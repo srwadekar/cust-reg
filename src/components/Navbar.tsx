@@ -1,16 +1,15 @@
 import React from 'react';
 
-export interface NavbarProps {
+interface NavbarProps {
   currentTab: string;
   setCurrentTab: (tab: string) => void;
   pendingSyncCount: number;
   onOpenDbConfig: () => void;
   onForceClearSync: () => void;
   onNewCustomerLog?: () => void;
-  // Punch In / Out props
   isPunchedIn: boolean;
   onTogglePunch: () => void;
-  activeWorkDuration?: string; // e.g. "2h 15m"
+  activeWorkDuration?: string;
   operatorName?: string;
   role?: string;
   onLogout?: () => void;
@@ -30,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   role = 'Operator',
   onLogout,
 }) => {
-  const navigationTabs = [
+  const tabs = [
     { id: 'ledger', label: 'Operations Ledger', icon: '📋' },
     { id: 'tasks', label: 'Task Dispatch', icon: '⚡' },
     { id: 'attendance_hub', label: 'Attendance & Payroll', icon: '👥' },
@@ -40,10 +39,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200/80 shadow-2xs">
-      {/* TIER 1: BRAND + PUNCH TOGGLE + LOG + OPERATOR */}
+      {/* TIER 1: BRAND + PUNCH CONTROLS + USER ACTIONS */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-100">
         <div className="flex items-center justify-between h-14">
-          {/* Logo & Cafe Brand */}
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-900 to-indigo-800 flex items-center justify-center text-white font-black text-base shadow-xs">
               S
@@ -62,9 +60,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Quick Actions & Header Controls */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* RESTORED: DYNAMIC PUNCH IN / PUNCH OUT BUTTON */}
+            {/* RESTORED PUNCH BUTTON */}
             <button
               type="button"
               onClick={onTogglePunch}
@@ -73,7 +70,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ? 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 animate-pulse'
                   : 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100'
               }`}
-              title={isPunchedIn ? 'Click to Punch Out' : 'Click to Punch In'}
             >
               <span>{isPunchedIn ? '🛑' : '⏱️'}</span>
               <span>{isPunchedIn ? 'Punch Out' : 'Punch In'}</span>
@@ -84,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </button>
 
-            {/* Quick New Customer Log */}
+            {/* NEW LOG BUTTON */}
             <button
               type="button"
               onClick={onNewCustomerLog}
@@ -95,12 +91,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="sm:hidden">New Log</span>
             </button>
 
-            {/* Sync Badge */}
+            {/* SYNC BADGE */}
             {pendingSyncCount > 0 ? (
               <button
                 type="button"
                 onClick={onForceClearSync}
-                title="Click to reset stalled sync items"
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition shadow-2xs cursor-pointer"
               >
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
@@ -113,7 +108,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* DB Config Trigger */}
             <button
               type="button"
               onClick={onOpenDbConfig}
@@ -125,7 +119,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             <div className="h-5 w-px bg-slate-200" />
 
-            {/* Operator Profile */}
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-xl px-2.5 py-1">
               <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-black">
                 SW
@@ -149,10 +142,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* TIER 2: SECOND ROW SUB-NAVIGATION */}
+      {/* TIER 2: NAVIGATION TABS */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-11 overflow-x-auto no-scrollbar gap-1 py-1">
-          {navigationTabs.map((tab) => {
+          {tabs.map((tab) => {
             const isActive = currentTab === tab.id;
             return (
               <button

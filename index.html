@@ -200,24 +200,23 @@
                         </div>
                     </div>
 
+                    <div class="flex items-center gap-2 sm:gap-3">
                         <!-- RESTORED: DYNAMIC PUNCH IN / PUNCH OUT TOGGLE IN TIER 1 -->
-                        <div class="flex items-center gap-1.5">
-                            <button
-                                type="button"
-                                @click="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? punchOutStaff() : punchInStaff()"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer"
-                                :class="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime
-                                    ? 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 animate-pulse'
-                                    : 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100'"
-                                :title="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? 'Click to Punch Out' : 'Click to Punch In'"
-                            >
-                                <span x-text="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? '🛑' : '⏱️'"></span>
-                                <span x-text="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? 'Punch Out' : 'Punch In'">Punch In</span>
-                                <template x-if="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime && activePunchDurationText">
-                                    <span class="hidden sm:inline-block font-mono text-[10px] bg-rose-200/60 text-rose-900 px-1.5 py-0.2 rounded-md ml-0.5" x-text="activePunchDurationText"></span>
-                                </template>
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            @click="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? punchOutStaff() : punchInStaff()"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer"
+                            :class="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime
+                                ? 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 animate-pulse'
+                                : 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100'"
+                            :title="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? 'Click to Punch Out' : 'Click to Punch In'"
+                        >
+                            <span x-text="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? '🛑' : '⏱️'"></span>
+                            <span x-text="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? 'Punch Out' : 'Punch In'">Punch In</span>
+                            <template x-if="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime && activePunchDurationText">
+                                <span class="hidden sm:inline-block font-mono text-[10px] bg-rose-200/60 text-rose-900 px-1.5 py-0.2 rounded-md ml-0.5" x-text="activePunchDurationText"></span>
+                            </template>
+                        </button>
 
                         <button
                             type="button"
@@ -533,56 +532,58 @@
                                                 <div class="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                                                     Subscribed Services & Progress
                                                 </div>
-                                                <div class="grid grid-cols-1 gap-2">
+                                                <div class="space-y-2">
                                                     <template x-for="(srv, sIndex) in (log.services || [])" :key="sIndex">
-                                                        <div class="bg-slate-50/70 hover:bg-slate-50 rounded-xl p-2.5 border border-slate-200/70 transition space-y-2">
-                                                            <!-- Service Title & Pricing -->
-                                                            <div class="flex items-center justify-between gap-1.5">
-                                                                <div>
-                                                                    <div class="font-bold text-xs text-slate-900 tracking-tight" x-text="srv.name"></div>
-                                                                    <div class="text-[10px] text-slate-500 space-x-1.5 mt-0.5 font-mono">
-                                                                        <span class="text-rose-600 font-semibold" x-text="'Challan: ₹' + (srv.challanFees || 0)"></span>
-                                                                        <span class="text-emerald-700 font-bold" x-text="'Margin: ₹' + (srv.netMargin !== undefined ? srv.netMargin : Math.max(0, Number(srv.customerPrice || srv.amount || 0) - Number(srv.challanFees || 0)))"></span>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="text-xs font-mono font-semibold text-slate-700 bg-white px-2 py-0.5 rounded-md border border-slate-200 shrink-0" x-text="'₹' + (srv.customerPrice || srv.amount || 0)"></div>
+                                                        <div class="bg-slate-50 p-2 rounded border border-slate-200 text-xs space-y-1">
+                                                            <div class="flex items-center justify-between font-semibold">
+                                                                <span class="text-slate-800" x-text="srv.name"></span>
+                                                                <span class="font-bold text-indigo-600 font-mono" x-text="'₹' + (srv.customerPrice || srv.amount || 0)"></span>
                                                             </div>
-
-                                                            <!-- Processing State Segmented Controller -->
-                                                            <div>
-                                                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                                                                    Work Progress:
-                                                                </span>
-                                                                <div class="grid grid-cols-3 gap-1 bg-white p-1 rounded-lg border border-slate-200">
-                                                                    <button type="button" @click="updateServiceStatus(log, sIndex, 'Pending')"
-                                                                        :class="srv.status === 'Pending' ? 'bg-amber-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'"
-                                                                        class="py-1 text-[10px] font-bold rounded-md transition-all text-center cursor-pointer">
-                                                                        ⏳ Pending
+                                                            <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                                                                <span class="text-rose-600 font-semibold" x-text="'Challan: ₹' + (srv.challanFees || 0)"></span>
+                                                                <span class="text-emerald-700 font-bold" x-text="'Margin: ₹' + (srv.netMargin !== undefined ? srv.netMargin : Math.max(0, Number(srv.customerPrice || srv.amount || 0) - Number(srv.challanFees || 0)))"></span>
+                                                            </div>
+                                                            <!-- Processing Status -->
+                                                            <div class="flex items-center justify-between gap-1 pt-1 border-t border-slate-200">
+                                                                <span class="text-[10px] text-slate-500 font-medium">Proc:</span>
+                                                                <div class="flex gap-1">
+                                                                    <button @click="updateServiceStatus(log, sIndex, 'In Process')" 
+                                                                        class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border cursor-pointer"
+                                                                        :class="srv.status === 'In Process' ? 'bg-amber-500 text-white border-amber-600 shadow-sm' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'">
+                                                                        In Proc
                                                                     </button>
-                                                                    <button type="button" @click="updateServiceStatus(log, sIndex, 'In Process')"
-                                                                        :class="srv.status === 'In Process' ? 'bg-sky-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'"
-                                                                        class="py-1 text-[10px] font-bold rounded-md transition-all text-center cursor-pointer">
-                                                                        ⚡ Process
+                                                                    <button @click="updateServiceStatus(log, sIndex, 'Pending')" 
+                                                                        class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border cursor-pointer"
+                                                                        :class="srv.status === 'Pending' ? 'bg-blue-600 text-white border-blue-700 shadow-sm' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'">
+                                                                        Pend
                                                                     </button>
-                                                                    <button type="button" @click="updateServiceStatus(log, sIndex, 'Completed')"
-                                                                        :class="srv.status === 'Completed' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'"
-                                                                        class="py-1 text-[10px] font-bold rounded-md transition-all text-center cursor-pointer">
-                                                                        ✓ Completed
+                                                                    <button @click="updateServiceStatus(log, sIndex, 'Completed')" 
+                                                                        class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border cursor-pointer"
+                                                                        :class="srv.status === 'Completed' ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'">
+                                                                        Comp
                                                                     </button>
                                                                 </div>
                                                             </div>
-
-                                                            <!-- Physical Dispatch Button -->
-                                                            <div class="flex items-center justify-between pt-1">
-                                                                <span class="text-[10px] text-slate-500 font-medium">Physical Delivery:</span>
-                                                                <button type="button"
-                                                                    @click="updatePhysicalStatus(log, sIndex, srv.physicalStatus === 'Despatched' ? 'Come in Shop' : 'Despatched')"
-                                                                    :class="srv.physicalStatus === 'Despatched'
-                                                                        ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
-                                                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'"
-                                                                    class="px-2.5 py-1 rounded-md text-[10px] font-bold border transition cursor-pointer">
-                                                                    <span x-text="srv.physicalStatus === 'Despatched' ? '📦 Dispatched (Out)' : '🏬 Ready in Shop'"></span>
-                                                                </button>
+                                                            <!-- Physical Document / Card Delivery Status -->
+                                                            <div class="flex items-center justify-between gap-1 pt-1 border-t border-slate-200">
+                                                                <span class="text-[10px] text-slate-500 font-medium">Physical:</span>
+                                                                <div class="flex gap-1">
+                                                                    <button @click="updatePhysicalStatus(log, sIndex, 'Pending')" 
+                                                                        class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border cursor-pointer"
+                                                                        :class="srv.physicalStatus === 'Pending' ? 'bg-slate-500 text-white border-slate-600 shadow-sm' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'">
+                                                                        Pending
+                                                                    </button>
+                                                                    <button @click="updatePhysicalStatus(log, sIndex, 'Despatched')" 
+                                                                        class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border cursor-pointer"
+                                                                        :class="srv.physicalStatus === 'Despatched' ? 'bg-purple-600 text-white border-purple-700 shadow-sm' : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'">
+                                                                        Despatched
+                                                                    </button>
+                                                                    <button @click="updatePhysicalStatus(log, sIndex, 'Come in Shop')" 
+                                                                        class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border cursor-pointer"
+                                                                        :class="srv.physicalStatus === 'Come in Shop' ? 'bg-teal-600 text-white border-teal-700 shadow-sm' : 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100'">
+                                                                        In Shop
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </template>
@@ -2237,6 +2238,12 @@
                                 <input type="number" x-model.number="inlineNewService.defaultAmount" placeholder="Cust ₹" 
                                     @keydown.enter.prevent="saveAndSelectInlineService"
                                     class="w-full px-2.5 py-1.5 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white font-bold text-slate-800 text-xs">
+                                <div class="flex items-center gap-1 mt-1">
+                                    <button type="button" @click="inlineNewService.defaultAmount = 25" class="px-1 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition cursor-pointer">₹25</button>
+                                    <button type="button" @click="inlineNewService.defaultAmount = 50" class="px-1 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition cursor-pointer">₹50</button>
+                                    <button type="button" @click="inlineNewService.defaultAmount = 100" class="px-1 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition cursor-pointer">₹100</button>
+                                    <button type="button" @click="inlineNewService.defaultAmount = 200" class="px-1 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition cursor-pointer">₹200</button>
+                                </div>
                             </div>
                             <div class="sm:col-span-2">
                                 <label class="block text-[10px] font-bold text-rose-600 uppercase mb-0.5">डीफॉल्ट चलन ₹</label>
@@ -2280,6 +2287,13 @@
                             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">ग्राहक शुल्क (₹)</label>
                             <input type="number" x-model.number="tempService.customerPrice" @input="tempService.amount = tempService.customerPrice; tempService.netMargin = Math.max(0, Number(tempService.customerPrice || 0) - Number(tempService.challanFees || 0))" placeholder="Customer ₹" 
                                 class="w-full px-2.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs font-bold text-slate-800">
+                            <!-- Quick Rate Action Buttons (25 / 50 / 100 / 200) -->
+                            <div class="flex items-center gap-1 mt-1">
+                                <button type="button" @click="tempService.customerPrice = 25; tempService.amount = 25; tempService.netMargin = Math.max(0, 25 - Number(tempService.challanFees || 0))" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 border border-slate-200 transition cursor-pointer">₹25</button>
+                                <button type="button" @click="tempService.customerPrice = 50; tempService.amount = 50; tempService.netMargin = Math.max(0, 50 - Number(tempService.challanFees || 0))" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 border border-slate-200 transition cursor-pointer">₹50</button>
+                                <button type="button" @click="tempService.customerPrice = 100; tempService.amount = 100; tempService.netMargin = Math.max(0, 100 - Number(tempService.challanFees || 0))" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 border border-slate-200 transition cursor-pointer">₹100</button>
+                                <button type="button" @click="tempService.customerPrice = 200; tempService.amount = 200; tempService.netMargin = Math.max(0, 200 - Number(tempService.challanFees || 0))" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 border border-slate-200 transition cursor-pointer">₹200</button>
+                            </div>
                         </div>
                         <div class="sm:col-span-2">
                             <label class="block text-[10px] font-bold text-rose-600 uppercase mb-0.5">सरकारी चलन (₹)</label>
