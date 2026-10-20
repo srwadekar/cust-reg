@@ -191,5 +191,160 @@ begin
     end if;
 end $$;
 
--- ९. PostgREST स्कीमा कॅशे रीलोड (Reload PostgREST Schema Cache)
+-- ९. कॅफे अटेंडन्स आणि अचूक कामाचे तास आधारित हजेरी (Cafe Attendance & Duration-Based Attendance)
+create table if not exists public.cafe_attendance (
+    id text primary key,
+    staff_id text,
+    staff_name text,
+    date date not null default current_date,
+    punch_in timestamptz,
+    punch_out timestamptz,
+    total_hours numeric default 0,
+    attendance_type text default 'Absent', -- 'Full Day', 'Half Day', 'Absent'
+    day_salary_multiplier numeric default 0, -- 1.0 (Full), 0.5 (Half), 0.0 (Absent)
+    base_daily_salary numeric default 300,
+    auto_calculated boolean default false,
+    created_at timestamptz default now()
+);
+
+-- जुन्या / विद्यमान टेबल्ससाठी सेफ कॉलम मायग्रेशन
+alter table if exists public.cafe_attendance add column if not exists staff_name text;
+alter table if exists public.cafe_attendance add column if not exists total_hours numeric default 0;
+alter table if exists public.cafe_attendance add column if not exists attendance_type text default 'Absent';
+alter table if exists public.cafe_attendance add column if not exists day_salary_multiplier numeric default 0;
+alter table if exists public.cafe_attendance add column if not exists base_daily_salary numeric default 300;
+alter table if exists public.cafe_attendance add column if not exists auto_calculated boolean default false;
+
+-- attendance_logs टेबलसाठी देखील कॉलम सेफ ऍड करणे (Dual Compatibility)
+alter table if exists public.attendance_logs add column if not exists total_hours numeric default 0;
+alter table if exists public.attendance_logs add column if not exists attendance_type text default 'Absent';
+alter table if exists public.attendance_logs add column if not exists day_salary_multiplier numeric default 0;
+alter table if exists public.attendance_logs add column if not exists auto_calculated boolean default false;
+alter table if exists public.attendance_logs add column if not exists punch_in_iso timestamptz;
+alter table if exists public.attendance_logs add column if not exists punch_out_iso timestamptz;
+
+-- १०. ऑटो-अॅब्सेंट रेकन्सिलिएशन फंक्शन (Automatic Daily Absent Reconciliation Function)
+create or replace function public.mark_daily_auto_absent(target_date date default current_date)
+returns void as $$
+begin
+  -- cafe_profiles किंवा users टेबलमधील सक्रिय कर्मचाऱ्यांसाठी cafe_attendance मध्ये Absent नोंद करणे
+  if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'cafe_profiles') then
+    insert into public.cafe_attendance (
+      id,
+      staff_id,
+      staff_name,
+      date,
+      punch_in,
+      punch_out,
+      total_hours,
+      attendance_type,
+      day_salary_multiplier,
+      auto_calculated
+    )
+    select 
+      'att_' || target_date || '_' || p.id,
+      p.id,
+      coalesce(p.name, p.full_name, 'Staff Member'),
+      target_date,
+      null,
+      null,
+      0.00,
+      'Absent',
+      0.00,
+      true
+    from public.cafe_profiles p
+    where (p.is_active = true or p.role in ('operator', 'staff', 'associate'))
+      and not exists (
+        select 1 from public.cafe_attendance a
+        where a.staff_id = p.id and a.date = target_date
+      )
+    on conflict (id) do nothing;
+  end if;
+
+  -- users टेबलमधील सक्रिय कर्मचाऱ्यांसाठी (जर users टेबल वापरले जात असेल)
+  if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'users') then
+    insert into public.cafe_attendance (
+      id,
+      staff_id,
+      staff_name,
+      date,
+      punch_in,
+      punch_out,
+      total_hours,
+      attendance_type,
+      day_salary_multiplier,
+      auto_calculated
+    )
+    select 
+      'att_' || target_date || '_' || u.username,
+      u.username,
+      coalesce(u.name, u.username),
+      target_date,
+      null,
+      null,
+      0.00,
+      'Absent',
+      0.00,
+      true
+    from public.users u
+    where u.role in ('operator', 'staff', 'associate') and u.username <> 'sagar'
+      and not exists (
+        select 1 from public.cafe_attendance a
+        where a.staff_id = u.username and a.date = target_date
+      )
+    on conflict (id) do nothing;
+
+    -- attendance_logs टेबलमध्ये देखील सेफ रेकॉर्ड करणे
+    insert into public.attendance_logs (
+      id,
+      staff_id,
+      date,
+      status,
+      punch_in_time,
+      punch_out_time,
+      total_hours,
+      attendance_type,
+      day_salary_multiplier,
+      auto_calculated
+    )
+    select 
+      'att_' || u.username || '_' || to_char(target_date, 'YYYY-MM-DD'),
+      u.username,
+      to_char(target_date, 'YYYY-MM-DD'),
+      'Absent',
+      null,
+      null,
+      0.00,
+      'Absent',
+      0.00,
+      true
+    from public.users u
+    where u.role in ('operator', 'staff', 'associate') and u.username <> 'sagar'
+      and not exists (
+        select 1 from public.attendance_logs al
+        where al.staff_id = u.username and al.date = to_char(target_date, 'YYYY-MM-DD')
+      )
+    on conflict (id) do nothing;
+  end if;
+end;
+$$ language plpgsql;
+
+-- तात्काळ आजच्या तारखेसाठी चालवणे
+select public.mark_daily_auto_absent(current_date);
+
+-- RLS & Realtime Rules
+alter table if exists public.cafe_attendance enable row level security;
+drop policy if exists "Allow all operations on cafe_attendance" on public.cafe_attendance;
+create policy "Allow all operations on cafe_attendance" on public.cafe_attendance for all using (true) with check (true);
+
+do $$
+begin
+    if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'cafe_attendance') then
+        if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'cafe_attendance') then
+            alter publication supabase_realtime add table public.cafe_attendance;
+        end if;
+    end if;
+end $$;
+
+-- ११. PostgREST स्कीमा कॅशे रीलोड (Reload PostgREST Schema Cache)
 notify pgrst, 'reload schema';

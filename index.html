@@ -200,15 +200,33 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2 sm:gap-3">
-                        <button
-                            type="button"
-                            @click="currentUser && myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? punchOutStaff() : punchInStaff()"
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100 transition shadow-2xs cursor-pointer"
-                        >
-                            <span>⏱️</span>
-                            <span class="hidden sm:inline" x-text="currentUser && myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? 'Punch Out' : 'Punch In'">Punch In</span>
-                        </button>
+                    <div class="flex items-center gap-1.5 sm:gap-3">
+                        <!-- Dynamic Live Punch In / Punch Out Engine Toggle with Running Timer -->
+                        <template x-if="currentUser && currentUser.username !== 'sagar' && currentUser.role !== 'admin'">
+                            <div class="flex items-center gap-1.5">
+                                <!-- Running Session Timer Badge (When Punched In) -->
+                                <template x-if="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime">
+                                    <div class="inline-flex items-center gap-1 px-2 py-1 rounded-xl text-[10px] sm:text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                                        <span class="hidden md:inline font-mono" x-text="'Active: ' + (activePunchDurationText || 'सुरू')"></span>
+                                        <span class="md:hidden font-mono" x-text="activePunchDurationText ? activePunchDurationText.split(' ')[0] + 'h' : 'चालू'"></span>
+                                    </div>
+                                </template>
+                                
+                                <button
+                                    type="button"
+                                    @click="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? punchOutStaff() : punchInStaff()"
+                                    class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer"
+                                    :class="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime
+                                        ? 'bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100'
+                                        : 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'"
+                                    :title="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? 'Punch Out & हजेरी नोंदवा' : 'Punch In करा'"
+                                >
+                                    <span x-text="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? '🛑' : '⏱️'"></span>
+                                    <span class="hidden sm:inline" x-text="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? 'Punch Out' : 'Punch In'">Punch In</span>
+                                </button>
+                            </div>
+                        </template>
 
                         <button
                             type="button"
@@ -1045,6 +1063,150 @@
                 <!-- SUB-TAB 1: DAILY ATTENDANCE LOG -->
                 <div x-show="attendanceSubTab === 'daily'" class="space-y-4">
                 
+                <!-- 1. DURATION-BASED ATTENDANCE & PUNCH CONSOLE BANNER (MOBILE-OPTIMIZED) -->
+                <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-4 sm:p-5 rounded-2xl shadow-xs">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-base sm:text-lg">⏱️</span>
+                                <h3 class="text-sm sm:text-base font-extrabold tracking-tight">
+                                    कामाच्या अचूक तासांवर आधारित हजेरी नियम (Strict Working Duration Rules)
+                                </h3>
+                            </div>
+                            <p class="text-[11px] sm:text-xs text-slate-300 mt-1">
+                                फक्त लॉगिन करून हजेरी ग्राह्य धरली जाणार नाही. प्रत्यक्ष कामाच्या वेळेनुसार (Duration) पगार व हजेरी मोजली जाईल.
+                            </p>
+                        </div>
+
+                        <!-- Live Punch Action Toggle -->
+                        <div class="flex items-center gap-2 self-start sm:self-auto w-full sm:w-auto">
+                            <template x-if="currentUser && currentUser.username !== 'sagar' && currentUser.role !== 'admin'">
+                                <div class="w-full sm:w-auto">
+                                    <template x-if="!myTodayPunchRecord || !myTodayPunchRecord.punchInTime || myTodayPunchRecord.punchOutTime">
+                                        <button
+                                            type="button"
+                                            @click="punchInStaff()"
+                                            class="w-full sm:w-auto px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 font-black text-xs text-slate-950 rounded-xl transition shadow-xs cursor-pointer flex items-center justify-center gap-2"
+                                        >
+                                            <span>⏱️</span>
+                                            <span>Punch In करा</span>
+                                        </button>
+                                    </template>
+                                    <template x-if="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime">
+                                        <button
+                                            type="button"
+                                            @click="punchOutStaff()"
+                                            class="w-full sm:w-auto px-5 py-2.5 bg-rose-500 hover:bg-rose-600 font-black text-xs text-white rounded-xl transition shadow-xs cursor-pointer flex items-center justify-center gap-2"
+                                        >
+                                            <span>🛑</span>
+                                            <span>Punch Out & हजेरी नोंदवा</span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Live Active Session Running Status -->
+                    <template x-if="currentUser && currentUser.username !== 'sagar' && myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime">
+                        <div class="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                                <span>सध्याचे कामाचे तास: <strong class="font-mono text-emerald-300 text-sm" x-text="(activePunchHours || 0) + ' hrs (' + (activePunchDurationText || 'चालू') + ')'"></strong></span>
+                            </div>
+                            <div class="bg-white/10 px-3 py-1 rounded-lg text-[11px] font-semibold">
+                                सध्याची स्थिती: <strong class="text-amber-300" x-text="activePunchMarathi || 'गणना चालू आहे'"></strong>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- 2. CRITERIA SUMMARY CARDS (FULL MOBILE RESPONSIVE GRID) -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="bg-white p-3.5 rounded-xl border border-emerald-200/80 bg-emerald-50/20 shadow-2xs">
+                        <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">४ तासांपेक्षा जास्त (> ४.० तास)</div>
+                        <div class="text-base sm:text-lg font-black text-emerald-700 mt-0.5">Full Day (पूर्ण पगार)</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">&gt; 4.0 तास प्रत्यक्ष काम (१००% दैनिक वेतन)</div>
+                    </div>
+
+                    <div class="bg-white p-3.5 rounded-xl border border-sky-200/80 bg-sky-50/20 shadow-2xs">
+                        <div class="text-[10px] font-bold text-sky-800 uppercase tracking-wider">२ ते ४ तास (२.० ते ४.० तास)</div>
+                        <div class="text-base sm:text-lg font-black text-sky-700 mt-0.5">Half Day (अर्धा पगार)</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">२.० ते ४.० तास प्रत्यक्ष काम (५०% दैनिक वेतन)</div>
+                    </div>
+
+                    <div class="bg-white p-3.5 rounded-xl border border-rose-200/80 bg-rose-50/20 shadow-2xs">
+                        <div class="text-[10px] font-bold text-rose-800 uppercase tracking-wider">२ तासांपेक्षा कमी (&lt; २.० तास)</div>
+                        <div class="text-base sm:text-lg font-black text-rose-700 mt-0.5">Absent (शून्य पगार)</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">&lt; २.० तास (केवळ लॉगिन केल्यास हजेरी किंवा पगार नाही)</div>
+                    </div>
+                </div>
+
+                <!-- 3. TODAY'S ATTENDANCE RECORDS TABLE (RESPONSIVE WRAPPER) -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs">
+                    <div class="p-3.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">आजचा अचूक हजेरी तक्ता (Staff Logs)</h4>
+                            <p class="text-[10px] text-slate-400">Punched duration, real-time hours & pro-rated daily wage calculation</p>
+                        </div>
+                        <span class="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md" x-text="dailyRollDate"></span>
+                    </div>
+
+                    <div class="overflow-x-auto w-full">
+                        <table class="w-full text-left text-xs whitespace-nowrap">
+                            <thead class="bg-slate-50/80 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-200/60">
+                                <tr>
+                                    <th class="py-2.5 px-4">कर्मचारी</th>
+                                    <th class="py-2.5 px-4">पंच इन (वेळ)</th>
+                                    <th class="py-2.5 px-4">पंच आऊट (वेळ)</th>
+                                    <th class="py-2.5 px-4">एकूण तास</th>
+                                    <th class="py-2.5 px-4">हजेरी स्थिती</th>
+                                    <th class="py-2.5 px-4">पगार गणना</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
+                                <template x-if="trackableAssociates.length === 0">
+                                    <tr>
+                                        <td colspan="6" class="py-6 text-center text-slate-400 text-xs">
+                                            कोणतेही असोसिएट कर्मचारी उपलब्ध नाहीत.
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template x-for="assoc in trackableAssociates" :key="assoc.username">
+                                    <tr class="hover:bg-slate-50/60 transition">
+                                        <td class="py-3 px-4 font-bold text-slate-900">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 font-bold flex items-center justify-center text-[10px] uppercase border border-indigo-200" x-text="assoc.name.slice(0, 1)"></div>
+                                                <div>
+                                                    <span x-text="assoc.name"></span>
+                                                    <span class="block text-[9px] text-slate-400 font-mono" x-text="'@' + assoc.username"></span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-4 font-mono font-semibold" x-text="getPunchTimes(assoc.username, dailyRollDate).in || '—'"></td>
+                                        <td class="py-3 px-4 font-mono font-semibold">
+                                            <span x-text="getPunchTimes(assoc.username, dailyRollDate).out || (getPunchTimes(assoc.username, dailyRollDate).in ? '🟢 चालू आहे' : '—')"></span>
+                                        </td>
+                                        <td class="py-3 px-4 font-mono font-bold text-slate-900" x-text="getStaffDurationDisplay(assoc.username, dailyRollDate)"></td>
+                                        <td class="py-3 px-4">
+                                            <span
+                                                class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                                                :class="getAttendanceStatus(assoc.username, dailyRollDate) === 'Present'
+                                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                                    : getAttendanceStatus(assoc.username, dailyRollDate) === 'Half Day'
+                                                    ? 'bg-sky-50 text-sky-800 border-sky-200'
+                                                    : 'bg-rose-50 text-rose-800 border-rose-200'"
+                                                x-text="getAttendanceStatus(assoc.username, dailyRollDate)"
+                                            ></span>
+                                        </td>
+                                        <td class="py-3 px-4 font-mono font-bold text-slate-800" x-text="getStaffSalaryCalculationDisplay(assoc.username, dailyRollDate)"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
                 <!-- Roll Call Header & Date Selector -->
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
@@ -1147,14 +1309,18 @@
                                     </div>
 
                                     <!-- Punch-in/Out Timestamps Display & Override -->
-                                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 grid grid-cols-2 gap-2 text-xs">
+                                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 grid grid-cols-3 gap-2 text-xs">
                                         <div>
                                             <label class="block text-[10px] font-semibold text-slate-500 uppercase">Punch In</label>
-                                            <span class="font-mono font-bold text-emerald-700 text-xs" x-text="getPunchTimes(emp.username, dailyRollDate).in || 'Not Punched'"></span>
+                                            <span class="font-mono font-bold text-emerald-700 text-xs truncate block" x-text="getPunchTimes(emp.username, dailyRollDate).in || 'Not Punched'"></span>
                                         </div>
                                         <div>
                                             <label class="block text-[10px] font-semibold text-slate-500 uppercase">Punch Out</label>
-                                            <span class="font-mono font-bold text-amber-700 text-xs" x-text="getPunchTimes(emp.username, dailyRollDate).out || 'Pending'"></span>
+                                            <span class="font-mono font-bold text-amber-700 text-xs truncate block" x-text="getPunchTimes(emp.username, dailyRollDate).out || (getPunchTimes(emp.username, dailyRollDate).in ? '🟢 चालू' : 'Pending')"></span>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-semibold text-slate-500 uppercase">वेळ / वेतन</label>
+                                            <span class="font-mono font-bold text-indigo-700 text-xs truncate block" x-text="getStaffDurationDisplay(emp.username, dailyRollDate)"></span>
                                         </div>
                                     </div>
 
@@ -3300,6 +3466,11 @@
                 activeTab: 'ledger',
                 attendanceSubTab: 'daily', // 'daily' | 'monthly'
 
+                // Live Active Punch Duration & Marathi Status State
+                activePunchDurationText: '',
+                activePunchHours: 0,
+                activePunchMarathi: '',
+
                 // WhatsApp Template
                 waTemplate: DEFAULT_WA_TEMPLATE,
                 tempWaTemplate: DEFAULT_WA_TEMPLATE,
@@ -3445,6 +3616,9 @@
                     this.updateClock();
                     setInterval(() => this.updateClock(), 1000);
 
+                    this.updateLivePunchTimer();
+                    setInterval(() => this.updateLivePunchTimer(), 10000);
+
                     const savedUrl = localStorage.getItem('suravi_sb_url');
                     const savedKey = localStorage.getItem('suravi_sb_key');
                     if (savedUrl && savedKey) {
@@ -3504,8 +3678,9 @@
                         } catch(e){}
                     }
 
-                    // Run auto-absent audit for missed past days
+                    // Run auto-absent audit and defensive reconciliation for unpunched staff
                     this.evaluatePastAutoAbsents();
+                    this.reconcileDailyAutoAbsent();
                 },
 
                 parseSalaryHistory(rawHistory, defaultRole = 'associate') {
@@ -3614,10 +3789,17 @@
                                 status: a.status || 'Present',
                                 punchInTime: a.punch_in_time || null,
                                 punchOutTime: a.punch_out_time || null,
+                                punchInISO: a.punch_in || a.punch_in_iso || null,
+                                punchOutISO: a.punch_out || a.punch_out_iso || null,
+                                totalHours: Number(a.total_hours || 0),
+                                attendanceType: a.attendance_type || (a.status === 'Half Day' ? 'Half Day' : a.status === 'Absent' ? 'Absent' : 'Full Day'),
+                                daySalaryMultiplier: a.day_salary_multiplier !== undefined ? Number(a.day_salary_multiplier) : (a.status === 'Present' ? 1.0 : a.status === 'Half Day' ? 0.5 : 0.0),
                                 penaltyWaived: Boolean(a.penalty_waived),
+                                autoCalculated: Boolean(a.auto_calculated),
                                 createdAt: a.created_at || null
                             }));
                             localStorage.setItem('sf_logs_data', JSON.stringify(this.attendanceLogs));
+                            this.updateLivePunchTimer();
                         }
                     } catch(e) {
                         console.error('pullAttendanceFromCloud error:', e);
@@ -3799,10 +3981,17 @@
                                 status: a.status || 'Present',
                                 punchInTime: a.punch_in_time || null,
                                 punchOutTime: a.punch_out_time || null,
+                                punchInISO: a.punch_in || a.punch_in_iso || null,
+                                punchOutISO: a.punch_out || a.punch_out_iso || null,
+                                totalHours: Number(a.total_hours || 0),
+                                attendanceType: a.attendance_type || (a.status === 'Half Day' ? 'Half Day' : a.status === 'Absent' ? 'Absent' : 'Full Day'),
+                                daySalaryMultiplier: a.day_salary_multiplier !== undefined ? Number(a.day_salary_multiplier) : (a.status === 'Present' ? 1.0 : a.status === 'Half Day' ? 0.5 : 0.0),
                                 penaltyWaived: Boolean(a.penalty_waived),
+                                autoCalculated: Boolean(a.auto_calculated),
                                 createdAt: a.created_at || null
                             }));
                             localStorage.setItem('sf_logs_data', JSON.stringify(this.attendanceLogs));
+                            this.updateLivePunchTimer();
                         }
 
                         // 5. Staff Payments Hydration (snake_case -> camelCase)
@@ -4611,6 +4800,37 @@
                     return this.attendanceLogs.find(a => a.staffId === this.currentUser.username && a.date === this.todayISODate);
                 },
 
+                // Live Active Punch Duration & Status Updater
+                updateLivePunchTimer() {
+                    if (!this.currentUser) return;
+                    const myRec = this.myTodayPunchRecord;
+                    if (myRec && myRec.punchInTime && !myRec.punchOutTime) {
+                        let startMs = myRec.punchInISO ? new Date(myRec.punchInISO).getTime() : NaN;
+                        if (isNaN(startMs) && myRec.punchInTime) {
+                            startMs = new Date(`${this.todayISODate} ${myRec.punchInTime}`).getTime();
+                        }
+                        if (isNaN(startMs)) startMs = Date.now();
+                        const diffMs = Math.max(0, Date.now() - startMs);
+                        const totalMins = Math.floor(diffMs / (1000 * 60));
+                        const hrs = Math.floor(totalMins / 60);
+                        const mins = totalMins % 60;
+                        const totalHours = Number((diffMs / (1000 * 60 * 60)).toFixed(2));
+                        this.activePunchHours = totalHours;
+                        this.activePunchDurationText = `${hrs} hrs ${mins} mins`;
+                        if (totalHours >= 4.0) {
+                            this.activePunchMarathi = `पूर्ण दिवस (${totalHours} तास - १००% वेतन)`;
+                        } else if (totalHours >= 2.0) {
+                            this.activePunchMarathi = `अर्धा दिवस (${totalHours} तास - ५०% वेतन)`;
+                        } else {
+                            this.activePunchMarathi = `अमान्य - २ तासांपेक्षा कमी (${totalHours} तास)`;
+                        }
+                    } else {
+                        this.activePunchDurationText = '';
+                        this.activePunchHours = 0;
+                        this.activePunchMarathi = '';
+                    }
+                },
+
                 async punchInStaff(targetUsername = null) {
                     const username = targetUsername || (this.currentUser ? this.currentUser.username : null);
                     if (!username) {
@@ -4630,7 +4850,9 @@
                         return;
                     }
 
-                    const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    const now = new Date();
+                    const nowISO = now.toISOString();
+                    const nowTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
                     const today = this.todayISODate;
                     const recId = `att_${username}_${today}`;
 
@@ -4640,14 +4862,19 @@
                         id: existing?.id || recId,
                         staff_id: username,
                         date: today,
-                        status: existing?.status || 'Present',
+                        status: 'Present',
                         punch_in_time: nowTime,
-                        punch_out_time: existing?.punchOutTime || null,
-                        penalty_waived: isWaived
+                        punch_out_time: null,
+                        punch_in_iso: nowISO,
+                        punch_out_iso: null,
+                        total_hours: 0.00,
+                        attendance_type: 'Absent',
+                        day_salary_multiplier: 0.00,
+                        penalty_waived: isWaived,
+                        auto_calculated: false
                     };
 
                     try {
-                        // Direct upsert to Supabase cloud first (no local-storage fallback)
                         const { error } = await this.supabaseClient
                             .from('attendance_logs')
                             .upsert(payload, { onConflict: 'staff_id,date' });
@@ -4658,7 +4885,26 @@
                             return;
                         }
 
-                        // Upon cloud success, update reactive Alpine.js state locally and trigger payroll re-renders
+                        // Dual sync to cafe_attendance
+                        try {
+                            const sal = targetUser ? (this.getSalaryInfoForMonth(targetUser, this.currentTargetMonthKey).baseRate || 300) : 300;
+                            await this.supabaseClient.from('cafe_attendance').upsert({
+                                id: payload.id,
+                                staff_id: username,
+                                staff_name: targetUser ? targetUser.name : username,
+                                date: today,
+                                punch_in: nowISO,
+                                punch_out: null,
+                                total_hours: 0.00,
+                                attendance_type: 'Absent',
+                                day_salary_multiplier: 0.00,
+                                base_daily_salary: sal,
+                                auto_calculated: false
+                            });
+                        } catch(caErr) {
+                            console.warn('cafe_attendance punch-in warn:', caErr);
+                        }
+
                         const updatedRecord = {
                             id: payload.id,
                             staffId: payload.staff_id,
@@ -4666,7 +4912,13 @@
                             status: payload.status,
                             punchInTime: payload.punch_in_time,
                             punchOutTime: payload.punch_out_time,
-                            penaltyWaived: payload.penalty_waived
+                            punchInISO: nowISO,
+                            punchOutISO: null,
+                            totalHours: 0.00,
+                            attendanceType: 'Absent',
+                            daySalaryMultiplier: 0.00,
+                            penaltyWaived: payload.penalty_waived,
+                            autoCalculated: false
                         };
 
                         const existingIdx = this.attendanceLogs.findIndex(a => a.staffId === username && a.date === today);
@@ -4676,11 +4928,11 @@
                             this.attendanceLogs.push(updatedRecord);
                         }
 
-                        // Force reactivity trigger
                         this.attendanceLogs = [...this.attendanceLogs];
                         localStorage.setItem('sf_logs_data', JSON.stringify(this.attendanceLogs));
+                        this.updateLivePunchTimer();
 
-                        alert(`हजेरी नोंदवली (Punched In at ${nowTime})!`);
+                        alert(`⏱️ Punch In यशस्वी (${nowTime})!\n\nकामाच्या अचूक तासांनुसार वेतन मोजले जाईल:\n• > ४.० तास: Full Day (१००% पगार)\n• २.० ते ४.० तास: Half Day (५०% पगार)\n• < २.० तास: Absent (०% पगार)`);
                     } catch (e) {
                         console.error('Punch In exception:', e);
                         alert('हजेरी नोंदवताना अडचण आली: ' + e.message);
@@ -4691,7 +4943,6 @@
                     const username = targetUsername || (this.currentUser ? this.currentUser.username : null);
                     if (!username) return;
 
-                    // Admin Attendance Exemption: Admin ('sagar' / role === 'admin') is exempt from punch-out
                     const targetUser = this.users.find(u => u.username === username);
                     if (username === 'sagar' || (targetUser && targetUser.role === 'admin')) {
                         alert('ॲडमिन (सागर) हजेरी नोंदीतून सूट मिळालेली आहे.');
@@ -4705,27 +4956,65 @@
 
                     const today = this.todayISODate;
                     let existing = this.attendanceLogs.find(a => a.staffId === username && a.date === today);
-                    if (!existing || !existing.punchInTime) {
+                    if (!existing || (!existing.punchInTime && !existing.punchInISO)) {
                         alert('प्रथम Punch In (हजेरी) नोंदवणे आवश्यक आहे.');
                         return;
                     }
 
-                    const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    const now = new Date();
+                    const nowISO = now.toISOString();
+                    const nowTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
                     const recId = existing.id || `att_${username}_${today}`;
+
+                    let startMs = existing.punchInISO ? new Date(existing.punchInISO).getTime() : NaN;
+                    if (isNaN(startMs) && existing.punchInTime) {
+                        startMs = new Date(`${today} ${existing.punchInTime}`).getTime();
+                    }
+                    if (isNaN(startMs)) startMs = now.getTime();
+
+                    const diffMs = Math.max(0, now.getTime() - startMs);
+                    const totalHours = Number((diffMs / (1000 * 60 * 60)).toFixed(2));
+
+                    let attendanceType = 'Absent';
+                    let salaryMultiplier = 0.0;
+                    let statusText = 'Absent';
+                    let marathiSummary = '';
+
+                    if (totalHours >= 4.0) {
+                        attendanceType = 'Full Day';
+                        salaryMultiplier = 1.0;
+                        statusText = 'Present';
+                        marathiSummary = `पूर्ण दिवस (${totalHours} तास - १००% वेतन)`;
+                    } else if (totalHours >= 2.0) {
+                        attendanceType = 'Half Day';
+                        salaryMultiplier = 0.5;
+                        statusText = 'Half Day';
+                        marathiSummary = `अर्धा दिवस (${totalHours} तास - ५०% वेतन)`;
+                    } else {
+                        attendanceType = 'Absent';
+                        salaryMultiplier = 0.0;
+                        statusText = 'Absent';
+                        marathiSummary = `अमान्य - २ तासांपेक्षा कमी कामाची वेळ (${totalHours} तास - ०% वेतन)`;
+                    }
 
                     const isWaived = existing ? Boolean(existing.penaltyWaived) : this.isStaffPenaltyWaived(username, today);
                     const payload = {
                         id: recId,
                         staff_id: username,
                         date: today,
-                        status: existing.status || 'Present',
-                        punch_in_time: existing.punchInTime,
+                        status: statusText,
+                        punch_in_time: existing.punchInTime || nowTime,
                         punch_out_time: nowTime,
-                        penalty_waived: isWaived
+                        punch_in_iso: existing.punchInISO || null,
+                        punch_out_iso: nowISO,
+                        total_hours: totalHours,
+                        attendance_type: attendanceType,
+                        day_salary_multiplier: salaryMultiplier,
+                        penalty_waived: isWaived,
+                        auto_calculated: false
                     };
 
                     try {
-                        // Direct upsert to Supabase cloud first (no local-storage fallback)
                         const { error } = await this.supabaseClient
                             .from('attendance_logs')
                             .upsert(payload, { onConflict: 'staff_id,date' });
@@ -4736,21 +5025,46 @@
                             return;
                         }
 
-                        // Upon cloud success, update reactive Alpine.js state locally and trigger payroll re-renders
+                        // Dual sync to cafe_attendance
+                        try {
+                            const sal = targetUser ? (this.getSalaryInfoForMonth(targetUser, this.currentTargetMonthKey).baseRate || 300) : 300;
+                            await this.supabaseClient.from('cafe_attendance').upsert({
+                                id: recId,
+                                staff_id: username,
+                                staff_name: targetUser ? targetUser.name : username,
+                                date: today,
+                                punch_in: existing.punchInISO,
+                                punch_out: nowISO,
+                                total_hours: totalHours,
+                                attendance_type: attendanceType,
+                                day_salary_multiplier: salaryMultiplier,
+                                base_daily_salary: sal,
+                                auto_calculated: false
+                            });
+                        } catch(caErr) {
+                            console.warn('cafe_attendance punch-out warn:', caErr);
+                        }
+
                         const existingIdx = this.attendanceLogs.findIndex(a => a.staffId === username && a.date === today);
                         if (existingIdx !== -1) {
                             this.attendanceLogs[existingIdx] = {
                                 ...this.attendanceLogs[existingIdx],
                                 id: recId,
-                                punchOutTime: nowTime
+                                punchOutTime: nowTime,
+                                punchOutISO: nowISO,
+                                totalHours: totalHours,
+                                attendanceType: attendanceType,
+                                daySalaryMultiplier: salaryMultiplier,
+                                status: statusText,
+                                autoCalculated: false
                             };
                         }
 
-                        // Force reactivity trigger
                         this.attendanceLogs = [...this.attendanceLogs];
                         localStorage.setItem('sf_logs_data', JSON.stringify(this.attendanceLogs));
+                        this.updateLivePunchTimer();
 
-                        alert(`निर्गमन नोंदवले (Punched Out at ${nowTime})!`);
+                        alert(`🛑 Punch Out यशस्वी (${nowTime})!\n\n• कामाचे तास: ${totalHours} hrs\n• हजेरी प्रकार: ${attendanceType}\n• निष्कर्ष: ${marathiSummary}`);
                     } catch (e) {
                         console.error('Punch Out exception:', e);
                         alert('निर्गमन नोंदवताना अडचण आली: ' + e.message);
@@ -4766,20 +5080,83 @@
                     return await this.punchOutStaff();
                 },
 
-                // Auto-Absent Evaluation Engine: Auto-marks past unpunched days as Absent
+                // Auto-Absent Evaluation Engine: Defensive reconciliation for unpunched operators
+                reconcileDailyAutoAbsent(targetDateStr = null) {
+                    const targetDate = targetDateStr || this.todayISODate;
+                    let changed = false;
+
+                    this.users.forEach(op => {
+                        if (op.role === 'admin' || op.username === 'sagar') return;
+                        const exists = this.attendanceLogs.some(a => a.staffId === op.username && a.date === targetDate);
+                        if (!exists) {
+                            const absentRecord = {
+                                id: `att_auto_${targetDate}_${op.username}`,
+                                staffId: op.username,
+                                date: targetDate,
+                                status: 'Absent',
+                                punchInTime: null,
+                                punchOutTime: null,
+                                punchInISO: null,
+                                punchOutISO: null,
+                                totalHours: 0.00,
+                                attendanceType: 'Absent',
+                                daySalaryMultiplier: 0.00,
+                                autoCalculated: true,
+                                autoMarked: true
+                            };
+                            this.attendanceLogs.push(absentRecord);
+                            changed = true;
+
+                            if (this.supabaseClient) {
+                                this.supabaseClient.from('attendance_logs').upsert({
+                                    id: absentRecord.id,
+                                    staff_id: op.username,
+                                    date: targetDate,
+                                    status: 'Absent',
+                                    total_hours: 0.00,
+                                    attendance_type: 'Absent',
+                                    day_salary_multiplier: 0.00,
+                                    auto_calculated: true
+                                }, { onConflict: 'staff_id,date' }).then(() => {}).catch(err => console.warn('Auto-absent sync err:', err));
+
+                                this.supabaseClient.from('cafe_attendance').upsert({
+                                    id: absentRecord.id,
+                                    staff_id: op.username,
+                                    staff_name: op.name || op.username,
+                                    date: targetDate,
+                                    punch_in: null,
+                                    punch_out: null,
+                                    total_hours: 0.00,
+                                    attendance_type: 'Absent',
+                                    day_salary_multiplier: 0.00,
+                                    auto_calculated: true
+                                }).then(() => {}).catch(() => {});
+                            }
+                        }
+                    });
+
+                    if (changed) {
+                        this.attendanceLogs = [...this.attendanceLogs];
+                        localStorage.setItem('sf_logs_data', JSON.stringify(this.attendanceLogs));
+                    }
+                },
+
                 evaluatePastAutoAbsents() {
                     const today = this.todayISODate;
                     const refDate = new Date(today);
                     let changed = false;
 
-                    // Check past 7 days up to yesterday
-                    for (let i = 1; i <= 7; i++) {
+                    // Check today defensively
+                    this.reconcileDailyAutoAbsent(today);
+
+                    // Check past 14 days up to yesterday
+                    for (let i = 1; i <= 14; i++) {
                         const d = new Date(refDate);
                         d.setDate(d.getDate() - i);
                         const dateStr = d.toISOString().slice(0, 10);
 
                         this.users.forEach(op => {
-                            if (op.role === 'admin') return; // Admins exempt from auto-absent
+                            if (op.role === 'admin' || op.username === 'sagar') return;
                             const exists = this.attendanceLogs.some(a => a.staffId === op.username && a.date === dateStr);
                             if (!exists) {
                                 this.attendanceLogs.push({
@@ -4789,6 +5166,12 @@
                                     status: 'Absent',
                                     punchInTime: null,
                                     punchOutTime: null,
+                                    punchInISO: null,
+                                    punchOutISO: null,
+                                    totalHours: 0.00,
+                                    attendanceType: 'Absent',
+                                    daySalaryMultiplier: 0.00,
+                                    autoCalculated: true,
                                     autoMarked: true
                                 });
                                 changed = true;
@@ -4797,6 +5180,7 @@
                     }
 
                     if (changed) {
+                        this.attendanceLogs = [...this.attendanceLogs];
                         localStorage.setItem('sf_logs_data', JSON.stringify(this.attendanceLogs));
                     }
                 },
@@ -4824,6 +5208,33 @@
                         in: record ? record.punchInTime : null,
                         out: record ? record.punchOutTime : null
                     };
+                },
+
+                getStaffDurationDisplay(username, dateStr) {
+                    const rec = this.attendanceLogs.find(a => a.staffId === username && a.date === dateStr);
+                    if (!rec) return '—';
+                    if (rec.punchOutTime || rec.totalHours > 0) {
+                        const hrs = Number(rec.totalHours || 0).toFixed(2);
+                        const mult = rec.daySalaryMultiplier !== undefined ? Number(rec.daySalaryMultiplier) : (rec.status === 'Present' ? 1.0 : rec.status === 'Half Day' ? 0.5 : 0.0);
+                        const pct = mult === 1.0 ? '100%' : mult === 0.5 ? '50%' : '0%';
+                        return `${hrs} hrs (${pct})`;
+                    }
+                    if (rec.punchInTime && !rec.punchOutTime) {
+                        if (dateStr === this.todayISODate && this.currentUser && this.currentUser.username === username) {
+                            return `🟢 ${(this.activePunchHours || 0).toFixed(2)} hrs (चालू)`;
+                        }
+                        return '🟢 चालू आहे';
+                    }
+                    return rec.status === 'Absent' ? '0.00 hrs (0%)' : '—';
+                },
+
+                getStaffSalaryCalculationDisplay(username, dateStr) {
+                    const rec = this.attendanceLogs.find(a => a.staffId === username && a.date === dateStr);
+                    if (!rec) return '०% (None)';
+                    const mult = rec.daySalaryMultiplier !== undefined ? Number(rec.daySalaryMultiplier) : (rec.status === 'Present' ? 1.0 : rec.status === 'Half Day' ? 0.5 : 0.0);
+                    if (mult === 1.0) return '१००% (Full Day)';
+                    if (mult === 0.5) return '५०% (Half Day)';
+                    return '०% (Absent / None)';
                 },
 
                 getAttendanceStatusClass(username, dateStr) {
@@ -4859,6 +5270,11 @@
                         const existingIdx = this.attendanceLogs.findIndex(a => a.staffId === username && a.date === dateStr);
                         let prevRecord = existingIdx !== -1 ? this.attendanceLogs[existingIdx] : null;
                         const isWaived = prevRecord ? Boolean(prevRecord.penaltyWaived) : this.isStaffPenaltyWaived(username, dateStr);
+
+                        const mult = status === 'Present' ? 1.0 : status === 'Half Day' ? 0.5 : 0.0;
+                        const hours = status === 'Present' ? (prevRecord?.totalHours > 0 ? prevRecord.totalHours : 8.0) : status === 'Half Day' ? (prevRecord?.totalHours > 0 ? prevRecord.totalHours : 4.0) : 0.0;
+                        const attType = status === 'Present' ? 'Full Day' : status === 'Half Day' ? 'Half Day' : 'Absent';
+
                         const record = {
                             id: prevRecord?.id || recId,
                             staffId: username,
@@ -4866,7 +5282,13 @@
                             status: status,
                             punchInTime: prevRecord?.punchInTime || (status === 'Present' ? 'Manual P' : null),
                             punchOutTime: prevRecord?.punchOutTime || null,
-                            penaltyWaived: isWaived
+                            punchInISO: prevRecord?.punchInISO || null,
+                            punchOutISO: prevRecord?.punchOutISO || null,
+                            totalHours: hours,
+                            attendanceType: attType,
+                            daySalaryMultiplier: mult,
+                            penaltyWaived: isWaived,
+                            autoCalculated: false
                         };
                         try {
                             const { error } = await this.supabaseClient.from('attendance_logs').upsert({
@@ -4876,13 +5298,37 @@
                                 status: status,
                                 punch_in_time: record.punchInTime || null,
                                 punch_out_time: record.punchOutTime || null,
-                                penalty_waived: Boolean(record.penaltyWaived)
+                                total_hours: hours,
+                                attendance_type: attType,
+                                day_salary_multiplier: mult,
+                                penalty_waived: Boolean(record.penaltyWaived),
+                                auto_calculated: false
                             }, { onConflict: 'staff_id,date' });
                             if (error) {
                                 console.error('Error upserting attendance_logs:', error);
                                 alert('हजेरी नोंदवताना त्रुटी आली: ' + error.message);
                                 return;
                             }
+
+                            // Dual sync to cafe_attendance
+                            try {
+                                const targetUser = this.users.find(u => u.username === username);
+                                const sal = targetUser ? (this.getSalaryInfoForMonth(targetUser, this.currentTargetMonthKey).baseRate || 300) : 300;
+                                await this.supabaseClient.from('cafe_attendance').upsert({
+                                    id: record.id,
+                                    staff_id: username,
+                                    staff_name: targetUser ? targetUser.name : username,
+                                    date: dateStr,
+                                    punch_in: null,
+                                    punch_out: null,
+                                    total_hours: hours,
+                                    attendance_type: attType,
+                                    day_salary_multiplier: mult,
+                                    base_daily_salary: sal,
+                                    auto_calculated: false
+                                });
+                            } catch(caErr) {}
+
                             if (existingIdx !== -1) {
                                 this.attendanceLogs[existingIdx] = record;
                             } else {
