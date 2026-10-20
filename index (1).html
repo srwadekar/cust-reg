@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suravi Cyber Cafe - Marathi Bulk WhatsApp Ledger</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js for Reactive UI -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS (xlsx) for Excel Export / Import -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .suravi-brand-font {
+            font-family: 'Segoe Script', 'Brush Script MT', cursive, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased" x-data="suraviApp()" x-init="initApp()" @keydown.window="handleGlobalKeys($event)">
+
+    <!-- ==================== SUPABASE CONFIG MODAL ==================== -->
+    <div x-show="!isSupabaseConfigured" class="fixed inset-0 bg-slate-900 flex items-center justify-center p-4 z-50">
+        <div class="max-w-md w-full bg-white rounded-xl shadow-2xl p-6 space-y-4">
+            <h2 class="text-lg font-bold text-slate-900">Connect Supabase Backend</h2>
+            <p class="text-xs text-slate-500">Enter your Supabase project URL and Anon Public Key to enable real-time automated sync across your shop browsers.</p>
+            <form @submit.prevent="saveSupabaseConfig" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Supabase URL</label>
+                    <input type="text" x-model="tempConfig.url" required placeholder="https://xyz.supabase.co" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Supabase Anon Key</label>
+                    <input type="password" x-model="tempConfig.key" required placeholder="eyJhbGciOiJIUzI1Ni..." class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow transition">Connect & Initialize</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== AUTHENTICATION VIEW ==================== -->
+    <div x-show="isSupabaseConfigured && !isAuthenticated" class="min-h-screen flex items-center justify-center p-4 bg-slate-900">
+        <div class="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 space-y-6">
+            <div class="text-center flex flex-col items-center">
+                <div class="relative group cursor-pointer" @click="openModal('logoSettings')" title="Click to customize Logo">
+                    <template x-if="customLogoUrl">
+                        <img :src="customLogoUrl" alt="Suravi Cafe Logo" class="w-28 h-28 object-contain rounded-full border border-slate-200 bg-white p-1 shadow-md">
+                    </template>
+                    <template x-if="!customLogoUrl">
+                        <div class="relative w-28 h-28 flex items-center justify-center bg-white rounded-full p-2 border border-slate-100 shadow-md">
+                            <div class="absolute inset-0 flex items-center justify-center text-slate-900 text-xs pointer-events-none select-none">
+                                <i class="fa-solid fa-mobile-screen absolute top-1.5 text-[13px]"></i>
+                                <i class="fa-solid fa-arrows-spin absolute top-4 right-4 text-[11px]"></i>
+                                <i class="fa-solid fa-comment-dots absolute right-2 text-[12px]"></i>
+                                <i class="fa-solid fa-envelope absolute bottom-4 right-4 text-[11px]"></i>
+                                <i class="fa-solid fa-gears absolute bottom-1.5 text-[13px]"></i>
+                                <i class="fa-solid fa-recycle absolute bottom-4 left-4 text-[11px]"></i>
+                                <i class="fa-solid fa-at absolute left-2 text-[12px]"></i>
+                                <i class="fa-solid fa-cart-shopping absolute top-4 left-4 text-[11px]"></i>
+                            </div>
+                            <div class="text-center z-10">
+                                <span class="suravi-brand-font text-2xl font-bold tracking-tight text-slate-900 block leading-none">SURAVI</span>
+                                <span class="text-[6.5px] font-mono tracking-widest text-slate-700 block uppercase mt-0.5">THINK ONLINE...</span>
+                            </div>
+                        </div>
+                    </template>
+                    <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition text-xs font-semibold">
+                        <i class="fa-solid fa-camera mr-1"></i> Change
+                    </div>
+                </div>
+
+                <h1 class="text-xl font-bold text-slate-900 mt-3">Suravi Cyber Cafe</h1>
+                <p class="text-xs text-slate-500">Real-Time Cloud Synced Management Portal</p>
+            </div>
+
+            <form @submit.prevent="login" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Select Operator / Admin</label>
+                    <select x-model="loginForm.username" required autofocus
+                        class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                        <option value="">-- Choose User --</option>
+                        <template x-for="u in users" :key="u.username">
+                            <option :value="u.username" x-text="u.name + ' (@' + u.username + ' - ' + u.role + ')'"></option>
+                        </template>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
+                    <input type="password" x-model="loginForm.password" required 
+                        class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        placeholder="Enter password">
+                </div>
+                <div x-show="loginError" class="text-sm text-red-600 font-medium text-center" x-text="loginError"></div>
+                <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow transition">
+                    Sign In (Press Enter)
+                </button>
+            </form>
+            <div class="flex justify-between items-center text-xs text-slate-400 pt-2 border-t">
+                <button @click="openModal('logoSettings')" class="text-slate-500 hover:text-indigo-600 flex items-center gap-1"><i class="fa-solid fa-image"></i> Logo</button>
+                <button @click="resetSupabaseConfig" class="text-indigo-600 hover:underline">Reconfigure DB</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN DASHBOARD VIEW ==================== -->
+    <div x-show="isSupabaseConfigured && isAuthenticated" class="min-h-screen flex flex-col">
+        
+        <!-- Header -->
+        <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div class="flex items-center gap-3">
+                    
+                    <div class="relative group cursor-pointer shrink-0" @click="openModal('logoSettings')" title="Click to customize Logo">
+                        <template x-if="customLogoUrl">
+                            <img :src="customLogoUrl" alt="Logo" class="w-10 h-10 object-contain rounded-full bg-white p-0.5 border border-slate-700 shadow-sm">
+                        </template>
+                        <template x-if="!customLogoUrl">
+                            <div class="relative w-10 h-10 bg-white rounded-full flex items-center justify-center p-1 shadow-sm">
+                                <div class="absolute inset-0 flex items-center justify-center text-slate-900 text-[6px] pointer-events-none select-none">
+                                    <i class="fa-solid fa-mobile-screen absolute top-0.5 text-[6px]"></i>
+                                    <i class="fa-solid fa-arrows-spin absolute top-1.5 right-1.5 text-[5px]"></i>
+                                    <i class="fa-solid fa-comment-dots absolute right-0.5 text-[5px]"></i>
+                                    <i class="fa-solid fa-envelope absolute bottom-1.5 right-1.5 text-[5px]"></i>
+                                    <i class="fa-solid fa-gears absolute bottom-0.5 text-[6px]"></i>
+                                    <i class="fa-solid fa-recycle absolute bottom-1.5 left-1.5 text-[5px]"></i>
+                                    <i class="fa-solid fa-at absolute left-0.5 text-[5px]"></i>
+                                    <i class="fa-solid fa-cart-shopping absolute top-1.5 left-1.5 text-[5px]"></i>
+                                </div>
+                                <div class="text-center z-10 leading-none">
+                                    <span class="suravi-brand-font text-[9px] font-bold text-slate-950 block">SURAVI</span>
+                                    <span class="text-[3px] font-mono tracking-tighter text-slate-800 block uppercase font-bold">ONLINE</span>
+                                </div>
+                            </div>
+                        </template>
+                        <div class="absolute inset-0 bg-indigo-900/60 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition text-[9px]">
+                            <i class="fa-solid fa-pen"></i>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h1 class="text-base font-bold leading-tight flex items-center gap-1.5">
+                            <span>Suravi Cyber Cafe</span>
+                            <span class="text-[9px] font-mono bg-slate-800 text-indigo-300 px-1.5 py-0.5 rounded border border-slate-700 tracking-wider">THINK ONLINE</span>
+                        </h1>
+                        <p class="text-[11px] text-slate-400 flex items-center gap-2">
+                            <span>Operator: <strong class="text-indigo-400" x-text="currentUser ? currentUser.name : ''"></strong></span>
+                            <span class="inline-flex items-center gap-1 text-emerald-400" title="Live Real-Time Sync Active"><i class="fa-solid fa-bolt text-[10px]"></i> Live Sync Active</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button @click="openModal('customer')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus text-xs"></i> New Customer Log <span class="text-[10px] bg-indigo-800 px-1.5 py-0.5 rounded font-mono">[Alt+N]</span>
+                    </button>
+
+                    <!-- WhatsApp Template Customizer Button -->
+                    <button @click="openModal('waSettings')" class="px-3 py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 text-xs font-semibold rounded-lg shadow transition flex items-center gap-1.5" title="Customize WhatsApp Template">
+                        <i class="fa-brands fa-whatsapp text-sm"></i> WhatsApp Template
+                    </button>
+                    
+                    <button @click="openModal('logoSettings')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition flex items-center gap-1.5" title="Change Logo">
+                        <i class="fa-solid fa-image"></i> Logo
+                    </button>
+
+                    <template x-if="currentUser && currentUser.role === 'admin'">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <button @click="openModal('appTypes')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-list-check"></i> App Types
+                            </button>
+                            <button @click="openModal('operators')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-users-gear"></i> Operators
+                            </button>
+                            <button @click="openModal('apiDocs')" class="px-3 py-2 bg-indigo-800 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-code"></i> API
+                            </button>
+                        </div>
+                    </template>
+
+                    <button @click="exportExcel" title="Export to Excel (.xlsx)" class="px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg shadow transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-excel"></i> Export Excel
+                    </button>
+                    <label title="Import Excel File" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 cursor-pointer transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-arrow-up"></i> Import Excel
+                        <input type="file" accept=".xlsx, .xls, .csv" @change="importExcel" class="hidden">
+                    </label>
+                    <button @click="logout" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-right-from-bracket"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="max-w-7xl mx-auto px-4 py-5 flex-1 w-full space-y-4">
+            
+            <!-- Keyboard Hotkey Notice Bar & Bulk Action Toolbar -->
+            <div class="bg-indigo-50 border border-indigo-200 text-indigo-900 px-3 py-2.5 rounded-lg text-xs flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <div><span class="font-bold">Shortcuts:</span> <kbd class="bg-white px-1 py-0.5 border rounded font-mono shadow-sm">Alt + N</kbd> (New) | <kbd class="bg-white px-1 py-0.5 border rounded font-mono shadow-sm">Alt + F</kbd> (Search) | <kbd class="bg-white px-1 py-0.5 border rounded font-mono shadow-sm">Esc</kbd> (Close)</div>
+                </div>
+                <div>
+                    <button @click="sendBulkWhatsAppMarathi()" :disabled="selectedLogIds.length === 0" 
+                        class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg shadow transition flex items-center gap-1.5 text-xs">
+                        <i class="fa-brands fa-whatsapp text-sm"></i> Send Bulk Marathi WhatsApp (<span x-text="selectedLogIds.length"></span> Selected)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Metrics Summary Bar -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-semibold text-slate-400 uppercase">Filtered Logs</p>
+                        <h3 class="text-xl font-bold text-slate-800" x-text="filteredLogs.length">0</h3>
+                    </div>
+                    <div class="w-9 h-9 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-sm"><i class="fa-solid fa-clipboard-list"></i></div>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-semibold text-slate-400 uppercase">In Process / Pending</p>
+                        <h3 class="text-xl font-bold text-amber-600" x-text="filteredLogs.filter(l => l.status !== 'Completed').length">0</h3>
+                    </div>
+                    <div class="w-9 h-9 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center text-sm"><i class="fa-solid fa-clock"></i></div>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:border-emerald-300 transition" @click="paymentFilter = 'Paid'; currentPage = 1" title="Click to filter Paid records">
+                    <div>
+                        <p class="text-[10px] font-semibold text-slate-400 uppercase">Total Collected</p>
+                        <h3 class="text-xl font-bold text-emerald-600" x-text="'₹ ' + filteredLogs.reduce((sum, l) => sum + Number(l.paidAmount || 0) + (l.paymentHistory ? l.paymentHistory.reduce((s, p) => s + Number(p.amount || 0), 0) : 0), 0)">₹ 0</h3>
+                    </div>
+                    <div class="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-sm"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:border-rose-300 transition" @click="paymentFilter = 'Due'; currentPage = 1" title="Click to filter Pending Dues only">
+                    <div>
+                        <p class="text-[10px] font-semibold text-slate-400 uppercase">Pending Dues</p>
+                        <h3 class="text-xl font-bold text-rose-600" x-text="'₹ ' + filteredLogs.reduce((sum, l) => { let paid = Number(l.paidAmount || 0) + (l.paymentHistory ? l.paymentHistory.reduce((s, p) => s + Number(p.amount || 0), 0) : 0); return sum + Math.max(0, Number(l.totalAmount || 0) - paid); }, 0)">₹ 0</h3>
+                    </div>
+                    <div class="w-9 h-9 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center text-sm"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                </div>
+            </div>
+
+            <!-- Toolbar: Search, Processing Status, Physical Status, Payment/Dues Filter, Date Filters, Presets, and Pagination Limit -->
+            <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200 space-y-3">
+                
+                <!-- Row 1: Search & Status Filters -->
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3">
+                    <div class="relative w-full lg:w-64">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs"><i class="fa-solid fa-search"></i></span>
+                        <input id="searchInput" type="text" x-model="searchQuery" @input="currentPage = 1" placeholder="Search name, mobile, app ID... [Alt+F]" 
+                            class="w-full pl-9 pr-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    
+                    <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
+                        
+                        <!-- Payment / Pending Dues Filter -->
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Dues:</span>
+                            <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                                <button @click="paymentFilter = 'All'; currentPage = 1" :class="paymentFilter === 'All' ? 'bg-slate-800 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'" class="px-2 py-1 rounded-md text-[11px] font-semibold transition">All</button>
+                                <button @click="paymentFilter = 'Due'; currentPage = 1" :class="paymentFilter === 'Due' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-700 hover:bg-rose-50'" class="px-2 py-1 rounded-md text-[11px] font-semibold transition flex items-center gap-1">
+                                    <i class="fa-solid fa-circle-exclamation text-[9px]"></i> Pending Dues
+                                </button>
+                                <button @click="paymentFilter = 'Paid'; currentPage = 1" :class="paymentFilter === 'Paid' ? 'bg-emerald-600 text-white shadow-xs' : 'text-emerald-700 hover:bg-emerald-50'" class="px-2 py-1 rounded-md text-[11px] font-semibold transition">Paid</button>
+                            </div>
+                        </div>
+
+                        <!-- Processing Status Filter -->
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Proc:</span>
+                            <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                                <button @click="statusFilter = 'All'; currentPage = 1" :class="statusFilter === 'All' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'" class="px-2.5 py-1 rounded-md text-[11px] font-semibold transition">All</button>
+                                <button @click="statusFilter = 'In Process'; currentPage = 1" :class="statusFilter === 'In Process' ? 'bg-amber-500 text-white shadow-xs' : 'text-amber-700 hover:bg-amber-50'" class="px-2.5 py-1 rounded-md text-[11px] font-semibold transition">In Proc</button>
+                                <button @click="statusFilter = 'Pending'; currentPage = 1" :class="statusFilter === 'Pending' ? 'bg-blue-600 text-white shadow-xs' : 'text-blue-700 hover:bg-blue-50'" class="px-2.5 py-1 rounded-md text-[11px] font-semibold transition">Pending</button>
+                                <button @click="statusFilter = 'Completed'; currentPage = 1" :class="statusFilter === 'Completed' ? 'bg-emerald-600 text-white shadow-xs' : 'text-emerald-700 hover:bg-emerald-50'" class="px-2.5 py-1 rounded-md text-[11px] font-semibold transition">Completed</button>
+                            </div>
+                        </div>
+
+                        <!-- Physical Document / Card Status Filter -->
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Physical:</span>
+                            <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                                <button @click="physicalFilter = 'All'; currentPage = 1" :class="physicalFilter === 'All' ? 'bg-slate-800 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'" class="px-2.5 py-1 rounded-md text-[11px] font-semibold transition">All</button>
+                                <button @click="physicalFilter = 'Pending'; currentPage = 1" :class="physicalFilter === 'Pending' ? 'bg-slate-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200'" class="px-2 py-1 rounded-md text-[11px] font-semibold transition">Pending</button>
+                                <button @click="physicalFilter = 'Despatched'; currentPage = 1" :class="physicalFilter === 'Despatched' ? 'bg-purple-600 text-white shadow-xs' : 'text-purple-700 hover:bg-purple-50'" class="px-2 py-1 rounded-md text-[11px] font-semibold transition">Despatched</button>
+                                <button @click="physicalFilter = 'Come in Shop'; currentPage = 1" :class="physicalFilter === 'Come in Shop' ? 'bg-teal-600 text-white shadow-xs' : 'text-teal-700 hover:bg-teal-50'" class="px-2 py-1 rounded-md text-[11px] font-semibold transition">In Shop</button>
+                            </div>
+                        </div>
+
+                        <!-- Per Page Select (20, 30, 50) -->
+                        <div class="flex items-center gap-1.5 text-xs text-slate-600">
+                            <span class="font-medium whitespace-nowrap">Show:</span>
+                            <select x-model.number="perPage" @change="currentPage = 1" class="px-2 py-1 border border-slate-300 rounded-lg bg-white font-semibold text-xs text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                <option :value="20">20 / page</option>
+                                <option :value="30">30 / page</option>
+                                <option :value="50">50 / page</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Comprehensive Date Filter & Quick Range Presets -->
+                <div class="pt-2 border-t border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-semibold text-slate-500 flex items-center gap-1.5"><i class="fa-regular fa-calendar text-indigo-600"></i> Date Filter:</span>
+                        
+                        <div class="flex items-center gap-1.5">
+                            <label class="text-[11px] text-slate-400 font-medium">From:</label>
+                            <input type="date" x-model="startDate" @change="currentPage = 1; datePreset = 'custom'" 
+                                class="px-2.5 py-1 border border-slate-300 rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+
+                        <div class="flex items-center gap-1.5">
+                            <label class="text-[11px] text-slate-400 font-medium">To:</label>
+                            <input type="date" x-model="endDate" @change="currentPage = 1; datePreset = 'custom'" 
+                                class="px-2.5 py-1 border border-slate-300 rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+
+                        <template x-if="startDate || endDate">
+                            <button @click="clearDateFilter" class="px-2 py-1 text-rose-600 hover:bg-rose-50 rounded font-semibold transition flex items-center gap-1" title="Clear Date Filter">
+                                <i class="fa-solid fa-xmark"></i> Clear
+                            </button>
+                        </template>
+                    </div>
+
+                    <!-- Quick Preset Buttons -->
+                    <div class="flex items-center gap-1 flex-wrap">
+                        <span class="text-[11px] text-slate-400 font-medium mr-1">Presets:</span>
+                        <button @click="setDatePreset('all')" :class="datePreset === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-2.5 py-1 rounded text-[11px] font-medium transition">All Time</button>
+                        <button @click="setDatePreset('today')" :class="datePreset === 'today' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-2.5 py-1 rounded text-[11px] font-medium transition">Today</button>
+                        <button @click="setDatePreset('yesterday')" :class="datePreset === 'yesterday' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-2.5 py-1 rounded text-[11px] font-medium transition">Yesterday</button>
+                        <button @click="setDatePreset('last7')" :class="datePreset === 'last7' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-2.5 py-1 rounded text-[11px] font-medium transition">Last 7 Days</button>
+                        <button @click="setDatePreset('thisMonth')" :class="datePreset === 'thisMonth' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-2.5 py-1 rounded text-[11px] font-medium transition">This Month</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Customer Logs Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="p-3 w-10 text-center">
+                                    <input type="checkbox" @change="toggleSelectAll($event)" :checked="isAllSelected" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                </th>
+                                <th class="p-3">App ID & Date</th>
+                                <th class="p-3">Customer Details</th>
+                                <th class="p-3">Services & Physical Document Status</th>
+                                <th class="p-3">Credentials</th>
+                                <th class="p-3">Payment Summary</th>
+                                <th class="p-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 text-xs">
+                            <template x-for="log in paginatedLogs" :key="log.id">
+                                <tr class="hover:bg-slate-50 transition" :class="selectedLogIds.includes(log.id) ? 'bg-indigo-50/50' : ''">
+                                    <td class="p-3 text-center align-top">
+                                        <input type="checkbox" x-model="selectedLogIds" :value="log.id" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="p-3 align-top">
+                                        <span class="font-mono font-bold text-indigo-600" x-text="log.appId"></span>
+                                        <div class="text-[11px] text-slate-400 mt-0.5" x-text="'Log: ' + log.date"></div>
+                                        <div class="text-[10px] text-indigo-500 mt-0.5 font-medium" x-text="'By: @' + log.createdBy"></div>
+                                    </td>
+                                    <td class="p-3 align-top">
+                                        <div class="font-semibold text-slate-800 text-sm" x-text="log.customerName"></div>
+                                        <div class="text-slate-500 font-mono" x-text="log.mobileNo"></div>
+                                        <div class="text-[11px] text-slate-500 mt-0.5 italic" x-text="log.address ? 'Addr: ' + log.address : ''"></div>
+                                    </td>
+                                    <td class="p-3 align-top">
+                                        <div class="space-y-2">
+                                            <template x-for="(srv, sIndex) in (log.services || [])">
+                                                <div class="bg-slate-50 p-2 rounded border border-slate-200 space-y-1.5">
+                                                    <div class="flex items-center justify-between gap-2">
+                                                        <span class="font-semibold text-slate-800" x-text="srv.name"></span>
+                                                        <span class="font-bold text-indigo-600" x-text="'₹' + srv.amount"></span>
+                                                    </div>
+                                                    <!-- Processing Status -->
+                                                    <div class="flex items-center justify-between gap-1">
+                                                        <span class="text-[10px] text-slate-500 font-medium">Proc:</span>
+                                                        <div class="flex gap-1">
+                                                            <button @click="updateServiceStatus(log, sIndex, 'In Process')" 
+                                                                class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border"
+                                                                :class="srv.status === 'In Process' ? 'bg-amber-500 text-white border-amber-600 shadow-sm' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'">
+                                                                In Proc
+                                                            </button>
+                                                            <button @click="updateServiceStatus(log, sIndex, 'Pending')" 
+                                                                class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border"
+                                                                :class="srv.status === 'Pending' ? 'bg-blue-600 text-white border-blue-700 shadow-sm' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'">
+                                                                Pend
+                                                            </button>
+                                                            <button @click="updateServiceStatus(log, sIndex, 'Completed')" 
+                                                                class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border"
+                                                                :class="srv.status === 'Completed' ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'">
+                                                                Comp
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Physical Document / Card Delivery Status -->
+                                                    <div class="flex items-center justify-between gap-1 pt-1 border-t border-slate-200">
+                                                        <span class="text-[10px] text-slate-500 font-medium">Physical:</span>
+                                                        <div class="flex gap-1">
+                                                            <button @click="updatePhysicalStatus(log, sIndex, 'Pending')" 
+                                                                class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border"
+                                                                :class="srv.physicalStatus === 'Pending' ? 'bg-slate-500 text-white border-slate-600 shadow-sm' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'">
+                                                                Pending
+                                                            </button>
+                                                            <button @click="updatePhysicalStatus(log, sIndex, 'Despatched')" 
+                                                                class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border"
+                                                                :class="srv.physicalStatus === 'Despatched' ? 'bg-purple-600 text-white border-purple-700 shadow-sm' : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'">
+                                                                Despatched
+                                                            </button>
+                                                            <button @click="updatePhysicalStatus(log, sIndex, 'Come in Shop')" 
+                                                                class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border"
+                                                                :class="srv.physicalStatus === 'Come in Shop' ? 'bg-teal-600 text-white border-teal-700 shadow-sm' : 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100'">
+                                                                In Shop
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </td>
+                                    <td class="p-3 align-top">
+                                        <div class="font-mono bg-slate-50 p-1.5 rounded border border-slate-200 space-y-0.5 max-w-[180px]">
+                                            <div class="truncate">U: <span class="text-slate-700" x-text="log.username || 'N/A'"></span></div>
+                                            <div class="flex items-center gap-1">
+                                                <span>P:</span> 
+                                                <span class="text-slate-700 truncate" x-text="log.showPass ? log.password : '••••••••'"></span>
+                                                <button @click="log.showPass = !log.showPass" class="text-indigo-600 hover:text-indigo-800 ml-auto"><i class="fa-solid" :class="log.showPass ? 'fa-eye-slash' : 'fa-eye'"></i></button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="p-3 align-top">
+                                        <div class="space-y-0.5">
+                                            <div>Total: <span class="font-semibold text-slate-700" x-text="'₹ ' + log.totalAmount"></span></div>
+                                            <div>Paid: <span class="font-semibold text-emerald-600" x-text="'₹ ' + (Number(log.paidAmount || 0) + (log.paymentHistory ? log.paymentHistory.reduce((s, p) => s + Number(p.amount || 0), 0) : 0))"></span></div>
+                                            <div class="text-[10px] text-slate-400" x-text="'Initial Date: ' + (log.paymentDate || 'N/A')"></div>
+                                            <template x-for="hist in (log.paymentHistory || [])">
+                                                <div class="text-[10px] text-indigo-600 font-medium">
+                                                    + ₹<span x-text="hist.amount"></span> paid on <span x-text="hist.date"></span>
+                                                </div>
+                                            </template>
+                                            <div :class="getDueAmount(log) > 0 ? 'text-rose-600 font-bold' : 'text-slate-400'">
+                                                Due: ₹ <span x-text="getDueAmount(log)"></span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="p-3 text-right align-top space-y-2">
+                                        <div>
+                                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold inline-block"
+                                                :class="{
+                                                    'bg-amber-100 text-amber-700': log.status === 'In Process',
+                                                    'bg-blue-100 text-blue-700': log.status === 'Pending',
+                                                    'bg-emerald-100 text-emerald-700': log.status === 'Completed'
+                                                }" x-text="'Overall: ' + log.status"></span>
+                                        </div>
+                                        <div class="flex items-center justify-end gap-1.5 pt-1">
+                                            <button @click="sendWhatsAppMarathi(log)" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded text-[11px] font-medium transition flex items-center gap-1" title="WhatsApp Marathi Status">
+                                                <i class="fa-brands fa-whatsapp text-emerald-600"></i> WhatsApp
+                                            </button>
+                                            <button @click="editLog(log)" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded text-[11px] font-medium transition flex items-center gap-1" title="Edit Full Details / Add Payment History">
+                                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                                            </button>
+                                            <button @click="deleteLog(log.id)" class="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-[11px] font-medium transition" title="Delete Log">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                            <template x-if="paginatedLogs.length === 0">
+                                <tr>
+                                    <td colspan="7" class="p-8 text-center text-slate-400">No customer logs match the selected search, processing status, physical doc status, pending dues filter, or date range.</td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Footer Bar -->
+                <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+                    <div>
+                        Showing <span class="font-bold text-slate-800" x-text="filteredLogs.length === 0 ? 0 : (currentPage - 1) * perPage + 1"></span> to 
+                        <span class="font-bold text-slate-800" x-text="Math.min(currentPage * perPage, filteredLogs.length)"></span> of 
+                        <span class="font-bold text-slate-800" x-text="filteredLogs.length"></span> entries
+                    </div>
+                    
+                    <div class="flex items-center gap-1.5" x-show="totalPages > 1">
+                        <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1" 
+                            class="px-2.5 py-1.5 border rounded bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition font-semibold">
+                            <i class="fa-solid fa-chevron-left text-[10px]"></i> Prev
+                        </button>
+
+                        <div class="flex items-center gap-1 px-1">
+                            <span class="font-semibold text-slate-700">Page</span>
+                            <span class="font-bold text-indigo-600" x-text="currentPage"></span>
+                            <span>of</span>
+                            <span class="font-semibold" x-text="totalPages"></span>
+                        </div>
+
+                        <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages" 
+                            class="px-2.5 py-1.5 border rounded bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition font-semibold">
+                            Next <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- CUSTOM WHATSAPP TEMPLATE MODAL -->
+    <div x-show="modals.waSettings" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-2xl max-w-xl w-full p-6 space-y-4 my-8" @keydown.escape.window="closeModals()">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-brands fa-whatsapp text-emerald-600 text-lg"></i> Custom WhatsApp Message Settings
+                </h3>
+                <button @click="closeModals()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <p class="text-slate-500">Customize the template used for sending individual and bulk status updates to customers on WhatsApp.</p>
+
+                <!-- Available Placeholders Chips -->
+                <div>
+                    <span class="font-semibold text-slate-700 block mb-1">Click Variable to Insert in Template:</span>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" @click="insertWaVariable('{customerName}')" class="px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 border rounded font-mono text-[11px] transition">{customerName}</button>
+                        <button type="button" @click="insertWaVariable('{appId}')" class="px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 border rounded font-mono text-[11px] transition">{appId}</button>
+                        <button type="button" @click="insertWaVariable('{status}')" class="px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 border rounded font-mono text-[11px] transition">{status}</button>
+                        <button type="button" @click="insertWaVariable('{services}')" class="px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 border rounded font-mono text-[11px] transition">{services}</button>
+                        <button type="button" @click="insertWaVariable('{totalAmount}')" class="px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 border rounded font-mono text-[11px] transition">{totalAmount}</button>
+                        <button type="button" @click="insertWaVariable('{paidAmount}')" class="px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 border rounded font-mono text-[11px] transition">{paidAmount}</button>
+                        <button type="button" @click="insertWaVariable('{dueAmount}')" class="px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 border rounded font-mono text-[11px] transition">{dueAmount}</button>
+                        <button type="button" @click="insertWaVariable('{address}')" class="px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 border rounded font-mono text-[11px] transition">{address}</button>
+                        <button type="button" @click="insertWaVariable('{date}')" class="px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 border rounded font-mono text-[11px] transition">{date}</button>
+                    </div>
+                </div>
+
+                <!-- Template Textarea -->
+                <div>
+                    <label class="block font-semibold text-slate-700 uppercase mb-1">Message Template</label>
+                    <textarea id="waTemplateTextarea" x-model="tempWaTemplate" rows="7" 
+                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none font-sans text-xs bg-slate-50 focus:bg-white leading-relaxed"></textarea>
+                </div>
+
+                <!-- Live Preview Block -->
+                <div class="bg-emerald-50/60 p-3 rounded-lg border border-emerald-200 space-y-1">
+                    <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-wide flex items-center gap-1">
+                        <i class="fa-solid fa-eye"></i> Sample Preview (Example Customer)
+                    </span>
+                    <pre class="text-[11px] text-slate-800 font-sans whitespace-pre-wrap leading-relaxed select-text" x-text="previewSampleWaMessage"></pre>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t">
+                    <button type="button" @click="resetToDefaultWaTemplate()" class="text-rose-600 hover:underline font-semibold">Reset Default Template</button>
+                    <div class="flex gap-2">
+                        <button type="button" @click="closeModals()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-lg transition">Cancel</button>
+                        <button type="button" @click="saveWaTemplate()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow transition">Save Template</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGO CONFIGURATION MODAL -->
+    <div x-show="modals.logoSettings" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 space-y-4" @keydown.escape.window="closeModals()">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base font-bold text-slate-800"><i class="fa-solid fa-image text-indigo-600 mr-1.5"></i> Custom Logo Option</h3>
+                <button @click="closeModals()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="space-y-4 text-xs">
+                <div class="flex flex-col items-center justify-center p-4 bg-slate-50 border border-dashed border-slate-300 rounded-xl">
+                    <template x-if="tempLogoInput">
+                        <img :src="tempLogoInput" alt="Logo Preview" class="w-24 h-24 object-contain rounded-full bg-white p-1 border shadow-sm">
+                    </template>
+                    <template x-if="!tempLogoInput">
+                        <div class="w-24 h-24 rounded-full bg-slate-200 flex flex-col items-center justify-center text-slate-400">
+                            <i class="fa-solid fa-image text-2xl mb-1"></i>
+                            <span class="text-[9px]">Default Logo</span>
+                        </div>
+                    </template>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 uppercase mb-1">Upload Image File (PNG/JPG)</label>
+                    <input type="file" accept="image/*" @change="handleLogoFileUpload($event)" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 uppercase mb-1">Or Paste Image URL</label>
+                    <input type="text" x-model="tempLogoInput" placeholder="https://example.com/logo.png" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t">
+                    <button type="button" @click="resetToDefaultLogo()" class="text-rose-600 hover:underline font-semibold">Reset Default</button>
+                    <div class="flex gap-2">
+                        <button type="button" @click="closeModals()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-lg transition">Cancel</button>
+                        <button type="button" @click="saveCustomLogo()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow transition">Save Logo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Log Modal -->
+    <div x-show="modals.customer" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 space-y-4 my-8" @keydown.escape.window="closeModals()">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base font-bold text-slate-800" x-text="editMode ? 'Edit Customer Log & Services' : 'New Customer Log'"></h3>
+                <button @click="closeModals()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form @submit.prevent="saveCustomerLog" class="space-y-3 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-600 uppercase mb-1">Customer Name <span class="text-[10px] text-indigo-600 font-mono">[Alt+C]</span></label>
+                        <input id="customerNameInput" type="text" x-model="customerForm.customerName" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 uppercase mb-1">Mobile Number <span class="text-[10px] text-indigo-600 font-mono">[Alt+M]</span></label>
+                        <input id="mobileNoInput" type="text" x-model="customerForm.mobileNo" required maxlength="10" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 uppercase mb-1">Address / Village / Location <span class="text-[10px] text-indigo-600 font-mono">[Alt+A]</span></label>
+                    <input id="addressInput" type="text" x-model="customerForm.address" placeholder="e.g. Near Bus Stand, Nampur" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
+                    <label class="block font-semibold text-slate-700 uppercase">Customer Services & Statuses <span class="text-[10px] text-indigo-600 font-mono">[Alt+S: Service Select]</span></label>
+                    <div class="flex gap-2">
+                        <select id="serviceSelectInput" x-model="tempService.name" @change="onTempServiceChange" class="flex-1 px-2 py-1.5 border rounded bg-white focus:outline-none">
+                            <option value="">Select Service Type</option>
+                            <template x-for="type in appTypes" :key="type.id">
+                                <option :value="type.name" x-text="type.name + ' (₹ ' + type.defaultAmount + ')'"></option>
+                            </template>
+                        </select>
+                        <input type="number" x-model="tempService.amount" placeholder="₹ Amount" class="w-24 px-2 py-1.5 border rounded bg-white focus:outline-none">
+                        <button type="button" @click="addServiceToForm()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-semibold">+ Add</button>
+                    </div>
+                    <div class="space-y-2 mt-2 max-h-48 overflow-y-auto">
+                        <template x-for="(srv, index) in customerForm.services" :key="index">
+                            <div class="bg-white p-2.5 rounded border text-[11px] space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-semibold text-slate-800" x-text="srv.name"></span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-indigo-600" x-text="'₹' + srv.amount"></span>
+                                        <button type="button" @click="removeServiceFromForm(index)" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                                    <div>
+                                        <label class="text-[9px] text-slate-400 uppercase font-semibold">Processing:</label>
+                                        <select x-model="srv.status" class="w-full px-1.5 py-1 border rounded bg-slate-50 text-[10px] font-semibold">
+                                            <option value="In Process">In Process</option>
+                                            <option value="Pending">Pending</option>
+                                            <option value="Completed">Completed</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[9px] text-slate-400 uppercase font-semibold">Physical Doc/Card:</label>
+                                        <select x-model="srv.physicalStatus" class="w-full px-1.5 py-1 border rounded bg-slate-50 text-[10px] font-semibold">
+                                            <option value="Pending">Pending</option>
+                                            <option value="Despatched">Despatched</option>
+                                            <option value="Come in Shop">Come in Shop</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-600 uppercase mb-1">Total Amount (Auto-Calculated)</label>
+                        <input type="number" x-model="customerForm.totalAmount" readonly class="w-full px-3 py-2 border rounded-lg bg-slate-100 font-bold text-slate-700 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 uppercase mb-1">Overall Status (Auto-Derived)</label>
+                        <input type="text" :value="derivedOverallStatus" readonly class="w-full px-3 py-2 border rounded-lg bg-slate-100 font-bold text-indigo-600 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-600 uppercase mb-1">Portal Username</label>
+                        <input type="text" x-model="customerForm.username" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 uppercase mb-1">Portal Password</label>
+                        <input type="text" x-model="customerForm.password" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-600 uppercase mb-1">Initial Paid (₹) <span class="text-[10px] text-indigo-600 font-mono">[Alt+P]</span></label>
+                        <input id="initialPaidInput" type="number" x-model="customerForm.paidAmount" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 uppercase mb-1">Initial Payment Date <span class="text-[10px] text-indigo-600 font-mono">[Alt+D]</span></label>
+                        <input id="paymentDateInput" type="date" x-model="customerForm.paymentDate" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div x-show="editMode" class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
+                    <label class="block font-semibold text-slate-700 uppercase">Add Subsequent Payment (e.g. Later Dues Paid)</label>
+                    <div class="flex gap-2">
+                        <input type="number" x-model="newSubPayment.amount" placeholder="Amount ₹" class="w-28 px-2 py-1 border rounded bg-white focus:outline-none">
+                        <input type="date" x-model="newSubPayment.date" class="flex-1 px-2 py-1 border rounded bg-white focus:outline-none">
+                        <button type="button" @click="addSubPayment()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-semibold">Add Payment</button>
+                    </div>
+                    <div class="space-y-1 mt-2">
+                        <template x-for="(hist, index) in customerForm.paymentHistory" :key="index">
+                            <div class="flex justify-between items-center bg-white px-2 py-1 rounded border text-[11px]">
+                                <span>Paid <strong class="text-emerald-600">₹<span x-text="hist.amount"></span></strong> on <span x-text="hist.date"></span></span>
+                                <button type="button" @click="removeSubPayment(index)" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 uppercase mb-1">Notes / Remarks <span class="text-[10px] text-indigo-600 font-mono">[Alt+R]</span></label>
+                    <textarea id="notesInput" x-model="customerForm.notes" rows="2" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t">
+                    <button type="button" @click="closeModals()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-lg transition">Cancel (Esc)</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow transition">Save Log & Sync (Enter)</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Manage Application Types Modal (Admin Only) -->
+    <div x-show="modals.appTypes" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4" @keydown.escape.window="closeModals()">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base font-bold text-slate-800">Manage Application Types</h3>
+                <button @click="closeModals()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form @submit.prevent="addAppType" class="flex gap-2 text-xs">
+                <input type="text" x-model="newAppType.name" placeholder="Service Name" required class="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <input type="number" x-model="newAppType.defaultAmount" placeholder="Default ₹" required class="w-24 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition">Add & Sync</button>
+            </form>
+            <div class="max-h-60 overflow-y-auto divide-y divide-slate-100 border rounded-lg text-xs">
+                <template x-for="type in appTypes" :key="type.id">
+                    <div class="p-2.5 flex justify-between items-center">
+                        <div>
+                            <span class="font-semibold text-slate-800" x-text="type.name"></span>
+                            <span class="text-slate-500 ml-2" x-text="'(₹ ' + type.defaultAmount + ')'"></span>
+                        </div>
+                        <button @click="deleteAppType(type.id)" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Operators Modal (Admin Only) -->
+    <div x-show="modals.operators" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 space-y-4" @keydown.escape.window="closeModals()">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base font-bold text-slate-800">Manage Operators</h3>
+                <button @click="closeModals()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form @submit.prevent="addOperator" class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <input type="text" x-model="newOperator.name" placeholder="Full Name" required class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <input type="text" x-model="newOperator.username" placeholder="Username" required class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <input type="password" x-model="newOperator.password" placeholder="Password" required class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <button type="submit" class="sm:col-span-3 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition">Create & Sync Operator</button>
+            </form>
+            <div class="max-h-60 overflow-y-auto divide-y divide-slate-100 border rounded-lg text-xs">
+                <template x-for="op in users" :key="op.username">
+                    <div class="p-2.5 flex justify-between items-center">
+                        <div>
+                            <span class="font-semibold text-slate-800" x-text="op.name"></span>
+                            <span class="text-indigo-600 ml-2 font-mono" x-text="'@' + op.username"></span>
+                            <span class="text-slate-400 ml-1" x-text="'(' + op.role + ')'"></span>
+                        </div>
+                        <template x-if="op.username !== 'sagar'">
+                            <button @click="deleteOperator(op.username)" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Documentation Modal -->
+    <div x-show="modals.apiDocs" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 space-y-4 my-8" @keydown.escape.window="closeModals()">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base font-bold text-slate-800"><i class="fa-solid fa-code mr-1 text-indigo-600"></i> Built-in REST API Access</h3>
+                <button @click="closeModals()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="space-y-3 text-xs text-slate-700">
+                <p>Your Supabase backend provides automatic REST & GraphQL endpoints to connect external webhooks, WhatsApp bots, or platforms like <code>apps.acl.onl</code>.</p>
+                <div class="bg-slate-50 p-3 rounded-lg border space-y-2 font-mono">
+                    <div class="font-bold text-indigo-700">API Endpoint (Get All Customer Logs)</div>
+                    <div class="bg-white p-2 rounded border text-[11px] select-all overflow-x-auto" x-text="apiEndpointUrl"></div>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-3 border-t">
+                <button type="button" @click="closeModals()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-lg transition">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== APPLICATION SCRIPT ==================== -->
+    <script>
+        const DEFAULT_WA_TEMPLATE = `नमस्कार *{customerName}*,
+
+सुरावी सायबर कॅफे (Suravi Cyber Cafe), नमपुर तर्फे तुमच्या अर्जाची सद्यस्थिती खालीलप्रमाणे आहे:
+
+अर्ज क्रमांक (App ID): *{appId}*
+एकूण स्थिती: *{status}*
+
+{services}
+
+💰 *तपशील (Payment Summary):*
+- एकूण रक्कम (Total): ₹{totalAmount}
+- भरलेली रक्कम (Paid): ₹{paidAmount}
+- बाकी रक्कम (Due): ₹{dueAmount}
+
+सुरावी सायबर कॅफेला भेट दिल्याबद्दल धन्यवाद!`;
+
+        function suraviApp() {
+            return {
+                isSupabaseConfigured: false,
+                supabaseClient: null,
+                tempConfig: { url: '', key: '' },
+                apiEndpointUrl: '',
+
+                isAuthenticated: false,
+                currentUser: null,
+                loginForm: { username: '', password: '' },
+                loginError: '',
+                
+                customLogoUrl: '',
+                tempLogoInput: '',
+
+                // WhatsApp Template Customization
+                waTemplate: DEFAULT_WA_TEMPLATE,
+                tempWaTemplate: DEFAULT_WA_TEMPLATE,
+
+                searchQuery: '',
+                statusFilter: 'All',
+                physicalFilter: 'All',
+                paymentFilter: 'All',
+                
+                startDate: '',
+                endDate: '',
+                datePreset: 'all',
+
+                perPage: 20,
+                currentPage: 1,
+                
+                selectedLogIds: [],
+
+                modals: { customer: false, appTypes: false, operators: false, apiDocs: false, logoSettings: false, waSettings: false },
+                editMode: false,
+                editId: null,
+
+                customerForm: {
+                    customerName: '', mobileNo: '', address: '', services: [],
+                    username: '', password: '', status: 'In Process',
+                    totalAmount: 0, paidAmount: '', paymentDate: '', paymentHistory: [], notes: ''
+                },
+
+                tempService: { name: '', amount: '' },
+                newSubPayment: { amount: '', date: new Date().toISOString().slice(0, 10) },
+                newAppType: { name: '', defaultAmount: '' },
+                newOperator: { name: '', username: '', password: '' },
+
+                users: [],
+                appTypes: [],
+                logs: [],
+
+                initApp() {
+                    let savedUrl = localStorage.getItem('suravi_sb_url');
+                    let savedKey = localStorage.getItem('suravi_sb_key');
+                    if (savedUrl && savedKey) {
+                        this.tempConfig.url = savedUrl;
+                        this.tempConfig.key = savedKey;
+                        this.apiEndpointUrl = `${savedUrl}/rest/v1/logs?select=*`;
+                        this.initSupabaseClient(savedUrl, savedKey);
+                    }
+
+                    const savedLogo = localStorage.getItem('suravi_custom_logo');
+                    if (savedLogo) {
+                        this.customLogoUrl = savedLogo;
+                        this.tempLogoInput = savedLogo;
+                    }
+
+                    const savedWaTpl = localStorage.getItem('suravi_wa_template');
+                    if (savedWaTpl) {
+                        this.waTemplate = savedWaTpl;
+                        this.tempWaTemplate = savedWaTpl;
+                    }
+                },
+
+                // Insert dynamic variable at current cursor position in the template textarea
+                insertWaVariable(variableTag) {
+                    const ta = document.getElementById('waTemplateTextarea');
+                    if (!ta) {
+                        this.tempWaTemplate += variableTag;
+                        return;
+                    }
+                    const start = ta.selectionStart;
+                    const end = ta.selectionEnd;
+                    const text = this.tempWaTemplate;
+                    this.tempWaTemplate = text.substring(0, start) + variableTag + text.substring(end);
+                    this.$nextTick(() => {
+                        ta.focus();
+                        ta.setSelectionRange(start + variableTag.length, start + variableTag.length);
+                    });
+                },
+
+                saveWaTemplate() {
+                    if (!this.tempWaTemplate.trim()) {
+                        alert('WhatsApp message template cannot be empty.');
+                        return;
+                    }
+                    this.waTemplate = this.tempWaTemplate;
+                    localStorage.setItem('suravi_wa_template', this.waTemplate);
+                    this.closeModals();
+                },
+
+                resetToDefaultWaTemplate() {
+                    this.tempWaTemplate = DEFAULT_WA_TEMPLATE;
+                    this.waTemplate = DEFAULT_WA_TEMPLATE;
+                    localStorage.removeItem('suravi_wa_template');
+                },
+
+                // Dynamic preview inside the modal using dummy customer data
+                get previewSampleWaMessage() {
+                    const sampleLog = {
+                        customerName: 'गणेश पाटील (Ganesh Patil)',
+                        appId: 'SRV-20261001-01',
+                        status: 'In Process',
+                        date: '01 Oct 2026',
+                        address: 'मु. पो. नampur (Nampur)',
+                        totalAmount: 150,
+                        paidAmount: 100,
+                        paymentHistory: [],
+                        services: [
+                            { name: 'उत्पन्न दाखला (Income Certificate)', status: 'In Process', physicalStatus: 'Pending', amount: 100 },
+                            { name: 'पॅन कार्ड (Pan Card)', status: 'Completed', physicalStatus: 'Come in Shop', amount: 50 }
+                        ]
+                    };
+                    return this.generateMessageFromTemplate(this.tempWaTemplate || this.waTemplate, sampleLog);
+                },
+
+                handleLogoFileUpload(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.tempLogoInput = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                },
+
+                saveCustomLogo() {
+                    this.customLogoUrl = this.tempLogoInput;
+                    if (this.customLogoUrl) {
+                        localStorage.setItem('suravi_custom_logo', this.customLogoUrl);
+                    } else {
+                        localStorage.removeItem('suravi_custom_logo');
+                    }
+                    this.closeModals();
+                },
+
+                resetToDefaultLogo() {
+                    this.tempLogoInput = '';
+                    this.customLogoUrl = '';
+                    localStorage.removeItem('suravi_custom_logo');
+                    this.closeModals();
+                },
+
+                saveSupabaseConfig() {
+                    if (!this.tempConfig.url || !this.tempConfig.key) return;
+                    localStorage.setItem('suravi_sb_url', this.tempConfig.url);
+                    localStorage.setItem('suravi_sb_key', this.tempConfig.key);
+                    this.apiEndpointUrl = `${this.tempConfig.url}/rest/v1/logs?select=*`;
+                    this.initSupabaseClient(this.tempConfig.url, this.tempConfig.key);
+                },
+
+                resetSupabaseConfig() {
+                    localStorage.removeItem('suravi_sb_url');
+                    localStorage.removeItem('suravi_sb_key');
+                    this.isSupabaseConfigured = false;
+                    this.isAuthenticated = false;
+                },
+
+                initSupabaseClient(url, key) {
+                    try {
+                        this.supabaseClient = window.supabase.createClient(url, key);
+                        this.isSupabaseConfigured = true;
+                        this.pullDataFromCloud();
+                        this.setupRealtimeSubscription();
+                    } catch (e) {
+                        alert('Failed to connect to Supabase: ' + e.message);
+                    }
+                },
+
+                setupRealtimeSubscription() {
+                    this.supabaseClient
+                        .channel('public:logs')
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'logs' }, payload => {
+                            this.pullDataFromCloud();
+                        })
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
+                            this.pullDataFromCloud();
+                        })
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_types' }, payload => {
+                            this.pullDataFromCloud();
+                        })
+                        .subscribe();
+                },
+
+                async pullDataFromCloud() {
+                    try {
+                        let { data: usersData } = await this.supabaseClient.from('users').select('*');
+                        if (usersData && usersData.length > 0) {
+                            this.users = usersData;
+                        } else {
+                            const defaultAdmin = { username: 'sagar', password: '123451', name: 'Sagar Wadekar', role: 'admin' };
+                            await this.supabaseClient.from('users').upsert(defaultAdmin);
+                            this.users = [defaultAdmin];
+                        }
+
+                        let { data: appData } = await this.supabaseClient.from('app_types').select('*');
+                        if (appData && appData.length > 0) {
+                            this.appTypes = appData.map(t => ({ id: t.id, name: t.name, defaultAmount: t.default_amount }));
+                        }
+
+                        let { data: logsData } = await this.supabaseClient.from('logs').select('*').order('created_at', { ascending: false });
+                        if (logsData) {
+                            const currentPassStates = {};
+                            this.logs.forEach(l => currentPassStates[l.id] = l.showPass);
+
+                            this.logs = logsData.map(l => {
+                                let srvs = l.services || (l.application_type ? [{ name: l.application_type, amount: l.total_amount, status: l.status, physicalStatus: 'Pending' }] : []);
+                                srvs = srvs.map(s => ({
+                                    name: s.name,
+                                    amount: s.amount,
+                                    status: s.status || l.status || 'In Process',
+                                    physicalStatus: s.physicalStatus || 'Pending'
+                                }));
+                                
+                                return {
+                                    id: Number(l.id),
+                                    appId: l.app_id,
+                                    customerName: l.customer_name,
+                                    mobileNo: l.mobile_no,
+                                    address: l.address || '',
+                                    applicationType: l.application_type,
+                                    services: srvs,
+                                    username: l.username,
+                                    password: l.password,
+                                    status: l.status,
+                                    totalAmount: l.total_amount,
+                                    paidAmount: l.paid_amount,
+                                    paymentDate: l.payment_date,
+                                    paymentHistory: l.payment_history || [],
+                                    notes: l.notes,
+                                    date: l.date,
+                                    createdAt: l.created_at || null,
+                                    createdBy: l.created_by,
+                                    showPass: currentPassStates[Number(l.id)] || false
+                                };
+                            });
+                        }
+
+                        let activeSession = sessionStorage.getItem('suravi_session');
+                        if (activeSession && !this.isAuthenticated) {
+                            this.currentUser = JSON.parse(activeSession);
+                            this.isAuthenticated = true;
+                        }
+                    } catch (e) {
+                        console.error('Cloud pull error:', e);
+                    }
+                },
+
+                getDueAmount(log) {
+                    const paid = Number(log.paidAmount || 0) + (log.paymentHistory ? log.paymentHistory.reduce((s, p) => s + Number(p.amount || 0), 0) : 0);
+                    return Math.max(0, Number(log.totalAmount || 0) - paid);
+                },
+
+                normalizeToISODate(dateVal) {
+                    if (!dateVal) return '';
+                    if (/^\d{4}-\d{2}-\d{2}/.test(dateVal)) {
+                        return dateVal.slice(0, 10);
+                    }
+                    const parsed = new Date(dateVal);
+                    if (!isNaN(parsed.getTime())) {
+                        const y = parsed.getFullYear();
+                        const m = String(parsed.getMonth() + 1).padStart(2, '0');
+                        const d = String(parsed.getDate()).padStart(2, '0');
+                        return `${y}-${m}-${d}`;
+                    }
+                    return '';
+                },
+
+                setDatePreset(preset) {
+                    this.datePreset = preset;
+                    this.currentPage = 1;
+
+                    const now = new Date();
+                    const formatYMD = (d) => {
+                        const y = d.getFullYear();
+                        const m = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        return `${y}-${m}-${day}`;
+                    };
+
+                    if (preset === 'all') {
+                        this.startDate = '';
+                        this.endDate = '';
+                    } else if (preset === 'today') {
+                        const todayStr = formatYMD(now);
+                        this.startDate = todayStr;
+                        this.endDate = todayStr;
+                    } else if (preset === 'yesterday') {
+                        const yest = new Date();
+                        yest.setDate(yest.getDate() - 1);
+                        const yestStr = formatYMD(yest);
+                        this.startDate = yestStr;
+                        this.endDate = yestStr;
+                    } else if (preset === 'last7') {
+                        const past7 = new Date();
+                        past7.setDate(past7.getDate() - 6);
+                        this.startDate = formatYMD(past7);
+                        this.endDate = formatYMD(now);
+                    } else if (preset === 'thisMonth') {
+                        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                        this.startDate = formatYMD(firstDay);
+                        this.endDate = formatYMD(now);
+                    }
+                },
+
+                clearDateFilter() {
+                    this.startDate = '';
+                    this.endDate = '';
+                    this.datePreset = 'all';
+                    this.currentPage = 1;
+                },
+
+                handleGlobalKeys(event) {
+                    if (event.altKey && event.key.toLowerCase() === 'n') {
+                        event.preventDefault();
+                        if (this.isAuthenticated) this.openModal('customer');
+                    }
+                    if (event.altKey && event.key.toLowerCase() === 'f') {
+                        event.preventDefault();
+                        if (this.isAuthenticated) {
+                            let sb = document.getElementById('searchInput');
+                            if (sb) sb.focus();
+                        }
+                    }
+
+                    if (this.modals.customer) {
+                        const key = event.key.toLowerCase();
+                        if (event.altKey && key === 'c') {
+                            event.preventDefault();
+                            document.getElementById('customerNameInput')?.focus();
+                        } else if (event.altKey && key === 'm') {
+                            event.preventDefault();
+                            document.getElementById('mobileNoInput')?.focus();
+                        } else if (event.altKey && key === 'a') {
+                            event.preventDefault();
+                            document.getElementById('addressInput')?.focus();
+                        } else if (event.altKey && key === 's') {
+                            event.preventDefault();
+                            document.getElementById('serviceSelectInput')?.focus();
+                        } else if (event.altKey && key === 'p') {
+                            event.preventDefault();
+                            document.getElementById('initialPaidInput')?.focus();
+                        } else if (event.altKey && key === 'd') {
+                            event.preventDefault();
+                            document.getElementById('paymentDateInput')?.focus();
+                        } else if (event.altKey && key === 'r') {
+                            event.preventDefault();
+                            document.getElementById('notesInput')?.focus();
+                        }
+                    }
+
+                    if (event.key === 'Escape') {
+                        this.closeModals();
+                    }
+                },
+
+                login() {
+                    this.loginError = '';
+                    let user = this.users.find(u => u.username === this.loginForm.username && u.password === this.loginForm.password);
+                    if (user) {
+                        this.currentUser = user;
+                        this.isAuthenticated = true;
+                        sessionStorage.setItem('suravi_session', JSON.stringify(user));
+                        this.loginForm = { username: '', password: '' };
+                    } else {
+                        this.loginError = 'Invalid username or password';
+                    }
+                },
+
+                logout() {
+                    this.isAuthenticated = false;
+                    this.currentUser = null;
+                    sessionStorage.removeItem('suravi_session');
+                },
+
+                openModal(type) {
+                    if (type === 'customer') {
+                        this.editMode = false;
+                        const todayStr = new Date().toISOString().slice(0, 10);
+                        this.customerForm = { 
+                            customerName: '', mobileNo: '', address: '', services: [], 
+                            username: '', password: '', status: 'In Process', 
+                            totalAmount: 0, paidAmount: '', paymentDate: todayStr, paymentHistory: [], notes: '' 
+                        };
+                        this.tempService = { name: '', amount: '' };
+                    } else if (type === 'logoSettings') {
+                        this.tempLogoInput = this.customLogoUrl;
+                    } else if (type === 'waSettings') {
+                        this.tempWaTemplate = this.waTemplate;
+                    }
+                    this.modals[type] = true;
+                    if (type === 'customer') {
+                        setTimeout(() => {
+                            let fi = document.getElementById('customerNameInput');
+                            if (fi) fi.focus();
+                        }, 50);
+                    }
+                },
+
+                closeModals() {
+                    this.modals = { customer: false, appTypes: false, operators: false, apiDocs: false, logoSettings: false, waSettings: false };
+                },
+
+                onTempServiceChange() {
+                    let selected = this.appTypes.find(t => t.name === this.tempService.name);
+                    if (selected) {
+                        this.tempService.amount = selected.defaultAmount;
+                    }
+                },
+
+                addServiceToForm() {
+                    if (!this.tempService.name || !this.tempService.amount) return;
+                    this.customerForm.services.push({ 
+                        name: this.tempService.name, 
+                        amount: Number(this.tempService.amount),
+                        status: 'In Process',
+                        physicalStatus: 'Pending'
+                    });
+                    this.recalculateTotal();
+                    this.tempService = { name: '', amount: '' };
+                },
+
+                removeServiceFromForm(index) {
+                    this.customerForm.services.splice(index, 1);
+                    this.recalculateTotal();
+                },
+
+                recalculateTotal() {
+                    let sum = this.customerForm.services.reduce((acc, s) => acc + Number(s.amount || 0), 0);
+                    this.customerForm.totalAmount = sum;
+                    if (!this.editMode && sum > 0) {
+                        this.customerForm.paidAmount = sum;
+                    }
+                },
+
+                get derivedOverallStatus() {
+                    if (!this.customerForm.services || this.customerForm.services.length === 0) return 'In Process';
+                    let allCompleted = this.customerForm.services.every(s => s.status === 'Completed');
+                    if (allCompleted) return 'Completed';
+                    let anyPending = this.customerForm.services.some(s => s.status === 'Pending');
+                    if (anyPending) return 'Pending';
+                    return 'In Process';
+                },
+
+                generateSequentialAppId() {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const datePrefix = `${year}${month}${day}`;
+
+                    const todayLogs = this.logs.filter(l => l.appId && l.appId.startsWith(`SRV-${datePrefix}-`));
+                    
+                    let nextSerial = 1;
+                    if (todayLogs.length > 0) {
+                        const serials = todayLogs.map(l => {
+                            const parts = l.appId.split('-');
+                            return parseInt(parts[2], 10) || 0;
+                        });
+                        nextSerial = Math.max(...serials) + 1;
+                    }
+
+                    const serialStr = String(nextSerial).padStart(2, '0');
+                    return `SRV-${datePrefix}-${serialStr}`;
+                },
+
+                addSubPayment() {
+                    if (!this.newSubPayment.amount) return;
+                    if (!this.customerForm.paymentHistory) {
+                        this.customerForm.paymentHistory = [];
+                    }
+                    this.customerForm.paymentHistory.push({ ...this.newSubPayment });
+                    this.newSubPayment.amount = '';
+                },
+
+                removeSubPayment(index) {
+                    this.customerForm.paymentHistory.splice(index, 1);
+                },
+
+                async updateServiceStatus(log, sIndex, newStatus) {
+                    log.services[sIndex].status = newStatus;
+                    
+                    let allCompleted = log.services.every(s => s.status === 'Completed');
+                    let anyPending = log.services.some(s => s.status === 'Pending');
+                    log.status = allCompleted ? 'Completed' : (anyPending ? 'Pending' : 'In Process');
+
+                    await this.supabaseClient.from('logs').update({
+                        services: log.services,
+                        status: log.status
+                    }).eq('id', log.id);
+                },
+
+                async updatePhysicalStatus(log, sIndex, newPhysicalStatus) {
+                    log.services[sIndex].physicalStatus = newPhysicalStatus;
+
+                    await this.supabaseClient.from('logs').update({
+                        services: log.services
+                    }).eq('id', log.id);
+                },
+
+                translateMarathi(status) {
+                    switch(status) {
+                        case 'In Process': return 'प्रक्रियेत (In Process)';
+                        case 'Pending': return 'प्रलंबित (Pending)';
+                        case 'Completed': return 'पूर्ण झाले (Completed)';
+                        case 'Despatched': return 'पाठवले (Despatched)';
+                        case 'Come in Shop': return 'दुकानात उपलब्ध (Available in Shop)';
+                        default: return status || 'N/A';
+                    }
+                },
+
+                // Core template interpolation engine replacing all placeholders
+                generateMessageFromTemplate(templateStr, log) {
+                    const totalPaid = Number(log.paidAmount || 0) + (log.paymentHistory ? log.paymentHistory.reduce((s, p) => s + Number(p.amount || 0), 0) : 0);
+                    const dueAmount = Math.max(0, Number(log.totalAmount || 0) - totalPaid);
+
+                    const servicesText = (log.services || []).map(s => 
+                        `• *${s.name}*\n  - सद्यस्थिती (Processing): ${this.translateMarathi(s.status)}\n  - भौतिक कागदपत्र/कार्ड (Physical): ${this.translateMarathi(s.physicalStatus)}`
+                    ).join('\n\n');
+
+                    const overallMarathi = this.translateMarathi(log.status);
+
+                    let msg = templateStr || DEFAULT_WA_TEMPLATE;
+                    msg = msg.replace(/{customerName}/g, log.customerName || '')
+                             .replace(/{appId}/g, log.appId || '')
+                             .replace(/{status}/g, overallMarathi)
+                             .replace(/{services}/g, servicesText)
+                             .replace(/{totalAmount}/g, log.totalAmount || 0)
+                             .replace(/{paidAmount}/g, totalPaid)
+                             .replace(/{dueAmount}/g, dueAmount)
+                             .replace(/{address}/g, log.address || '')
+                             .replace(/{date}/g, log.date || '');
+
+                    return msg;
+                },
+
+                formatMarathiMessage(log) {
+                    return this.generateMessageFromTemplate(this.waTemplate, log);
+                },
+
+                sendWhatsAppMarathi(log) {
+                    let mobile = (log.mobileNo || '').trim();
+                    if (!mobile) {
+                        alert('या ग्राहकाचा मोबाईल नंबर उपलब्ध नाही.');
+                        return;
+                    }
+                    if (mobile.length === 10) {
+                        mobile = '91' + mobile;
+                    }
+
+                    let message = this.formatMarathiMessage(log);
+                    let encodedMessage = encodeURIComponent(message);
+                    let whatsappUrl = `https://wa.me/${mobile}?text=${encodedMessage}`;
+                    window.open(whatsappUrl, '_blank');
+                },
+
+                get isAllSelected() {
+                    return this.paginatedLogs.length > 0 && this.paginatedLogs.every(l => this.selectedLogIds.includes(l.id));
+                },
+
+                toggleSelectAll(event) {
+                    if (event.target.checked) {
+                        const pageIds = this.paginatedLogs.map(l => l.id);
+                        this.selectedLogIds = Array.from(new Set([...this.selectedLogIds, ...pageIds]));
+                    } else {
+                        const pageIds = this.paginatedLogs.map(l => l.id);
+                        this.selectedLogIds = this.selectedLogIds.filter(id => !pageIds.includes(id));
+                    }
+                },
+
+                sendBulkWhatsAppMarathi() {
+                    if (this.selectedLogIds.length === 0) {
+                        alert('कृपया कमीत कमी एक अर्ज निवडा.');
+                        return;
+                    }
+
+                    let selectedLogsList = this.logs.filter(l => this.selectedLogIds.includes(l.id));
+                    
+                    selectedLogsList.forEach((log, index) => {
+                        let mobile = (log.mobileNo || '').trim();
+                        if (mobile) {
+                            if (mobile.length === 10) mobile = '91' + mobile;
+                            let message = this.formatMarathiMessage(log);
+                            let encodedMessage = encodeURIComponent(message);
+                            let whatsappUrl = `https://wa.me/${mobile}?text=${encodedMessage}`;
+                            
+                            setTimeout(() => {
+                                window.open(whatsappUrl, '_blank');
+                            }, index * 800);
+                        }
+                    });
+                },
+
+                async saveCustomerLog() {
+                    if (this.customerForm.services.length === 0) {
+                        alert('Please add at least one service for the customer.');
+                        return;
+                    }
+
+                    let logPayload;
+                    let primaryAppType = this.customerForm.services.map(s => s.name).join(', ');
+                    let overallStat = this.derivedOverallStatus;
+
+                    if (this.editMode) {
+                        let index = this.logs.findIndex(l => l.id === this.editId);
+                        if (index !== -1) {
+                            this.logs[index] = { ...this.logs[index], ...this.customerForm, applicationType: primaryAppType, status: overallStat };
+                            logPayload = this.logs[index];
+                        }
+                    } else {
+                        logPayload = {
+                            id: Date.now(),
+                            appId: this.generateSequentialAppId(),
+                            date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+                            createdBy: this.currentUser.username,
+                            showPass: false,
+                            applicationType: primaryAppType,
+                            status: overallStat,
+                            ...this.customerForm
+                        };
+                        this.logs.unshift(logPayload);
+                    }
+
+                    await this.supabaseClient.from('logs').upsert({
+                        id: logPayload.id,
+                        app_id: logPayload.appId,
+                        customer_name: logPayload.customerName,
+                        mobile_no: logPayload.mobileNo,
+                        address: logPayload.address || '',
+                        application_type: logPayload.applicationType,
+                        services: logPayload.services,
+                        username: logPayload.username,
+                        password: logPayload.password,
+                        status: logPayload.status,
+                        total_amount: logPayload.totalAmount,
+                        paid_amount: logPayload.paidAmount,
+                        payment_date: logPayload.paymentDate,
+                        payment_history: logPayload.paymentHistory,
+                        notes: logPayload.notes,
+                        date: logPayload.date,
+                        created_by: logPayload.createdBy
+                    });
+
+                    this.closeModals();
+                },
+
+                editLog(log) {
+                    this.editMode = true;
+                    this.editId = log.id;
+                    this.customerForm = JSON.parse(JSON.stringify(log));
+                    if (!this.customerForm.services) {
+                        this.customerForm.services = [{ name: log.applicationType, amount: log.totalAmount, status: log.status, physicalStatus: 'Pending' }];
+                    }
+                    if (!this.customerForm.paymentDate) {
+                        this.customerForm.paymentDate = new Date().toISOString().slice(0, 10);
+                    }
+                    if (!this.customerForm.paymentHistory) {
+                        this.customerForm.paymentHistory = [];
+                    }
+                    this.tempService = { name: '', amount: '' };
+                    this.newSubPayment = { amount: '', date: new Date().toISOString().slice(0, 10) };
+                    this.modals.customer = true;
+                },
+
+                async deleteLog(id) {
+                    if (confirm('Delete this customer log from cloud?')) {
+                        this.logs = this.logs.filter(l => l.id !== id);
+                        await this.supabaseClient.from('logs').delete().eq('id', id);
+                    }
+                },
+
+                async addAppType() {
+                    let newType = { id: Date.now(), name: this.newAppType.name, defaultAmount: Number(this.newAppType.defaultAmount) };
+                    this.appTypes.push(newType);
+                    await this.supabaseClient.from('app_types').upsert({
+                        id: newType.id,
+                        name: newType.name,
+                        default_amount: newType.defaultAmount
+                    });
+                    this.newAppType = { name: '', defaultAmount: '' };
+                },
+
+                async deleteAppType(id) {
+                    this.appTypes = this.appTypes.filter(t => t.id !== id);
+                    await this.supabaseClient.from('app_types').delete().eq('id', id);
+                },
+
+                async addOperator() {
+                    if (this.users.some(u => u.username === this.newOperator.username)) {
+                        alert('Username already exists!');
+                        return;
+                    }
+                    let op = { ...this.newOperator, role: 'operator' };
+                    this.users.push(op);
+                    await this.supabaseClient.from('users').upsert({
+                        username: op.username,
+                        password: op.password,
+                        name: op.name,
+                        role: op.role
+                    });
+                    this.newOperator = { name: '', username: '', password: '' };
+                },
+
+                async deleteOperator(username) {
+                    if (confirm('Delete this operator?')) {
+                        this.users = this.users.filter(u => u.username !== username);
+                        await this.supabaseClient.from('users').delete().eq('username', username);
+                    }
+                },
+
+                exportExcel() {
+                    if (this.filteredLogs.length === 0) {
+                        alert('No logs available in the current filter to export.');
+                        return;
+                    }
+
+                    const excelData = this.filteredLogs.map(log => {
+                        const totalPaid = Number(log.paidAmount || 0) + (log.paymentHistory ? log.paymentHistory.reduce((s, p) => s + Number(p.amount || 0), 0) : 0);
+                        const dueAmount = Math.max(0, Number(log.totalAmount || 0) - totalPaid);
+                        const servicesList = (log.services || []).map(s => `${s.name} [Proc:${s.status}|Phys:${s.physicalStatus}] (₹${s.amount})`).join(', ');
+
+                        return {
+                            "App ID": log.appId,
+                            "Log Date": log.date,
+                            "Customer Name": log.customerName,
+                            "Mobile Number": log.mobileNo,
+                            "Address": log.address || "",
+                            "Services & Status": servicesList,
+                            "Overall Status": log.status,
+                            "Portal Username": log.username || "",
+                            "Portal Password": log.password || "",
+                            "Total Amount (₹)": Number(log.totalAmount),
+                            "Paid Amount (₹)": totalPaid,
+                            "Pending Due (₹)": dueAmount,
+                            "Initial Payment Date": log.paymentDate || "",
+                            "Notes / Remarks": log.notes || "",
+                            "Created By": log.createdBy
+                        };
+                    });
+
+                    const worksheet = XLSX.utils.json_to_sheet(excelData);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "Filtered Logs");
+
+                    const fileName = `Suravi_Cyber_Cafe_Logs_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                    XLSX.writeFile(workbook, fileName);
+                },
+
+                importExcel(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            const firstSheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[firstSheetName];
+                            const importedRows = XLSX.utils.sheet_to_json(worksheet);
+
+                            if (importedRows.length === 0) {
+                                alert('The uploaded Excel file is empty.');
+                                return;
+                            }
+
+                            let count = 0;
+                            for (let row of importedRows) {
+                                const srvText = row["Services & Status"] || row["Services Taken"] || "General Service";
+                                const newLog = {
+                                    id: Date.now() + Math.floor(Math.random() * 1000),
+                                    appId: row["App ID"] || this.generateSequentialAppId(),
+                                    date: row["Log Date"] || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+                                    customerName: row["Customer Name"] || "Unknown",
+                                    mobileNo: String(row["Mobile Number"] || ""),
+                                    address: row["Address"] || "",
+                                    applicationType: srvText,
+                                    services: [{ name: srvText, amount: Number(row["Total Amount (₹)"] || 0), status: row["Overall Status"] || "In Process", physicalStatus: "Pending" }],
+                                    username: row["Portal Username"] || "",
+                                    password: row["Portal Password"] || "",
+                                    status: row["Overall Status"] || "In Process",
+                                    totalAmount: Number(row["Total Amount (₹)"] || 0),
+                                    paidAmount: Number(row["Paid Amount (₹)"] || 0),
+                                    paymentDate: row["Initial Payment Date"] || new Date().toISOString().slice(0, 10),
+                                    paymentHistory: [],
+                                    notes: row["Notes / Remarks"] || "",
+                                    createdBy: this.currentUser.username,
+                                    showPass: false
+                                };
+
+                                await this.supabaseClient.from('logs').upsert({
+                                    id: newLog.id,
+                                    app_id: newLog.appId,
+                                    customer_name: newLog.customerName,
+                                    mobile_no: newLog.mobileNo,
+                                    address: newLog.address,
+                                    application_type: newLog.applicationType,
+                                    services: newLog.services,
+                                    username: newLog.username,
+                                    password: newLog.password,
+                                    status: newLog.status,
+                                    total_amount: newLog.totalAmount,
+                                    paid_amount: newLog.paidAmount,
+                                    payment_date: newLog.paymentDate,
+                                    payment_history: newLog.paymentHistory,
+                                    notes: newLog.notes,
+                                    date: newLog.date,
+                                    created_by: newLog.createdBy
+                                });
+                                count++;
+                            }
+
+                            alert(`Successfully imported ${count} records from Excel!`);
+                            event.target.value = '';
+                            this.pullDataFromCloud();
+                        } catch (err) {
+                            alert('Failed to parse Excel file: ' + err.message);
+                        }
+                    };
+                    reader.readAsArrayBuffer(file);
+                },
+
+                get filteredLogs() {
+                    return this.logs.filter(log => {
+                        // 1. Text Search matching
+                        const srvStr = (log.services || []).map(s => s.name).join(' ');
+                        const matchesSearch = (log.customerName + log.mobileNo + (log.address || '') + log.appId + log.applicationType + srvStr)
+                            .toLowerCase()
+                            .includes(this.searchQuery.toLowerCase());
+
+                        // 2. Processing Status matching
+                        const matchesStatus = this.statusFilter === 'All' || log.status === this.statusFilter;
+
+                        // 3. Physical Document / Card Status matching
+                        let matchesPhysical = true;
+                        if (this.physicalFilter !== 'All') {
+                            matchesPhysical = (log.services || []).some(s => s.physicalStatus === this.physicalFilter);
+                        }
+
+                        // 4. Payment / Dues Matching
+                        let matchesPayment = true;
+                        const due = this.getDueAmount(log);
+                        if (this.paymentFilter === 'Due') {
+                            matchesPayment = due > 0;
+                        } else if (this.paymentFilter === 'Paid') {
+                            matchesPayment = due === 0;
+                        }
+
+                        // 5. Date Range matching
+                        let matchesDate = true;
+                        if (this.startDate || this.endDate) {
+                            let targetDateISO = this.normalizeToISODate(log.date) || 
+                                                this.normalizeToISODate(log.paymentDate) || 
+                                                this.normalizeToISODate(log.createdAt);
+
+                            if (!targetDateISO && log.appId && log.appId.startsWith('SRV-')) {
+                                const parts = log.appId.split('-');
+                                if (parts[1] && parts[1].length === 8) {
+                                    targetDateISO = `${parts[1].slice(0,4)}-${parts[1].slice(4,6)}-${parts[1].slice(6,8)}`;
+                                }
+                            }
+
+                            if (targetDateISO) {
+                                if (this.startDate && targetDateISO < this.startDate) {
+                                    matchesDate = false;
+                                }
+                                if (this.endDate && targetDateISO > this.endDate) {
+                                    matchesDate = false;
+                                }
+                            }
+                        }
+
+                        return matchesSearch && matchesStatus && matchesPhysical && matchesPayment && matchesDate;
+                    });
+                },
+
+                get totalPages() {
+                    return Math.ceil(this.filteredLogs.length / this.perPage) || 1;
+                },
+
+                get paginatedLogs() {
+                    const start = (this.currentPage - 1) * this.perPage;
+                    return this.filteredLogs.slice(start, start + this.perPage);
+                },
+
+                goToPage(page) {
+                    if (page >= 1 && page <= this.totalPages) {
+                        this.currentPage = page;
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
