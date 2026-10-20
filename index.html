@@ -171,142 +171,143 @@
     <!-- ==================== 3. MAIN DASHBOARD VIEW ==================== -->
     <div x-show="isSupabaseConfigured && isAuthenticated" class="min-h-screen flex flex-col flex-1">
         
-        <!-- Top Application Sticky Header -->
-        <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30 no-print">
-            <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex flex-wrap justify-between items-center gap-2 sm:gap-3">
-                <div class="flex items-center gap-2.5 shrink-0">
-                    <div class="relative group cursor-pointer shrink-0" @click="activeTab = 'settings'; openModal('logoSettings')" title="Shop Logo (Click to change)">
-                        <template x-if="customLogoUrl">
-                            <img :src="customLogoUrl" alt="Logo" class="w-8 h-8 sm:w-9 sm:h-9 object-contain rounded-full bg-white p-0.5 border border-slate-700 shadow-sm">
-                        </template>
-                        <template x-if="!customLogoUrl">
-                            <div class="relative w-8 h-8 sm:w-9 sm:h-9 bg-white rounded-full flex items-center justify-center p-1 shadow-sm">
-                                <div class="text-center z-10 leading-none">
-                                    <span class="suravi-brand-font text-[8px] sm:text-[9px] font-bold text-slate-950 block">SURAVI</span>
-                                    <span class="text-[3px] font-mono tracking-tighter text-slate-800 block uppercase font-bold">ONLINE</span>
-                                </div>
+        <!-- Top Application Sticky Header (Executive-Grade SaaS Navbar) -->
+        <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs no-print">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16 gap-3">
+                    <!-- Brand & Live Indicators -->
+                    <div class="flex items-center gap-3 shrink-0">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-900 to-indigo-800 flex items-center justify-center text-white font-black text-lg shadow-xs cursor-pointer"
+                             @click="activeTab = 'settings'; openModal('logoSettings')" title="Shop Settings / Logo">
+                            <template x-if="customLogoUrl">
+                                <img :src="customLogoUrl" alt="Logo" class="w-8 h-8 object-contain rounded-lg">
+                            </template>
+                            <template x-if="!customLogoUrl">
+                                <span>S</span>
+                            </template>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h1 class="text-sm font-bold text-slate-900 tracking-tight">Suravi Cyber Cafe</h1>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+                                    Live System
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 font-medium">Nampur • Enterprise Management</p>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Pill Menu -->
+                    <nav class="hidden md:flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+                        <button @click="activeTab = 'ledger'"
+                            :class="activeTab === 'ledger' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'"
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
+                            <span>📋</span>
+                            <span>Operations Ledger</span>
+                            <span class="bg-indigo-100 text-indigo-700 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold" x-text="logs.length"></span>
+                        </button>
+
+                        <button @click="activeTab = 'tasks'"
+                            :class="activeTab === 'tasks' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'"
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
+                            <span>⚡</span>
+                            <span>Task Dispatch</span>
+                            <span class="bg-amber-100 text-amber-700 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold" x-text="allServiceTasks.filter(t => t.status !== 'Completed').length"></span>
+                        </button>
+
+                        <button @click="activeTab = 'payroll'"
+                            :class="activeTab === 'payroll' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'"
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
+                            <span>💰</span>
+                            <span>Commission & Payroll</span>
+                        </button>
+
+                        <button @click="activeTab = 'daily'"
+                            :class="activeTab === 'daily' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'"
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
+                            <span>🕒</span>
+                            <span>Attendance</span>
+                        </button>
+
+                        <button @click="activeTab = 'grid'"
+                            :class="activeTab === 'grid' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'"
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
+                            <span>📅</span>
+                            <span>Monthly</span>
+                        </button>
+
+                        <button @click="activeTab = 'settings'"
+                            :class="activeTab === 'settings' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'"
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
+                            <span>⚙️</span>
+                            <span>Admin</span>
+                        </button>
+                    </nav>
+
+                    <!-- System Status Controls & Profile -->
+                    <div class="flex items-center gap-2 sm:gap-2.5">
+                        <!-- Cloud Sync Status Pill -->
+                        <div class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            Synced Cloud
+                        </div>
+
+                        <!-- Daily Punch In/Out for Associates -->
+                        <template x-if="currentUser && currentUser.role !== 'admin' && currentUser.username !== 'sagar'">
+                            <div class="flex items-center gap-1">
+                                <template x-if="!myTodayPunchRecord || !myTodayPunchRecord.punchInTime">
+                                    <button @click="punchInStaff()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[11px] shadow-xs transition flex items-center gap-1 animate-pulse cursor-pointer">
+                                        <i class="fa-solid fa-fingerprint"></i> <span>Punch In</span>
+                                    </button>
+                                </template>
+                                <template x-if="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime">
+                                    <button @click="punchOutStaff()" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-[11px] shadow-xs transition flex items-center gap-1 cursor-pointer">
+                                        <i class="fa-solid fa-right-from-bracket"></i> <span>Punch Out</span>
+                                    </button>
+                                </template>
                             </div>
                         </template>
-                    </div>
 
-                    <div>
-                        <h1 class="text-xs sm:text-sm font-bold leading-tight flex items-center gap-1.5">
-                            <span>Suravi Cyber Cafe</span>
-                            <span class="text-[9px] font-mono bg-indigo-950 text-indigo-300 px-1 py-0.2 rounded border border-indigo-800 tracking-wider hidden sm:inline-block">THINK ONLINE</span>
-                        </h1>
-                        <p class="text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1.5">
-                            <span><strong class="text-indigo-300" x-text="currentUser ? currentUser.name : ''"></strong> <span class="text-[9px] bg-slate-800 px-1 py-0.2 rounded" x-text="'(' + (currentUser ? currentUser.role : '') + ')'"></span></span>
-                            <span class="inline-flex items-center gap-1 text-emerald-400 font-medium" title="Live Cloud Sync Active">
-                                <i class="fa-solid fa-bolt text-[9px]"></i> Live Sync
-                            </span>
-                        </p>
-                    </div>
+                        <!-- Quick New Customer Log Button -->
+                        <button @click="openModal('customer')" class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs shadow-xs transition cursor-pointer">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                            <span class="hidden sm:inline">New Log</span>
+                            <span class="text-[9px] bg-indigo-800 px-1 py-0.2 rounded font-mono hidden lg:inline">[Alt+N]</span>
+                        </button>
 
-                    <!-- Live Digital 12-Hour Clock & Date -->
-                    <div class="hidden md:flex bg-slate-800 text-slate-200 border border-slate-700 px-2 py-1 rounded-lg text-xs font-mono items-center gap-1.5 shadow-inner">
-                        <i class="fa-regular fa-clock text-indigo-400 text-xs"></i>
-                        <span class="font-bold text-indigo-300" x-text="currentTime"></span>
-                        <span class="text-slate-500">|</span>
-                        <span class="text-slate-400 text-[10px]" x-text="currentDate"></span>
+                        <!-- DB Reconfigure Trigger -->
+                        <button @click="resetSupabaseConfig" class="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200/80 transition cursor-pointer" title="Database Settings">
+                            ⚡
+                        </button>
+
+                        <div class="h-6 w-px bg-slate-200 mx-0.5"></div>
+
+                        <!-- Operator Avatar & Logout -->
+                        <div class="flex items-center gap-2 pl-1">
+                            <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 select-none">
+                                <span x-text="currentUser ? (currentUser.name || currentUser.username).charAt(0).toUpperCase() : 'S'"></span>
+                            </div>
+                            <div class="hidden lg:block text-left">
+                                <div class="text-xs font-bold text-slate-800 leading-none truncate max-w-[100px]" x-text="currentUser ? currentUser.name : 'Operator'"></div>
+                                <div class="text-[10px] text-slate-400 font-medium leading-tight mt-0.5 capitalize" x-text="currentUser ? currentUser.role : 'Staff'"></div>
+                            </div>
+                            <button @click="logout" title="Logout" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer">
+                                <i class="fa-solid fa-power-off text-xs"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Prominent Actions: ONLY Punch-In/Out & New Customer Log (+ compact Logout) -->
-                <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
-                    <!-- Admin Attendance Exemption Indicator (Admin is exempt from daily punch tracking) -->
-                    <template x-if="currentUser && (currentUser.role === 'admin' || currentUser.username === 'sagar')">
-                        <div class="px-2.5 sm:px-3 py-1.5 bg-purple-950/80 border border-purple-700/60 text-purple-200 font-semibold rounded-lg text-xs shadow-xs flex items-center gap-1.5">
-                            <i class="fa-solid fa-shield-halved text-purple-400"></i>
-                            <span>Admin (Attendance Exempted)</span>
-                        </div>
-                    </template>
-
-                    <!-- Daily Biometric Punch-In / Punch-Out Quick Button for Non-Admin Associates -->
-                    <template x-if="currentUser && currentUser.role !== 'admin' && currentUser.username !== 'sagar'">
-                        <div class="flex items-center gap-1.5">
-                            <template x-if="!myTodayPunchRecord || !myTodayPunchRecord.punchInTime">
-                                <button @click="punchInStaff()" class="px-2.5 sm:px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center gap-1.5 animate-pulse">
-                                    <i class="fa-solid fa-fingerprint text-xs sm:text-sm"></i> <span>Punch In (हजेरी लावा)</span>
-                                </button>
-                            </template>
-                            <template x-if="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime">
-                                <button @click="punchOutStaff()" class="px-2.5 sm:px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center gap-1.5">
-                                    <i class="fa-solid fa-right-from-bracket text-xs sm:text-sm"></i> <span>Punch Out (निर्गमन)</span> <span class="text-[9px] bg-amber-700 px-1 py-0.2 rounded font-mono hidden sm:inline-block" x-text="'In: ' + myTodayPunchRecord.punchInTime"></span>
-                                </button>
-                            </template>
-                            <template x-if="myTodayPunchRecord && myTodayPunchRecord.punchInTime && myTodayPunchRecord.punchOutTime">
-                                <div class="px-2 py-1 bg-emerald-950 border border-emerald-800 text-emerald-300 rounded-lg text-[10px] sm:text-[11px] font-mono flex items-center gap-1">
-                                    <i class="fa-solid fa-circle-check text-emerald-400"></i> <span class="hidden sm:inline">Day Completed</span>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-
-                    <!-- New Customer Log Button -->
-                    <button @click="openModal('customer')" class="px-2.5 sm:px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-plus text-xs"></i> <span>New Customer Log</span> <span class="text-[9px] bg-indigo-800 px-1 py-0.2 rounded font-mono hidden sm:inline-block">[Alt+N]</span>
-                    </button>
-
-                    <!-- Compact Logout Button -->
-                    <button @click="logout" title="Logout (लॉगआउट करा)" class="px-2 py-1.5 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white text-xs font-medium rounded-lg transition flex items-center gap-1 border border-slate-700">
-                        <i class="fa-solid fa-power-off"></i>
-                    </button>
+                <!-- Mobile Responsive Tab Pill Row -->
+                <div class="md:hidden flex items-center gap-1 overflow-x-auto py-2 border-t border-slate-100 no-scrollbar">
+                    <button @click="activeTab = 'ledger'" :class="activeTab === 'ledger' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">📋 Ledger</button>
+                    <button @click="activeTab = 'tasks'" :class="activeTab === 'tasks' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">⚡ Tasks</button>
+                    <button @click="activeTab = 'payroll'" :class="activeTab === 'payroll' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">💰 Payroll</button>
+                    <button @click="activeTab = 'daily'" :class="activeTab === 'daily' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">🕒 Attendance</button>
+                    <button @click="activeTab = 'grid'" :class="activeTab === 'grid' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">📅 Grid</button>
+                    <button @click="activeTab = 'settings'" :class="activeTab === 'settings' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">⚙️ Settings</button>
                 </div>
-            </div>
-
-            <!-- Workspace Tabs Navigation Bar (6 Clean Modules with Flexbox / Even Spacing) -->
-            <div class="bg-slate-950 border-t border-slate-800 px-2 sm:px-4">
-                <nav class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-1 py-1.5 text-xs font-medium">
-                    <!-- Tab 1: Customer Ledger -->
-                    <button @click="activeTab = 'ledger'" 
-                        :class="activeTab === 'ledger' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800'"
-                        class="flex-1 min-w-[120px] px-2 py-1.5 rounded-lg transition flex items-center justify-center gap-1.5 text-center">
-                        <i class="fa-solid fa-clipboard-list"></i>
-                        <span>1. Customer Ledger</span>
-                        <span class="bg-indigo-900/80 px-1.5 py-0.2 rounded text-[10px]" x-text="logs.length"></span>
-                    </button>
-
-                    <!-- Tab 2: Tasks & Commissions -->
-                    <button @click="activeTab = 'tasks'" 
-                        :class="activeTab === 'tasks' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800'"
-                        class="flex-1 min-w-[130px] px-2 py-1.5 rounded-lg transition flex items-center justify-center gap-1.5 text-center">
-                        <i class="fa-solid fa-list-check"></i>
-                        <span>2. Tasks & Commissions</span>
-                        <span class="bg-amber-600 text-white px-1.5 py-0.2 rounded text-[10px]" x-text="allServiceTasks.filter(t => t.status !== 'Completed').length"></span>
-                    </button>
-
-                    <!-- Tab 3: Daily Attendance -->
-                    <button @click="activeTab = 'daily'" 
-                        :class="activeTab === 'daily' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800'"
-                        class="flex-1 min-w-[120px] px-2 py-1.5 rounded-lg transition flex items-center justify-center gap-1.5 text-center">
-                        <i class="fa-solid fa-fingerprint"></i>
-                        <span>3. Daily Attendance</span>
-                    </button>
-
-                    <!-- Tab 4: Monthly Grid -->
-                    <button @click="activeTab = 'grid'" 
-                        :class="activeTab === 'grid' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800'"
-                        class="flex-1 min-w-[110px] px-2 py-1.5 rounded-lg transition flex items-center justify-center gap-1.5 text-center">
-                        <i class="fa-solid fa-table-cells"></i>
-                        <span>4. Monthly Grid</span>
-                    </button>
-
-                    <!-- Tab 5: Payroll & Payments -->
-                    <button @click="activeTab = 'payroll'" 
-                        :class="activeTab === 'payroll' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800'"
-                        class="flex-1 min-w-[125px] px-2 py-1.5 rounded-lg transition flex items-center justify-center gap-1.5 text-center">
-                        <i class="fa-solid fa-file-invoice-dollar"></i>
-                        <span>5. Payroll & Payments</span>
-                    </button>
-
-                    <!-- Tab 6: Centralized Settings -->
-                    <button @click="activeTab = 'settings'" 
-                        :class="activeTab === 'settings' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800'"
-                        class="flex-1 min-w-[95px] px-2 py-1.5 rounded-lg transition flex items-center justify-center gap-1.5 text-center">
-                        <i class="fa-solid fa-gear"></i>
-                        <span>6. Settings</span>
-                    </button>
-                </nav>
             </div>
         </header>
 
@@ -334,35 +335,60 @@
                     </div>
                 </div>
 
-                <!-- 4 KPI Summary Cards -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-                        <div>
-                            <p class="text-[10px] font-semibold text-slate-400 uppercase">Filtered Logs</p>
-                            <h3 class="text-xl font-bold text-slate-800" x-text="filteredLogs.length">0</h3>
+                <!-- Modern SaaS Metrics Banner (Volume Metrics + Financial Overview) -->
+                <div class="space-y-3">
+                    <!-- Volume Metrics -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Master Catalog</span>
+                            <div class="text-2xl font-black text-slate-900 mt-1" x-text="appTypes.length">0</div>
+                            <span class="text-[11px] font-medium text-emerald-600 mt-0.5 block">Active Services Configured</span>
                         </div>
-                        <div class="w-9 h-9 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-sm"><i class="fa-solid fa-clipboard-list"></i></div>
+
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Bookings</span>
+                            <div class="text-2xl font-black text-slate-900 mt-1" x-text="allServiceTasks.length">0</div>
+                            <span class="text-[11px] font-medium text-slate-500 mt-0.5 block">Customer Service Items</span>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">In Pipeline</span>
+                            <div class="text-2xl font-black text-sky-700 mt-1" x-text="allServiceTasks.filter(t => t.status === 'In Process').length">0</div>
+                            <span class="text-[11px] font-medium text-sky-600 mt-0.5 block">Active In Process Jobs</span>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Completed</span>
+                            <div class="text-2xl font-black text-emerald-700 mt-1" x-text="allServiceTasks.filter(t => t.status === 'Completed').length">0</div>
+                            <span class="text-[11px] font-medium text-emerald-600 mt-0.5 block">Finished & Ready</span>
+                        </div>
                     </div>
-                    <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-                        <div>
-                            <p class="text-[10px] font-semibold text-slate-400 uppercase">In Process / Pending</p>
-                            <h3 class="text-xl font-bold text-amber-600" x-text="filteredLogs.filter(l => l.status !== 'Completed').length">0</h3>
+
+                    <!-- Financial Overview Banner -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Billed Volume</span>
+                                <div class="text-xl font-extrabold text-slate-900 font-mono mt-0.5" x-text="'₹ ' + filteredLogs.reduce((sum, l) => sum + Number(l.totalAmount || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })">₹ 0.00</div>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 font-bold">₹</div>
                         </div>
-                        <div class="w-9 h-9 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center text-sm"><i class="fa-solid fa-clock"></i></div>
-                    </div>
-                    <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:border-emerald-300 transition" @click="paymentFilter = 'Paid'; currentPage = 1" title="Click to filter Paid records">
-                        <div>
-                            <p class="text-[10px] font-semibold text-slate-400 uppercase">Total Collected</p>
-                            <h3 class="text-xl font-bold text-emerald-600" x-text="'₹ ' + filteredLogs.reduce((sum, l) => sum + Number(l.paidAmount || 0) + (l.paymentHistory ? l.paymentHistory.reduce((s, p) => s + Number(p.amount || 0), 0) : 0), 0)">₹ 0</h3>
+
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between cursor-pointer hover:border-emerald-300 transition" @click="paymentFilter = 'Paid'; currentPage = 1" title="Click to filter Paid records">
+                            <div>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Collected Revenue</span>
+                                <div class="text-xl font-extrabold text-emerald-700 font-mono mt-0.5" x-text="'₹ ' + filteredLogs.reduce((sum, l) => sum + Number(l.paidAmount || 0) + (l.paymentHistory ? l.paymentHistory.reduce((s, p) => s + Number(p.amount || 0), 0) : 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })">₹ 0.00</div>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold">✓</div>
                         </div>
-                        <div class="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-sm"><i class="fa-solid fa-indian-rupee-sign"></i></div>
-                    </div>
-                    <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:border-rose-300 transition" @click="paymentFilter = 'Due'; currentPage = 1" title="Click to filter Pending Dues only">
-                        <div>
-                            <p class="text-[10px] font-semibold text-slate-400 uppercase">Pending Dues</p>
-                            <h3 class="text-xl font-bold text-rose-600" x-text="'₹ ' + filteredLogs.reduce((sum, l) => sum + getDueAmount(l), 0)">₹ 0</h3>
+
+                        <div class="bg-white p-4 rounded-2xl border border-amber-200/80 bg-amber-50/30 shadow-2xs flex items-center justify-between cursor-pointer hover:border-amber-300 transition" @click="paymentFilter = 'Due'; currentPage = 1" title="Click to filter Pending Dues only">
+                            <div>
+                                <span class="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">Outstanding Due Dues</span>
+                                <div class="text-xl font-extrabold text-amber-700 font-mono mt-0.5" x-text="'₹ ' + filteredLogs.reduce((sum, l) => sum + getDueAmount(l), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })">₹ 0.00</div>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-amber-100/70 flex items-center justify-center text-amber-700 font-bold">⏳</div>
                         </div>
-                        <div class="w-9 h-9 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center text-sm"><i class="fa-solid fa-file-invoice-dollar"></i></div>
                     </div>
                 </div>
 
@@ -482,65 +508,63 @@
                                         </td>
                                         <td class="p-3 align-top">
                                             <div class="space-y-2">
-                                                <template x-for="(srv, sIndex) in (log.services || [])">
-                                                    <div class="bg-slate-50 p-2 rounded border border-slate-200 space-y-1.5">
-                                                        <div class="flex items-start justify-between gap-2">
+                                                <div class="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                                    Subscribed Services & Progress
+                                                </div>
+                                                <div class="grid grid-cols-1 gap-2">
+                                                    <template x-for="(srv, sIndex) in (log.services || [])" :key="sIndex">
+                                                        <div class="bg-slate-50/70 hover:bg-slate-50 rounded-xl p-2.5 border border-slate-200/70 transition space-y-2">
+                                                            <!-- Service Title & Pricing -->
+                                                            <div class="flex items-center justify-between gap-1.5">
+                                                                <div>
+                                                                    <div class="font-bold text-xs text-slate-900 tracking-tight" x-text="srv.name"></div>
+                                                                    <div class="text-[10px] text-slate-500 space-x-1.5 mt-0.5 font-mono">
+                                                                        <span class="text-rose-600 font-semibold" x-text="'Challan: ₹' + (srv.challanFees || 0)"></span>
+                                                                        <span class="text-emerald-700 font-bold" x-text="'Margin: ₹' + (srv.netMargin !== undefined ? srv.netMargin : Math.max(0, Number(srv.customerPrice || srv.amount || 0) - Number(srv.challanFees || 0)))"></span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="text-xs font-mono font-semibold text-slate-700 bg-white px-2 py-0.5 rounded-md border border-slate-200 shrink-0" x-text="'₹' + (srv.customerPrice || srv.amount || 0)"></div>
+                                                            </div>
+
+                                                            <!-- Processing State Segmented Controller -->
                                                             <div>
-                                                                <span class="font-semibold text-slate-800 block" x-text="srv.name"></span>
-                                                                <div class="text-[10px] text-slate-500 space-x-1.5 mt-0.5 font-mono">
-                                                                    <span class="text-indigo-700 font-bold" x-text="'Cust: ₹' + (srv.customerPrice || srv.amount || 0)"></span>
-                                                                    <span class="text-rose-600 font-semibold" x-text="'Challan: ₹' + (srv.challanFees || 0)"></span>
+                                                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                                                                    Work Progress:
+                                                                </span>
+                                                                <div class="grid grid-cols-3 gap-1 bg-white p-1 rounded-lg border border-slate-200">
+                                                                    <button type="button" @click="updateServiceStatus(log, sIndex, 'Pending')"
+                                                                        :class="srv.status === 'Pending' ? 'bg-amber-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'"
+                                                                        class="py-1 text-[10px] font-bold rounded-md transition-all text-center cursor-pointer">
+                                                                        ⏳ Pending
+                                                                    </button>
+                                                                    <button type="button" @click="updateServiceStatus(log, sIndex, 'In Process')"
+                                                                        :class="srv.status === 'In Process' ? 'bg-sky-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'"
+                                                                        class="py-1 text-[10px] font-bold rounded-md transition-all text-center cursor-pointer">
+                                                                        ⚡ Process
+                                                                    </button>
+                                                                    <button type="button" @click="updateServiceStatus(log, sIndex, 'Completed')"
+                                                                        :class="srv.status === 'Completed' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'"
+                                                                        class="py-1 text-[10px] font-bold rounded-md transition-all text-center cursor-pointer">
+                                                                        ✓ Completed
+                                                                    </button>
                                                                 </div>
                                                             </div>
-                                                            <div class="text-right shrink-0">
-                                                                <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold text-[10px] font-mono block" 
-                                                                    x-text="'Margin: ₹' + (srv.netMargin !== undefined ? srv.netMargin : Math.max(0, Number(srv.customerPrice || srv.amount || 0) - Number(srv.challanFees || 0)))"></span>
-                                                            </div>
-                                                        </div>
-                                                        <!-- Processing Status Buttons -->
-                                                        <div class="flex items-center justify-between gap-1">
-                                                            <span class="text-[10px] text-slate-500 font-medium">Proc:</span>
-                                                            <div class="flex gap-1">
-                                                                <button @click="updateServiceStatus(log, sIndex, 'In Process')" 
-                                                                    class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border"
-                                                                    :class="srv.status === 'In Process' ? 'bg-amber-500 text-white border-amber-600' : 'bg-amber-50 text-amber-700 border-amber-200'">
-                                                                    In Proc
-                                                                </button>
-                                                                <button @click="updateServiceStatus(log, sIndex, 'Pending')" 
-                                                                    class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border"
-                                                                    :class="srv.status === 'Pending' ? 'bg-blue-600 text-white border-blue-700' : 'bg-blue-50 text-blue-700 border-blue-200'">
-                                                                    Pend
-                                                                </button>
-                                                                <button @click="updateServiceStatus(log, sIndex, 'Completed')" 
-                                                                    class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border"
-                                                                    :class="srv.status === 'Completed' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-emerald-50 text-emerald-700 border-emerald-200'">
-                                                                    Comp
+
+                                                            <!-- Physical Dispatch Button -->
+                                                            <div class="flex items-center justify-between pt-1">
+                                                                <span class="text-[10px] text-slate-500 font-medium">Physical Delivery:</span>
+                                                                <button type="button"
+                                                                    @click="updatePhysicalStatus(log, sIndex, srv.physicalStatus === 'Despatched' ? 'Come in Shop' : 'Despatched')"
+                                                                    :class="srv.physicalStatus === 'Despatched'
+                                                                        ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
+                                                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'"
+                                                                    class="px-2.5 py-1 rounded-md text-[10px] font-bold border transition cursor-pointer">
+                                                                    <span x-text="srv.physicalStatus === 'Despatched' ? '📦 Dispatched (Out)' : '🏬 Ready in Shop'"></span>
                                                                 </button>
                                                             </div>
                                                         </div>
-                                                        <!-- Physical Document Status -->
-                                                        <div class="flex items-center justify-between gap-1 pt-1 border-t border-slate-200">
-                                                            <span class="text-[10px] text-slate-500 font-medium">Physical:</span>
-                                                            <div class="flex gap-1">
-                                                                <button @click="updatePhysicalStatus(log, sIndex, 'Pending')" 
-                                                                    class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border"
-                                                                    :class="srv.physicalStatus === 'Pending' ? 'bg-slate-500 text-white border-slate-600' : 'bg-slate-100 text-slate-600 border-slate-200'">
-                                                                    Pending
-                                                                </button>
-                                                                <button @click="updatePhysicalStatus(log, sIndex, 'Despatched')" 
-                                                                    class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border"
-                                                                    :class="srv.physicalStatus === 'Despatched' ? 'bg-purple-600 text-white border-purple-700' : 'bg-purple-50 text-purple-700 border-purple-200'">
-                                                                    Despatched
-                                                                </button>
-                                                                <button @click="updatePhysicalStatus(log, sIndex, 'Come in Shop')" 
-                                                                    class="px-1.5 py-0.5 rounded text-[9px] font-bold transition border"
-                                                                    :class="srv.physicalStatus === 'Come in Shop' ? 'bg-teal-600 text-white border-teal-700' : 'bg-teal-50 text-teal-700 border-teal-200'">
-                                                                    In Shop
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </template>
+                                                    </template>
+                                                </div>
                                             </div>
                                         </td>
                                         <td class="p-3 align-top">
