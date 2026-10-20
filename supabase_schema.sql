@@ -210,7 +210,7 @@ create table if not exists public.cafe_attendance (
 -- जुन्या / विद्यमान टेबल्ससाठी सेफ कॉलम मायग्रेशन
 alter table if exists public.cafe_attendance add column if not exists staff_id text;
 alter table if exists public.cafe_attendance add column if not exists staff_name text;
-alter table if exists public.cafe_attendance add column if not exists date text;
+alter table if exists public.cafe_attendance add column if not exists date date default current_date;
 alter table if exists public.cafe_attendance add column if not exists punch_in timestamptz;
 alter table if exists public.cafe_attendance add column if not exists punch_out timestamptz;
 alter table if exists public.cafe_attendance add column if not exists total_hours numeric default 0;
@@ -251,7 +251,7 @@ begin
       'att_' || to_char(target_date, 'YYYY-MM-DD') || '_' || u.username,
       u.username,
       coalesce(u.name, u.username),
-      to_char(target_date, 'YYYY-MM-DD'),
+      target_date,
       null,
       null,
       0.00,
