@@ -50,6 +50,7 @@ export const formatISTTime = (isoString: string | null): string => {
   if (!isoString) return '—';
   try {
     const date = new Date(isoString);
+    if (isNaN(date.getTime())) return isoString;
     return date.toLocaleTimeString('en-IN', {
       hour: '2-digit',
       minute: '2-digit',
@@ -57,11 +58,38 @@ export const formatISTTime = (isoString: string | null): string => {
       timeZone: 'Asia/Kolkata',
     });
   } catch {
-    return '—';
+    return isoString || '—';
   }
 };
 
-// 5. Get formatted live timer details
+// 5. Compute formatted duration string (e.g., 8 hrs 21 mins (8.35 hrs))
+export const formatDurationDisplay = (startISO: string | null, endISO?: string | null): string => {
+  if (!startISO) return '—';
+  const start = new Date(startISO).getTime();
+  if (isNaN(start)) return '—';
+  const end = endISO ? new Date(endISO).getTime() : Date.now();
+  const diffMs = Math.max(0, end - start);
+  const totalMinutes = Math.floor(diffMs / (1000 * 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  const decimalHours = (diffMs / (1000 * 60 * 60)).toFixed(2);
+  return `${hours} hrs ${mins} mins (${decimalHours} hrs)`;
+};
+
+// 6. Compute compact duration string (e.g., 1h 22m)
+export const formatDurationCompact = (startISO: string | null, endISO?: string | null): string => {
+  if (!startISO) return '0m';
+  const start = new Date(startISO).getTime();
+  if (isNaN(start)) return '0m';
+  const end = endISO ? new Date(endISO).getTime() : Date.now();
+  const diffMs = Math.max(0, end - start);
+  const totalMinutes = Math.floor(diffMs / (1000 * 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+};
+
+// 7. Get formatted live timer details
 export const getLiveTimerDetails = (punchInISO: string) => {
   const timeIST = formatISTTime(punchInISO);
   const evaluation = evaluateWorkingHours(punchInISO);
@@ -71,10 +99,15 @@ export const getLiveTimerDetails = (punchInISO: string) => {
   const hrs = Math.floor(totalMins / 60);
   const mins = totalMins % 60;
   const durationText = `${hrs} hrs ${mins} min${mins === 1 ? '' : 's'}`;
+  const durationCompact = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+  const decimalHours = (diffMs / (1000 * 60 * 60)).toFixed(2);
+  const durationFullDisplay = `${hrs} hrs ${mins} mins (${decimalHours} hrs)`;
   
   return {
     timeIST,
     durationText,
+    durationCompact,
+    durationFullDisplay,
     totalHours: evaluation.totalHours,
     summaryMarathi: evaluation.summaryMarathi,
     bannerText: `चालू वेळ: ${timeIST} (${hrs} hrs ${mins} min)`,

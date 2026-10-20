@@ -207,14 +207,26 @@
                             @click="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? punchOutStaff() : punchInStaff()"
                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer"
                             :class="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime
-                                ? 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 animate-pulse'
+                                ? 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100'
                                 : 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100'"
                             :title="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? 'Click to Punch Out' : 'Click to Punch In'"
                         >
                             <span x-text="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? '🛑' : '⏱️'"></span>
                             <span x-text="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? 'Punch Out' : 'Punch In'">Punch In</span>
-                            <template x-if="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime && activePunchDurationText">
-                                <span class="hidden sm:inline-block font-mono text-[10px] bg-rose-200/60 text-rose-900 px-1.5 py-0.2 rounded-md ml-0.5" x-text="activePunchDurationText"></span>
+                            
+                            <!-- When Punched In: Live pulsing indicator with In time & Active duration -->
+                            <template x-if="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime">
+                                <span class="inline-flex items-center gap-1 font-mono text-[10px] bg-rose-200/70 text-rose-950 px-2 py-0.5 rounded-md ml-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping"></span>
+                                    <span x-text="'In: ' + (myTodayPunchRecord.punchInTime || formatToISTTime(myTodayPunchRecord.punchInISO) || '—') + ' (Active: ' + (activePunchDurationCompact || activePunchDurationText || '0m') + ')'"></span>
+                                </span>
+                            </template>
+
+                            <!-- When Punched Out today: Show Last Out time and worked duration -->
+                            <template x-if="myTodayPunchRecord && myTodayPunchRecord.punchOutTime">
+                                <span class="hidden sm:inline-block font-mono text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-md ml-1"
+                                      x-text="'Last Out: ' + (myTodayPunchRecord.punchOutTime || formatToISTTime(myTodayPunchRecord.punchOutISO)) + ' (Worked: ' + Number(myTodayPunchRecord.totalHours || 0).toFixed(2) + ' hrs)'">
+                                </span>
                             </template>
                         </button>
 
@@ -1148,10 +1160,10 @@
                             <thead class="bg-slate-50/80 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-200/60">
                                 <tr>
                                     <th class="py-2.5 px-4">कर्मचारी</th>
-                                    <th class="py-2.5 px-4">पंच इन (वेळ)</th>
-                                    <th class="py-2.5 px-4">पंच आऊट (वेळ)</th>
-                                    <th class="py-2.5 px-4">एकूण तास</th>
-                                    <th class="py-2.5 px-4">हजेरी स्थिती</th>
+                                    <th class="py-2.5 px-4">पंच-इन वेळ (Punch-In Time)</th>
+                                    <th class="py-2.5 px-4">पंच-आऊट वेळ (Punch-Out Time)</th>
+                                    <th class="py-2.5 px-4">कामाचे तास (Duration)</th>
+                                    <th class="py-2.5 px-4">हजेरी स्थिती व पगार (Status & Wage)</th>
                                     <th class="py-2.5 px-4">पगार गणना</th>
                                 </tr>
                             </thead>
@@ -1176,18 +1188,18 @@
                                         </td>
                                         <td class="py-3 px-4 font-mono font-semibold" x-text="getPunchTimes(assoc.username, dailyRollDate).in || '—'"></td>
                                         <td class="py-3 px-4 font-mono font-semibold">
-                                            <span x-text="getPunchTimes(assoc.username, dailyRollDate).out || (getPunchTimes(assoc.username, dailyRollDate).in ? '🟢 चालू आहे' : '—')"></span>
+                                            <span x-text="getPunchTimes(assoc.username, dailyRollDate).out || (getPunchTimes(assoc.username, dailyRollDate).in ? '🟢 काम चालू आहे' : '—')"></span>
                                         </td>
                                         <td class="py-3 px-4 font-mono font-bold text-slate-900" x-text="getStaffDurationDisplay(assoc.username, dailyRollDate)"></td>
                                         <td class="py-3 px-4">
                                             <span
                                                 class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border"
-                                                :class="getAttendanceStatus(assoc.username, dailyRollDate) === 'Present'
+                                                :class="getAttendanceStatus(assoc.username, dailyRollDate) === 'Present' || getAttendanceStatus(assoc.username, dailyRollDate) === 'Full Day'
                                                     ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                                                     : getAttendanceStatus(assoc.username, dailyRollDate) === 'Half Day'
                                                     ? 'bg-sky-50 text-sky-800 border-sky-200'
                                                     : 'bg-rose-50 text-rose-800 border-rose-200'"
-                                                x-text="getAttendanceStatus(assoc.username, dailyRollDate)"
+                                                x-text="getAttendanceStatusWithWage(assoc.username, dailyRollDate)"
                                             ></span>
                                         </td>
                                         <td class="py-3 px-4 font-mono font-bold text-slate-800" x-text="getStaffSalaryCalculationDisplay(assoc.username, dailyRollDate)"></td>
@@ -3472,6 +3484,7 @@
 
                 // Live Active Punch Duration & Marathi Status State
                 activePunchDurationText: '',
+                activePunchDurationCompact: '',
                 activePunchBannerText: '',
                 activePunchHours: 0,
                 activePunchMarathi: '',
@@ -4861,19 +4874,20 @@
                     if (log) this.sendWhatsAppMarathi(log);
                 },
 
-                // ==================== WORKSPACE 3: DAILY ATTENDANCE & PUNCH-IN/OUT ====================
-                formatToISTTime(isoString) {
-                    if (!isoString) return '—';
+                // IST Time Formatter (12-hour AM/PM format)
+                formatToISTTime(isoDateStr) {
+                    if (!isoDateStr) return '—';
                     try {
-                        const date = new Date(isoString);
-                        return date.toLocaleTimeString('en-IN', {
+                        const d = new Date(isoDateStr);
+                        if (isNaN(d.getTime())) return isoDateStr;
+                        return d.toLocaleTimeString('en-IN', {
                             hour: '2-digit',
                             minute: '2-digit',
                             hour12: true,
-                            timeZone: 'Asia/Kolkata',
+                            timeZone: 'Asia/Kolkata'
                         });
-                    } catch {
-                        return '—';
+                    } catch (e) {
+                        return isoDateStr || '—';
                     }
                 },
 
@@ -4948,6 +4962,7 @@
 
                         this.activePunchHours = totalHours;
                         this.activePunchDurationText = `${hrs} hrs ${mins} min${mins === 1 ? '' : 's'}`;
+                        this.activePunchDurationCompact = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
                         this.activePunchBannerText = `चालू वेळ: ${inTimeFormatted} (${hrs} hrs ${mins} min)`;
 
                         if (totalHours >= 4.0) {
@@ -4959,6 +4974,7 @@
                         }
                     } else {
                         this.activePunchDurationText = '';
+                        this.activePunchDurationCompact = '';
                         this.activePunchBannerText = '';
                         this.activePunchHours = 0;
                         this.activePunchMarathi = '';
@@ -5358,28 +5374,82 @@
                     };
                 },
 
+                // Compute Working Duration (Hours & Minutes)
                 getStaffDurationDisplay(username, dateStr) {
                     if (dateStr === this.todayISODate && this.currentUser && (username === this.currentUser.username || (this.currentUser.username === 'sagar' && username === 'sagar_wadekar') || (this.currentUser.username === 'sagar_wadekar' && username === 'sagar'))) {
                         const myRec = this.myTodayPunchRecord;
-                        if (myRec && myRec.punchInTime && !myRec.punchOutTime) {
-                            return `🟢 ${(this.activePunchHours || 0).toFixed(2)} hrs (${this.activePunchDurationText || 'चालू'})`;
+                        if (myRec && (myRec.punchInISO || myRec.punchInTime) && !myRec.punchOutISO && !myRec.punchOutTime) {
+                            let start = myRec.punchInISO ? new Date(myRec.punchInISO).getTime() : NaN;
+                            if (isNaN(start) && myRec.punchInTime) {
+                                start = new Date(`${dateStr} ${myRec.punchInTime}`).getTime();
+                            }
+                            if (isNaN(start)) start = Date.now();
+                            const diffMs = Math.max(0, Date.now() - start);
+                            const totalMinutes = Math.floor(diffMs / (1000 * 60));
+                            const hours = Math.floor(totalMinutes / 60);
+                            const mins = totalMinutes % 60;
+                            const decimalHours = (diffMs / (1000 * 60 * 60)).toFixed(2);
+                            return `${hours} hrs ${mins} mins (${decimalHours} hrs)`;
                         }
                     }
+
                     const rec = (this.attendanceLogs || []).find(a => 
                         (a.staffId === username || a.staff_id === username || (username === 'sagar' && a.staffId === 'sagar_wadekar') || (username === 'sagar_wadekar' && a.staffId === 'sagar')) && 
                         (a.date === dateStr || a.date?.startsWith(dateStr))
                     );
-                    if (!rec) return '—';
-                    if (rec.punchOutTime || rec.totalHours > 0) {
-                        const hrs = Number(rec.totalHours || 0).toFixed(2);
-                        const mult = rec.daySalaryMultiplier !== undefined ? Number(rec.daySalaryMultiplier) : (rec.status === 'Present' ? 1.0 : rec.status === 'Half Day' ? 0.5 : 0.0);
-                        const pct = mult === 1.0 ? '100%' : mult === 0.5 ? '50%' : '0%';
-                        return `${hrs} hrs (${pct})`;
+                    const punchInVal = rec ? (rec.punchInISO || rec.punch_in || rec.punchInTime) : null;
+                    if (!rec || !punchInVal) return '—';
+
+                    let start = (rec.punchInISO || rec.punch_in) ? new Date(rec.punchInISO || rec.punch_in).getTime() : NaN;
+                    if (isNaN(start) && rec.punchInTime) {
+                        start = new Date(`${dateStr} ${rec.punchInTime}`).getTime();
                     }
-                    if (rec.punchInTime && !rec.punchOutTime) {
-                        return '🟢 चालू आहे';
+                    if (isNaN(start)) return '—';
+
+                    let end = (rec.punchOutISO || rec.punch_out) ? new Date(rec.punchOutISO || rec.punch_out).getTime() : NaN;
+                    if (isNaN(end) && rec.punchOutTime) {
+                        end = new Date(`${dateStr} ${rec.punchOutTime}`).getTime();
                     }
-                    return rec.status === 'Absent' ? '0.00 hrs (0%)' : '—';
+                    if (isNaN(end)) {
+                        if (dateStr === this.todayISODate) {
+                            end = Date.now();
+                        } else if (rec.totalHours > 0) {
+                            end = start + Math.round(rec.totalHours * 3600 * 1000);
+                        } else {
+                            return '—';
+                        }
+                    }
+
+                    const diffMs = Math.max(0, end - start);
+                    const totalMinutes = Math.floor(diffMs / (1000 * 60));
+                    const hours = Math.floor(totalMinutes / 60);
+                    const mins = totalMinutes % 60;
+                    const decimalHours = (diffMs / (1000 * 60 * 60)).toFixed(2);
+
+                    return `${hours} hrs ${mins} mins (${decimalHours} hrs)`;
+                },
+
+                // Attendance Status with Wage Multiplier Badge Display
+                getAttendanceStatusWithWage(username, dateStr) {
+                    if (dateStr === this.todayISODate && this.currentUser && (username === this.currentUser.username || (this.currentUser.username === 'sagar' && username === 'sagar_wadekar') || (this.currentUser.username === 'sagar_wadekar' && username === 'sagar'))) {
+                        const myRec = this.myTodayPunchRecord;
+                        if (myRec && (myRec.punchInISO || myRec.punchInTime) && !myRec.punchOutISO && !myRec.punchOutTime) {
+                            const hrs = this.activePunchHours || 0;
+                            if (hrs >= 4.0) return 'Full Day (100%)';
+                            if (hrs >= 2.0) return 'Half Day (50%)';
+                            return 'Absent (0%)';
+                        }
+                    }
+                    const record = (this.attendanceLogs || []).find(a => 
+                        (a.staffId === username || a.staff_id === username || (username === 'sagar' && a.staffId === 'sagar_wadekar') || (username === 'sagar_wadekar' && a.staffId === 'sagar')) && 
+                        (a.date === dateStr || a.date?.startsWith(dateStr))
+                    );
+                    if (!record) return 'Absent (0%)';
+                    const type = record.attendanceType || (record.status === 'Present' ? 'Full Day' : record.status === 'Half Day' ? 'Half Day' : 'Absent');
+                    const mult = record.daySalaryMultiplier !== undefined ? Number(record.daySalaryMultiplier) : (type === 'Full Day' || record.status === 'Present' ? 1.0 : type === 'Half Day' || record.status === 'Half Day' ? 0.5 : 0.0);
+                    if (mult === 1.0 || type === 'Full Day' || record.status === 'Present') return 'Full Day (100%)';
+                    if (mult === 0.5 || type === 'Half Day' || record.status === 'Half Day') return 'Half Day (50%)';
+                    return 'Absent (0%)';
                 },
 
                 getStaffSalaryCalculationDisplay(username, dateStr) {

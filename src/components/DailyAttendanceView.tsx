@@ -5,6 +5,7 @@ import {
   saveActiveLocalSession,
   clearActiveLocalSession,
   formatISTTime,
+  formatDurationDisplay,
   getLiveTimerDetails,
   syncPunchInToCloud,
   syncPunchOutToCloud,
@@ -255,10 +256,10 @@ export const DailyAttendanceView: React.FC = () => {
             <thead className="bg-slate-50/80 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-200/60">
               <tr>
                 <th className="py-2.5 px-4">कर्मचारी</th>
-                <th className="py-2.5 px-4">पंच इन (वेळ)</th>
-                <th className="py-2.5 px-4">पंच आऊट (वेळ)</th>
-                <th className="py-2.5 px-4">एकूण तास</th>
-                <th className="py-2.5 px-4">हजेरी स्थिती</th>
+                <th className="py-2.5 px-4">पंच-इन वेळ (Punch-In Time)</th>
+                <th className="py-2.5 px-4">पंच-आऊट वेळ (Punch-Out Time)</th>
+                <th className="py-2.5 px-4">कामाचे तास (Duration)</th>
+                <th className="py-2.5 px-4">हजेरी स्थिती व पगार (Status & Wage)</th>
                 <th className="py-2.5 px-4">पगार गणना</th>
               </tr>
             </thead>
@@ -275,16 +276,22 @@ export const DailyAttendanceView: React.FC = () => {
                   const outTime = r.punch_out
                     ? formatISTTime(r.punch_out)
                     : r.punch_in
-                    ? '🟢 चालू आहे'
+                    ? '🟢 काम चालू आहे'
                     : '—';
-                  const hours = Number(r.total_hours || 0);
+                  const durationDisplay = formatDurationDisplay(r.punch_in, r.punch_out);
+                  const wageStatusText =
+                    r.attendance_type === 'Full Day' || r.day_salary_multiplier === 1
+                      ? 'Full Day (100%)'
+                      : r.attendance_type === 'Half Day' || r.day_salary_multiplier === 0.5
+                      ? 'Half Day (50%)'
+                      : 'Absent (0%)';
 
                   return (
                     <tr key={r.id} className="hover:bg-slate-50/60 transition">
                       <td className="py-3 px-4 font-bold text-slate-900">{r.staff_name}</td>
                       <td className="py-3 px-4 font-mono font-semibold">{inTime}</td>
                       <td className="py-3 px-4 font-mono font-semibold">{outTime}</td>
-                      <td className="py-3 px-4 font-mono font-bold text-slate-900">{hours.toFixed(2)} hrs</td>
+                      <td className="py-3 px-4 font-mono font-bold text-slate-900">{durationDisplay}</td>
                       <td className="py-3 px-4">
                         <span
                           className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${
@@ -295,15 +302,15 @@ export const DailyAttendanceView: React.FC = () => {
                               : 'bg-rose-50 text-rose-800 border-rose-200'
                           }`}
                         >
-                          {r.attendance_type}
+                          {wageStatusText}
                         </span>
                       </td>
                       <td className="py-3 px-4 font-mono font-bold text-slate-800">
                         {r.day_salary_multiplier === 1
-                          ? '१००% (Full)'
+                          ? '१००% (Full Day)'
                           : r.day_salary_multiplier === 0.5
-                          ? '५०% (Half)'
-                          : '०% (None)'}
+                          ? '५०% (Half Day)'
+                          : '०% (Absent / None)'}
                       </td>
                     </tr>
                   );

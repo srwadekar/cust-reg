@@ -9,6 +9,9 @@ interface NavbarProps {
   onNewCustomerLog?: () => void;
   isPunchedIn: boolean;
   onTogglePunch: () => void;
+  punchInTime?: string;
+  lastPunchOutTime?: string;
+  workedHoursToday?: number;
   activeWorkDuration?: string;
   operatorName?: string;
   role?: string;
@@ -24,6 +27,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNewCustomerLog,
   isPunchedIn,
   onTogglePunch,
+  punchInTime,
+  lastPunchOutTime,
+  workedHoursToday = 0,
   activeWorkDuration,
   operatorName = 'Sagar Wadekar',
   role = 'Operator',
@@ -61,23 +67,31 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* RESTORED PUNCH BUTTON */}
+            {/* RESTORED PUNCH BUTTON WITH LIVE INDICATOR & TIMESTAMPS */}
             <button
               type="button"
               onClick={onTogglePunch}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer ${
                 isPunchedIn
-                  ? 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 animate-pulse'
+                  ? 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100'
                   : 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100'
               }`}
+              title={isPunchedIn ? 'Click to Punch Out' : 'Click to Punch In'}
             >
               <span>{isPunchedIn ? '🛑' : '⏱️'}</span>
               <span>{isPunchedIn ? 'Punch Out' : 'Punch In'}</span>
-              {isPunchedIn && activeWorkDuration && (
-                <span className="hidden sm:inline-block font-mono text-[10px] bg-rose-200/60 text-rose-900 px-1.5 py-0.2 rounded-md ml-0.5">
-                  {activeWorkDuration}
+              {isPunchedIn ? (
+                <span className="inline-flex items-center gap-1 font-mono text-[10px] bg-rose-200/70 text-rose-950 px-2 py-0.5 rounded-md ml-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping" />
+                  <span>
+                    In: {punchInTime || '—'} (Active: {activeWorkDuration || '0m'})
+                  </span>
                 </span>
-              )}
+              ) : lastPunchOutTime ? (
+                <span className="hidden sm:inline-block font-mono text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-md ml-1">
+                  Last Out: {lastPunchOutTime} (Worked: {workedHoursToday.toFixed(2)} hrs)
+                </span>
+              ) : null}
             </button>
 
             {/* NEW LOG BUTTON */}
