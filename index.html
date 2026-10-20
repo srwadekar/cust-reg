@@ -171,16 +171,16 @@
     <!-- ==================== 3. MAIN DASHBOARD VIEW ==================== -->
     <div x-show="isSupabaseConfigured && isAuthenticated" class="min-h-screen flex flex-col flex-1">
         
-        <!-- Top Application Sticky Header (Executive-Grade SaaS Navbar) -->
-        <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs no-print">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16 gap-3">
-                    <!-- Brand & Live Indicators -->
-                    <div class="flex items-center gap-3 shrink-0">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-900 to-indigo-800 flex items-center justify-center text-white font-black text-lg shadow-xs cursor-pointer"
-                             @click="activeTab = 'settings'; openModal('logoSettings')" title="Shop Settings / Logo">
+        <!-- Top Application Sticky Header (Executive-Grade SaaS Two-Tier Header) -->
+        <header class="sticky top-0 z-40 bg-white border-b border-slate-200/80 shadow-2xs no-print">
+            <!-- TIER 1: BRAND + QUICK ACTIONS + OPERATOR PROFILE -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-100">
+                <div class="flex items-center justify-between h-14">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-900 to-indigo-800 flex items-center justify-center text-white font-black text-base shadow-xs cursor-pointer"
+                             @click="activeTab = 'admin'; openModal('logoSettings')" title="Shop Settings / Logo">
                             <template x-if="customLogoUrl">
-                                <img :src="customLogoUrl" alt="Logo" class="w-8 h-8 object-contain rounded-lg">
+                                <img :src="customLogoUrl" alt="Logo" class="w-7 h-7 object-contain rounded-lg">
                             </template>
                             <template x-if="!customLogoUrl">
                                 <span>S</span>
@@ -188,125 +188,142 @@
                         </div>
                         <div>
                             <div class="flex items-center gap-2">
-                                <h1 class="text-sm font-bold text-slate-900 tracking-tight">Suravi Cyber Cafe</h1>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
-                                    Live System
+                                <span class="font-extrabold text-sm text-slate-900 tracking-tight">
+                                    Suravi Cyber Cafe
+                                </span>
+                                <span class="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
+                                    Live
                                 </span>
                             </div>
-                            <p class="text-[11px] text-slate-500 font-medium">Nampur • Enterprise Management</p>
+                            <p class="text-[10px] text-slate-400 font-medium leading-none">Nampur • Center Operations</p>
                         </div>
                     </div>
 
-                    <!-- Navigation Pill Menu -->
-                    <nav class="hidden md:flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
-                        <button @click="activeTab = 'ledger'"
-                            :class="activeTab === 'ledger' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'"
-                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
-                            <span>📋</span>
-                            <span>Operations Ledger</span>
-                            <span class="bg-indigo-100 text-indigo-700 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold" x-text="logs.length"></span>
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <button
+                            type="button"
+                            @click="currentUser && myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? punchOutStaff() : punchInStaff()"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100 transition shadow-2xs cursor-pointer"
+                        >
+                            <span>⏱️</span>
+                            <span class="hidden sm:inline" x-text="currentUser && myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime ? 'Punch Out' : 'Punch In'">Punch In</span>
                         </button>
 
-                        <button @click="activeTab = 'tasks'"
-                            :class="activeTab === 'tasks' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'"
-                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
-                            <span>⚡</span>
-                            <span>Task Dispatch</span>
-                            <span class="bg-amber-100 text-amber-700 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold" x-text="allServiceTasks.filter(t => t.status !== 'Completed').length"></span>
+                        <button
+                            type="button"
+                            @click="openModal('customer')"
+                            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-black text-white shadow-2xs transition cursor-pointer"
+                        >
+                            <span>➕</span>
+                            <span class="hidden sm:inline">New Customer Log</span>
+                            <span class="sm:hidden">New Log</span>
                         </button>
 
-                        <button @click="activeTab = 'payroll'"
-                            :class="activeTab === 'payroll' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'"
-                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
-                            <span>💰</span>
-                            <span>Commission & Payroll</span>
-                        </button>
-
-                        <button @click="activeTab = 'daily'"
-                            :class="activeTab === 'daily' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'"
-                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
-                            <span>🕒</span>
-                            <span>Attendance</span>
-                        </button>
-
-                        <button @click="activeTab = 'grid'"
-                            :class="activeTab === 'grid' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'"
-                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
-                            <span>📅</span>
-                            <span>Monthly</span>
-                        </button>
-
-                        <button @click="activeTab = 'settings'"
-                            :class="activeTab === 'settings' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'"
-                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
-                            <span>⚙️</span>
-                            <span>Admin</span>
-                        </button>
-                    </nav>
-
-                    <!-- System Status Controls & Profile -->
-                    <div class="flex items-center gap-2 sm:gap-2.5">
-                        <!-- Cloud Sync Status Pill -->
-                        <div class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            Synced Cloud
-                        </div>
-
-                        <!-- Daily Punch In/Out for Associates -->
-                        <template x-if="currentUser && currentUser.role !== 'admin' && currentUser.username !== 'sagar'">
-                            <div class="flex items-center gap-1">
-                                <template x-if="!myTodayPunchRecord || !myTodayPunchRecord.punchInTime">
-                                    <button @click="punchInStaff()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[11px] shadow-xs transition flex items-center gap-1 animate-pulse cursor-pointer">
-                                        <i class="fa-solid fa-fingerprint"></i> <span>Punch In</span>
-                                    </button>
-                                </template>
-                                <template x-if="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime">
-                                    <button @click="punchOutStaff()" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-[11px] shadow-xs transition flex items-center gap-1 cursor-pointer">
-                                        <i class="fa-solid fa-right-from-bracket"></i> <span>Punch Out</span>
-                                    </button>
-                                </template>
+                        <template x-if="pendingSyncCount > 0">
+                            <button
+                                type="button"
+                                @click="resetSupabaseConfig"
+                                title="Click to reset stalled sync items"
+                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition shadow-2xs cursor-pointer"
+                            >
+                                <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                                <span x-text="'Syncing (' + pendingSyncCount + ') ✕'"></span>
+                            </button>
+                        </template>
+                        <template x-if="!pendingSyncCount || pendingSyncCount === 0">
+                            <div class="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-50 text-slate-600 border border-slate-200">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                Cloud Synced
                             </div>
                         </template>
 
-                        <!-- Quick New Customer Log Button -->
-                        <button @click="openModal('customer')" class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs shadow-xs transition cursor-pointer">
-                            <i class="fa-solid fa-plus text-xs"></i>
-                            <span class="hidden sm:inline">New Log</span>
-                            <span class="text-[9px] bg-indigo-800 px-1 py-0.2 rounded font-mono hidden lg:inline">[Alt+N]</span>
-                        </button>
-
-                        <!-- DB Reconfigure Trigger -->
-                        <button @click="resetSupabaseConfig" class="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200/80 transition cursor-pointer" title="Database Settings">
+                        <button
+                            type="button"
+                            @click="resetSupabaseConfig"
+                            class="p-1.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition cursor-pointer"
+                            title="Database Settings"
+                        >
                             ⚡
                         </button>
 
-                        <div class="h-6 w-px bg-slate-200 mx-0.5"></div>
+                        <div class="h-5 w-px bg-slate-200"></div>
 
-                        <!-- Operator Avatar & Logout -->
-                        <div class="flex items-center gap-2 pl-1">
-                            <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 select-none">
-                                <span x-text="currentUser ? (currentUser.name || currentUser.username).charAt(0).toUpperCase() : 'S'"></span>
+                        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-xl px-2.5 py-1">
+                            <div class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-black uppercase">
+                                <span x-text="currentUser ? (currentUser.name || currentUser.username).slice(0, 2).toUpperCase() : 'SW'"></span>
                             </div>
-                            <div class="hidden lg:block text-left">
-                                <div class="text-xs font-bold text-slate-800 leading-none truncate max-w-[100px]" x-text="currentUser ? currentUser.name : 'Operator'"></div>
-                                <div class="text-[10px] text-slate-400 font-medium leading-tight mt-0.5 capitalize" x-text="currentUser ? currentUser.role : 'Staff'"></div>
+                            <div class="text-left hidden sm:block">
+                                <div class="text-xs font-bold text-slate-900 leading-none truncate max-w-[120px]" x-text="currentUser ? currentUser.name : 'Sagar Wadekar'"></div>
+                                <div class="text-[9px] text-slate-400 font-semibold capitalize mt-0.5" x-text="currentUser ? currentUser.role : 'Operator'"></div>
                             </div>
-                            <button @click="logout" title="Logout" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer">
-                                <i class="fa-solid fa-power-off text-xs"></i>
+                            <button
+                                type="button"
+                                @click="logout"
+                                title="Logout"
+                                class="text-[11px] text-slate-400 hover:text-rose-600 ml-1 transition cursor-pointer"
+                            >
+                                🚪
                             </button>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Mobile Responsive Tab Pill Row -->
-                <div class="md:hidden flex items-center gap-1 overflow-x-auto py-2 border-t border-slate-100 no-scrollbar">
-                    <button @click="activeTab = 'ledger'" :class="activeTab === 'ledger' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">📋 Ledger</button>
-                    <button @click="activeTab = 'tasks'" :class="activeTab === 'tasks' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">⚡ Tasks</button>
-                    <button @click="activeTab = 'payroll'" :class="activeTab === 'payroll' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">💰 Payroll</button>
-                    <button @click="activeTab = 'daily'" :class="activeTab === 'daily' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">🕒 Attendance</button>
-                    <button @click="activeTab = 'grid'" :class="activeTab === 'grid' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">📅 Grid</button>
-                    <button @click="activeTab = 'settings'" :class="activeTab === 'settings' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">⚙️ Settings</button>
+            <!-- TIER 2: SECOND ROW SUB-NAVIGATION -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center h-11 overflow-x-auto no-scrollbar gap-1 py-1">
+                    <button
+                        type="button"
+                        @click="activeTab = 'ledger'"
+                        :class="activeTab === 'ledger' ? 'bg-slate-900 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'"
+                        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
+                    >
+                        <span class="text-sm">📋</span>
+                        <span>Operations Ledger</span>
+                        <span :class="activeTab === 'ledger' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'" class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold" x-text="logs.length"></span>
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="activeTab = 'tasks'"
+                        :class="activeTab === 'tasks' ? 'bg-slate-900 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'"
+                        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
+                    >
+                        <span class="text-sm">⚡</span>
+                        <span>Task Dispatch</span>
+                        <span :class="activeTab === 'tasks' ? 'bg-amber-400 text-amber-950' : 'bg-amber-100 text-amber-800'" class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold" x-text="allServiceTasks.filter(t => t.status !== 'Completed').length"></span>
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="activeTab = 'attendance_hub'"
+                        :class="activeTab === 'attendance_hub' || activeTab === 'daily' || activeTab === 'grid' ? 'bg-slate-900 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'"
+                        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
+                    >
+                        <span class="text-sm">👥</span>
+                        <span>Attendance & Payroll</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="activeTab = 'commissions'"
+                        :class="activeTab === 'commissions' || activeTab === 'payroll' ? 'bg-slate-900 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'"
+                        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
+                    >
+                        <span class="text-sm">💰</span>
+                        <span>Commission & Ledger</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="activeTab = 'admin'"
+                        :class="activeTab === 'admin' || activeTab === 'settings' ? 'bg-slate-900 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'"
+                        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
+                    >
+                        <span class="text-sm">⚙️</span>
+                        <span>Master Admin</span>
+                    </button>
                 </div>
             </div>
         </header>
@@ -327,10 +344,6 @@
                     <div class="flex items-center gap-2">
                         <button @click="openModal('customer')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs">
                             <i class="fa-solid fa-plus text-xs"></i> <span>+ नवीन ग्राहक व सेवा नोंद (New Entry)</span>
-                        </button>
-                        <button @click="sendBulkWhatsAppMarathi()" :disabled="selectedLogIds.length === 0" 
-                            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg shadow transition flex items-center gap-1.5 text-xs">
-                            <i class="fa-brands fa-whatsapp text-sm"></i> Send Bulk Marathi WhatsApp (<span x-text="selectedLogIds.length"></span> Selected)
                         </button>
                     </div>
                 </div>
@@ -661,76 +674,74 @@
                 </div>
 
                 <!-- Top Summary Cards (Streamlined: Total Earned, Pending Payout, Today's Earned) -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                     <!-- Card 1: Total Earned (एकूण कमिशन) -->
-                    <div class="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition duration-150 flex flex-col justify-between">
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition duration-150 flex flex-col justify-between overflow-visible">
                         <div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            <div class="flex items-start justify-between gap-2">
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">
                                     Total Earned (एकूण कमिशन)
                                 </span>
-                                <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
+                                <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm shrink-0">
                                     <i class="fa-solid fa-trophy"></i>
                                 </span>
                             </div>
-                            <div class="text-2xl font-extrabold text-slate-900 mt-1.5 font-mono tracking-tight" x-text="'₹ ' + myTotalAccumulatedCommission">
+                            <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2 font-mono tracking-tight break-words" x-text="'₹ ' + myTotalAccumulatedCommission">
                                 ₹ 0.00
                             </div>
                         </div>
-                        <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 gap-2 flex-wrap">
                             <span>एकूण झालेली कमाई</span>
-                            <span class="text-[10px] text-slate-500 font-medium font-mono" x-show="myPaidCommission > 0" x-text="'वितरित: ₹ ' + myPaidCommission"></span>
+                            <span class="text-[11px] text-slate-600 font-medium font-mono bg-slate-50 px-2 py-0.5 rounded border border-slate-200" x-show="myPaidCommission > 0" x-text="'वितरित: ₹ ' + myPaidCommission"></span>
                         </div>
                     </div>
 
                     <!-- Card 2: Pending Payout (द्यायचे बाकी कमिशन) -->
-                    <div class="bg-white p-4.5 rounded-2xl border border-amber-200/80 shadow-2xs hover:shadow-xs transition duration-150 flex flex-col justify-between relative overflow-hidden">
-                        <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200/90 shadow-2xs hover:shadow-xs transition duration-150 flex flex-col justify-between overflow-visible relative border-t-4 border-t-amber-500">
                         <div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            <div class="flex items-start justify-between gap-2">
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">
                                     Pending Payout (द्यायचे बाकी कमिशन)
                                 </span>
                                 <template x-if="pendingCommissionPayout > 0 && currentUser && (currentUser.role === 'admin' || currentUser.username === 'sagar')">
                                     <button
                                         type="button"
                                         @click="openCommissionPayoutModal(currentUser)"
-                                        class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[10px] font-bold transition shadow-2xs cursor-pointer inline-flex items-center gap-1"
+                                        class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer inline-flex items-center gap-1 shrink-0"
                                     >
-                                        <i class="fa-solid fa-hand-holding-dollar text-[9px]"></i> Pay Now
+                                        <i class="fa-solid fa-hand-holding-dollar text-[10px]"></i> Pay Now
                                     </button>
                                 </template>
                             </div>
-                            <div class="text-2xl font-extrabold text-amber-600 mt-1.5 font-mono tracking-tight" x-text="'₹ ' + pendingCommissionPayout">
+                            <div class="text-2xl sm:text-3xl font-extrabold text-amber-600 mt-2 font-mono tracking-tight break-words" x-text="'₹ ' + pendingCommissionPayout">
                                 ₹ 0.00
                             </div>
                         </div>
-                        <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 gap-2 flex-wrap">
                             <span>देय बाकी कमिशन</span>
-                            <span class="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.2 rounded border border-amber-200 font-semibold">Decoupled</span>
+                            <span class="text-[11px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-200 font-semibold">Decoupled</span>
                         </div>
                     </div>
 
                     <!-- Card 3: Today's Earned (आजचे कमिशन) -->
-                    <div class="bg-white p-4.5 rounded-2xl border border-indigo-200/80 shadow-2xs hover:shadow-xs transition duration-150 flex flex-col justify-between relative overflow-hidden">
-                        <div class="absolute top-0 left-0 right-0 h-1 bg-indigo-600"></div>
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-indigo-200/90 shadow-2xs hover:shadow-xs transition duration-150 flex flex-col justify-between overflow-visible relative border-t-4 border-t-indigo-600 sm:col-span-2 lg:col-span-1">
                         <div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            <div class="flex items-start justify-between gap-2">
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">
                                     Today's Earned (आजचे कमिशन)
                                 </span>
-                                <div class="flex items-center gap-1.5">
+                                <div class="flex items-center gap-1.5 shrink-0">
                                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Live Today Tracker"></span>
-                                    <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200 uppercase">Today</span>
+                                    <span class="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 uppercase">Today</span>
                                 </div>
                             </div>
-                            <div class="text-2xl font-extrabold text-indigo-700 mt-1.5 font-mono tracking-tight" x-text="'₹ ' + todayEarnedCommission">
+                            <div class="text-2xl sm:text-3xl font-extrabold text-indigo-700 mt-2 font-mono tracking-tight break-words" x-text="'₹ ' + todayEarnedCommission">
                                 ₹ 0.00
                             </div>
                         </div>
-                        <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 gap-2 flex-wrap">
                             <span>आज पूर्ण / डिस्पॅच कामे</span>
-                            <span class="text-[10px] text-indigo-600 font-semibold">Live Split</span>
+                            <span class="text-[11px] text-indigo-600 font-semibold bg-indigo-50/70 px-2 py-0.5 rounded">Live Split</span>
                         </div>
                     </div>
                 </div>
@@ -998,9 +1009,41 @@
             </div>
 
             <!-- ============================================================== -->
-            <!-- TAB 3: DAILY ROLL-CALL & PUNCH-IN/OUT AUTOMATION               -->
+            <!-- TAB 3: CONSOLIDATED ATTENDANCE & PAYROLL HUB (हजेरी व वेतन हब) -->
             <!-- ============================================================== -->
-            <div x-show="activeTab === 'daily'" class="space-y-4">
+            <div x-show="activeTab === 'attendance_hub' || activeTab === 'daily' || activeTab === 'grid'" class="space-y-4">
+                
+                <!-- Internal Segmented Sub-Tabs / Pills -->
+                <div class="bg-white p-2 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="inline-flex p-1 bg-slate-100 rounded-xl gap-1 w-full sm:w-auto">
+                        <button 
+                            type="button"
+                            @click="attendanceSubTab = 'daily'"
+                            :class="attendanceSubTab === 'daily' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 font-semibold'"
+                            class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs transition-all cursor-pointer flex-1 sm:flex-initial"
+                        >
+                            <span>📅</span>
+                            <span>Daily Attendance Log</span>
+                        </button>
+                        <button 
+                            type="button"
+                            @click="attendanceSubTab = 'monthly'"
+                            :class="attendanceSubTab === 'monthly' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 font-semibold'"
+                            class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs transition-all cursor-pointer flex-1 sm:flex-initial"
+                        >
+                            <span>📊</span>
+                            <span>Monthly Attendance & Payroll Grid</span>
+                        </button>
+                    </div>
+
+                    <div class="text-[11px] text-slate-500 font-medium px-2 text-center sm:text-right">
+                        <span x-show="attendanceSubTab === 'daily'">दैनिक हजेरी, पंच-इन / आऊट आणि हजेरी नोंदी</span>
+                        <span x-show="attendanceSubTab === 'monthly'">मासिक ३१-दिवसीय ग्रिड, सुट्ट्या आणि वेतन कॅल्क्युलेशन</span>
+                    </div>
+                </div>
+
+                <!-- SUB-TAB 1: DAILY ATTENDANCE LOG -->
+                <div x-show="attendanceSubTab === 'daily'" class="space-y-4">
                 
                 <!-- Roll Call Header & Date Selector -->
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -1172,12 +1215,10 @@
                     </template>
                 </div>
 
-            </div>
+                </div>
 
-            <!-- ============================================================== -->
-            <!-- TAB 4: MONTHLY GRID SHEET (मासिक हजेरी तक्ता)                  -->
-            <!-- ============================================================== -->
-            <div x-show="activeTab === 'grid'" class="space-y-4">
+                <!-- SUB-TAB 2: MONTHLY ATTENDANCE & PAYROLL GRID (मासिक हजेरी तक्ता) -->
+                <div x-show="attendanceSubTab === 'monthly'" class="space-y-4">
                 
                 <!-- Month & Year Selector & Magic Tools -->
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -1356,65 +1397,72 @@
                     </div>
                 </div>
 
+                </div>
             </div>
 
             <!-- ============================================================== -->
-            <!-- TAB 5: PAYMENT LOG & PAYROLL (वेतन व देयके)                     -->
+            <!-- TAB 4: COMMISSION & LEDGER (कमिशन व वेतन खतावणी)                  -->
             <!-- ============================================================== -->
-            <div x-show="activeTab === 'payroll'" class="space-y-4">
+            <div x-show="activeTab === 'commissions' || activeTab === 'payroll'" class="space-y-4">
                 
                 <!-- 3 KPI Summary Cards: Scoped by Role -->
                 <!-- Admin View: Store-Wide Total Compensation & Disbursals -->
                 <template x-if="currentUser && (currentUser.role === 'admin' || currentUser.username === 'sagar')">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div class="bg-gradient-to-br from-indigo-700 to-indigo-900 text-white p-4 rounded-xl shadow-md">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total Expected Payroll</p>
-                            <h3 class="text-2xl font-extrabold mt-1" x-text="'₹ ' + totalShopMonthlyPayrollGross">₹ 0</h3>
-                            <p class="text-[11px] text-indigo-200 mt-1">Base Attendance + Net Commissions</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                        <div class="bg-gradient-to-br from-indigo-700 to-indigo-900 text-white p-4 sm:p-5 rounded-2xl shadow-md overflow-visible flex flex-col justify-between">
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total Expected Payroll</p>
+                                <h3 class="text-2xl sm:text-3xl font-extrabold mt-2 font-mono tracking-tight break-words" x-text="'₹ ' + totalShopMonthlyPayrollGross">₹ 0</h3>
+                            </div>
+                            <p class="text-xs text-indigo-200 mt-4 pt-3 border-t border-indigo-600/50">Base Attendance + Net Commissions</p>
                         </div>
 
-                        <div class="bg-gradient-to-br from-emerald-600 to-emerald-800 text-white p-4 rounded-xl shadow-md">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-200">Total Paid / Advances</p>
-                            <h3 class="text-2xl font-extrabold mt-1" x-text="'₹ ' + totalShopMonthlyPaid">₹ 0</h3>
-                            <p class="text-[11px] text-emerald-200 mt-1">Disbursed in selected period</p>
+                        <div class="bg-gradient-to-br from-emerald-600 to-emerald-800 text-white p-4 sm:p-5 rounded-2xl shadow-md overflow-visible flex flex-col justify-between">
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-200">Total Paid / Advances</p>
+                                <h3 class="text-2xl sm:text-3xl font-extrabold mt-2 font-mono tracking-tight break-words" x-text="'₹ ' + totalShopMonthlyPaid">₹ 0</h3>
+                            </div>
+                            <p class="text-xs text-emerald-200 mt-4 pt-3 border-t border-emerald-600/50">Disbursed in selected period</p>
                         </div>
 
-                        <div class="bg-gradient-to-br from-rose-600 to-rose-800 text-white p-4 rounded-xl shadow-md">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-rose-200">Net Outstanding Balance</p>
-                            <h3 class="text-2xl font-extrabold mt-1" x-text="'₹ ' + totalShopMonthlyBalanceDue">₹ 0</h3>
-                            <p class="text-[11px] text-rose-200 mt-1">Remaining dues payable</p>
+                        <div class="bg-gradient-to-br from-rose-600 to-rose-800 text-white p-4 sm:p-5 rounded-2xl shadow-md overflow-visible flex flex-col justify-between sm:col-span-2 lg:col-span-1">
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-rose-200">Net Outstanding Balance</p>
+                                <h3 class="text-2xl sm:text-3xl font-extrabold mt-2 font-mono tracking-tight break-words" x-text="'₹ ' + totalShopMonthlyBalanceDue">₹ 0</h3>
+                            </div>
+                            <p class="text-xs text-rose-200 mt-4 pt-3 border-t border-rose-600/50">Remaining dues payable</p>
                         </div>
                     </div>
                 </template>
 
                 <!-- Associate View: Personal Scoped Compensation Figures Only (Decoupled Salary vs Commission) -->
                 <template x-if="currentUser && currentUser.role !== 'admin' && currentUser.username !== 'sagar'">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div class="bg-gradient-to-br from-indigo-700 to-indigo-900 text-white p-4 rounded-xl shadow-md flex flex-col justify-between">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                        <div class="bg-gradient-to-br from-indigo-700 to-indigo-900 text-white p-4 sm:p-5 rounded-2xl shadow-md overflow-visible flex flex-col justify-between">
                             <div>
                                 <p class="text-[10px] font-bold uppercase tracking-wider text-indigo-200">हजेरी मूळ वेतन बाकी (Base Salary Due)</p>
-                                <h3 class="text-2xl font-extrabold mt-1 font-mono tracking-tight" x-text="'₹ ' + getAssociateBaseSalaryDue(currentUser)">₹ 0</h3>
+                                <h3 class="text-2xl sm:text-3xl font-extrabold mt-2 font-mono tracking-tight break-words" x-text="'₹ ' + getAssociateBaseSalaryDue(currentUser)">₹ 0</h3>
                             </div>
-                            <p class="text-[11px] text-indigo-200 mt-2" x-text="'कमाई: ₹ ' + getAssociateBaseSalaryEarned(currentUser) + ' | उचल: ₹ ' + getAssociateBaseSalaryPaid(currentUser.username)"></p>
+                            <p class="text-xs text-indigo-200 mt-4 pt-3 border-t border-indigo-600/50 break-words" x-text="'कमाई: ₹ ' + getAssociateBaseSalaryEarned(currentUser) + ' | उचल: ₹ ' + getAssociateBaseSalaryPaid(currentUser.username)"></p>
                         </div>
 
-                        <div class="bg-gradient-to-br from-rose-600 to-rose-800 text-white p-4 rounded-xl shadow-md flex flex-col justify-between">
+                        <div class="bg-gradient-to-br from-rose-600 to-rose-800 text-white p-4 sm:p-5 rounded-2xl shadow-md overflow-visible flex flex-col justify-between">
                             <div>
-                                <div class="flex items-center justify-between">
+                                <div class="flex items-center justify-between gap-2">
                                     <p class="text-[10px] font-bold uppercase tracking-wider text-rose-200">प्रलंबित कमिशन बाकी (Pending Commission)</p>
-                                    <span class="text-[9px] bg-rose-950 text-rose-300 font-bold px-1.5 py-0.2 rounded uppercase">Isolated</span>
+                                    <span class="text-[9px] bg-rose-950 text-rose-300 font-bold px-1.5 py-0.2 rounded uppercase shrink-0">Isolated</span>
                                 </div>
-                                <h3 class="text-2xl font-extrabold mt-1 font-mono tracking-tight" x-text="'₹ ' + getAssociatePendingCommission(currentUser.username)">₹ 0</h3>
+                                <h3 class="text-2xl sm:text-3xl font-extrabold mt-2 font-mono tracking-tight break-words" x-text="'₹ ' + getAssociatePendingCommission(currentUser.username)">₹ 0</h3>
                             </div>
-                            <p class="text-[11px] text-rose-200 mt-2" x-text="'एकूण: ₹ ' + getAssociateAccumulatedCommission(currentUser.username) + ' | वाटप: ₹ ' + getAssociatePaidCommission(currentUser.username)"></p>
+                            <p class="text-xs text-rose-200 mt-4 pt-3 border-t border-rose-600/50 break-words" x-text="'एकूण: ₹ ' + getAssociateAccumulatedCommission(currentUser.username) + ' | वाटप: ₹ ' + getAssociatePaidCommission(currentUser.username)"></p>
                         </div>
 
-                        <div class="bg-gradient-to-br from-emerald-600 to-emerald-800 text-white p-4 rounded-xl shadow-md flex flex-col justify-between">
+                        <div class="bg-gradient-to-br from-emerald-600 to-emerald-800 text-white p-4 sm:p-5 rounded-2xl shadow-md overflow-visible flex flex-col justify-between sm:col-span-2 lg:col-span-1">
                             <div>
                                 <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-200">एकूण निव्वळ येणे बाकी (Total Net Due)</p>
-                                <h3 class="text-2xl font-extrabold mt-1 font-mono tracking-tight" x-text="'₹ ' + (getAssociateBaseSalaryDue(currentUser) + getAssociatePendingCommission(currentUser.username))">₹ 0</h3>
+                                <h3 class="text-2xl sm:text-3xl font-extrabold mt-2 font-mono tracking-tight break-words" x-text="'₹ ' + (getAssociateBaseSalaryDue(currentUser) + getAssociatePendingCommission(currentUser.username))">₹ 0</h3>
                             </div>
-                            <p class="text-[11px] text-emerald-200 mt-2">वेतन बाकी + कमिशन बाकी (Decoupled Balance)</p>
+                            <p class="text-xs text-emerald-200 mt-4 pt-3 border-t border-emerald-600/50">वेतन बाकी + कमिशन बाकी (Decoupled Balance)</p>
                         </div>
                     </div>
                 </template>
@@ -1782,9 +1830,9 @@
             </div>
 
             <!-- ============================================================== -->
-            <!-- TAB 6: CENTRALIZED SETTINGS & CONFIGURATION HUB               -->
+            <!-- TAB 5: MASTER ADMIN & SYSTEM SETTINGS (प्रशासक व प्रणाली सेटिंग्ज) -->
             <!-- ============================================================== -->
-            <div x-show="activeTab === 'settings'" class="space-y-5">
+            <div x-show="activeTab === 'admin' || activeTab === 'settings'" class="space-y-5">
                 
                 <!-- Settings Header Banner -->
                 <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 text-white rounded-2xl p-5 shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -3248,8 +3296,9 @@
                 currentTime: '',
                 currentDate: '',
 
-                // Active Workspace Tab: 'ledger' | 'tasks' | 'daily' | 'grid' | 'payroll'
+                // Active Workspace Tab: 'ledger' | 'tasks' | 'attendance_hub' | 'commissions' | 'admin'
                 activeTab: 'ledger',
+                attendanceSubTab: 'daily', // 'daily' | 'monthly'
 
                 // WhatsApp Template
                 waTemplate: DEFAULT_WA_TEMPLATE,

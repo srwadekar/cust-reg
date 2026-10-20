@@ -4,11 +4,13 @@ export interface NavbarProps {
   currentTab: string;
   setCurrentTab: (tab: string) => void;
   pendingSyncCount: number;
-  activeServicesCount?: number;
   onOpenDbConfig: () => void;
   onForceClearSync: () => void;
+  onNewCustomerLog?: () => void;
+  onPunchIn?: () => void;
   operatorName?: string;
   role?: string;
+  onLogout?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -17,93 +19,134 @@ export const Navbar: React.FC<NavbarProps> = ({
   pendingSyncCount,
   onOpenDbConfig,
   onForceClearSync,
-  operatorName = 'Sagar',
-  role = 'Admin',
+  onNewCustomerLog,
+  onPunchIn,
+  operatorName = 'Sagar Wadekar',
+  role = 'Operator',
+  onLogout,
 }) => {
-  const tabs = [
+  const navigationTabs = [
     { id: 'ledger', label: 'Operations Ledger', icon: '📋' },
     { id: 'tasks', label: 'Task Dispatch', icon: '⚡' },
-    { id: 'commissions', label: 'Commission & Payroll', icon: '💰' },
-    { id: 'admin', label: 'Master Catalog & Admin', icon: '⚙️' },
+    { id: 'attendance_hub', label: 'Attendance & Payroll', icon: '👥' },
+    { id: 'commissions', label: 'Commission & Ledger', icon: '💰' },
+    { id: 'admin', label: 'Master Admin', icon: '⚙️' },
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Brand & Live Indicators */}
+    <header className="sticky top-0 z-40 bg-white border-b border-slate-200/80 shadow-2xs">
+      {/* TIER 1: BRAND + QUICK ACTIONS + OPERATOR PROFILE */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-100">
+        <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-900 to-indigo-800 flex items-center justify-center text-white font-black text-lg shadow-xs">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-900 to-indigo-800 flex items-center justify-center text-white font-black text-base shadow-xs">
               S
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-sm font-bold text-slate-900 tracking-tight">Suravi Cyber Cafe</h1>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" />
-                  Live System
+                <span className="font-extrabold text-sm text-slate-900 tracking-tight">
+                  Suravi Cyber Cafe
+                </span>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse" />
+                  Live
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-medium">Nampur • Enterprise Management</p>
+              <p className="text-[10px] text-slate-400 font-medium leading-none">Nampur • Center Operations</p>
             </div>
           </div>
 
-          {/* Navigation Pill Menu */}
-          <nav className="hidden md:flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setCurrentTab(tab.id)}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  currentTab === tab.id
-                    ? 'bg-white text-slate-900 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-                }`}
-              >
-                <span>{tab.icon}</span>
-                {tab.label}
-              </button>
-            ))}
-          </nav>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={onPunchIn}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100 transition shadow-2xs cursor-pointer"
+            >
+              <span>⏱️</span>
+              <span className="hidden sm:inline">Punch In</span>
+            </button>
 
-          {/* System Status Controls & Profile */}
-          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={onNewCustomerLog}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-black text-white shadow-2xs transition cursor-pointer"
+            >
+              <span>➕</span>
+              <span>New Customer Log</span>
+            </button>
+
             {pendingSyncCount > 0 ? (
               <button
+                type="button"
                 onClick={onForceClearSync}
                 title="Click to reset stalled sync items"
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition shadow-2xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition shadow-2xs cursor-pointer"
               >
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
                 Syncing ({pendingSyncCount}) ✕
               </button>
             ) : (
-              <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+              <div className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-50 text-slate-600 border border-slate-200">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                Synced Cloud
+                Cloud Synced
               </div>
             )}
 
             <button
+              type="button"
               onClick={onOpenDbConfig}
-              className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200/80 transition cursor-pointer"
+              className="p-1.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition cursor-pointer"
               title="Database Settings"
             >
               ⚡
             </button>
 
-            <div className="h-6 w-px bg-slate-200 mx-0.5" />
+            <div className="h-5 w-px bg-slate-200" />
 
-            <div className="flex items-center gap-2 pl-1">
-              <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700">
-                {operatorName.charAt(0)}
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-xl px-2.5 py-1">
+              <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-black">
+                SW
               </div>
-              <div className="hidden lg:block text-left">
-                <div className="text-xs font-bold text-slate-800 leading-none">{operatorName}</div>
-                <div className="text-[10px] text-slate-400 font-medium leading-tight mt-0.5">{role}</div>
+              <div className="text-left hidden sm:block">
+                <div className="text-xs font-bold text-slate-900 leading-none">{operatorName}</div>
+                <div className="text-[9px] text-slate-400 font-semibold">{role}</div>
               </div>
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  title="Logout"
+                  className="text-[11px] text-slate-400 hover:text-rose-600 ml-1 transition"
+                >
+                  🚪
+                </button>
+              )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* TIER 2: SECOND ROW SUB-NAVIGATION */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center h-11 overflow-x-auto no-scrollbar gap-1 py-1">
+          {navigationTabs.map((tab) => {
+            const isActive = currentTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setCurrentTab(tab.id)}
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-slate-900 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+                }`}
+              >
+                <span className="text-sm">{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </header>
