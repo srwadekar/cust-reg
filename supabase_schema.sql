@@ -208,12 +208,17 @@ create table if not exists public.cafe_attendance (
 );
 
 -- जुन्या / विद्यमान टेबल्ससाठी सेफ कॉलम मायग्रेशन
+alter table if exists public.cafe_attendance add column if not exists staff_id text;
 alter table if exists public.cafe_attendance add column if not exists staff_name text;
+alter table if exists public.cafe_attendance add column if not exists date text;
+alter table if exists public.cafe_attendance add column if not exists punch_in timestamptz;
+alter table if exists public.cafe_attendance add column if not exists punch_out timestamptz;
 alter table if exists public.cafe_attendance add column if not exists total_hours numeric default 0;
 alter table if exists public.cafe_attendance add column if not exists attendance_type text default 'Absent';
 alter table if exists public.cafe_attendance add column if not exists day_salary_multiplier numeric default 0;
 alter table if exists public.cafe_attendance add column if not exists base_daily_salary numeric default 300;
 alter table if exists public.cafe_attendance add column if not exists auto_calculated boolean default false;
+alter table if exists public.cafe_attendance add column if not exists created_at timestamptz default now();
 
 -- attendance_logs टेबलसाठी देखील कॉलम सेफ ऍड करणे (Dual Compatibility)
 alter table if exists public.attendance_logs add column if not exists total_hours numeric default 0;
@@ -242,10 +247,10 @@ begin
       auto_calculated
     )
     select 
-      'att_' || target_date || '_' || p.id,
+      'att_' || to_char(target_date, 'YYYY-MM-DD') || '_' || p.id,
       p.id,
       coalesce(p.name, p.full_name, 'Staff Member'),
-      target_date,
+      to_char(target_date, 'YYYY-MM-DD'),
       null,
       null,
       0.00,
@@ -256,7 +261,7 @@ begin
     where (p.is_active = true or p.role in ('operator', 'staff', 'associate'))
       and not exists (
         select 1 from public.cafe_attendance a
-        where a.staff_id = p.id and a.date = target_date
+        where a.staff_id = p.id and a.date::text = to_char(target_date, 'YYYY-MM-DD')
       )
     on conflict (id) do nothing;
   end if;
@@ -276,10 +281,10 @@ begin
       auto_calculated
     )
     select 
-      'att_' || target_date || '_' || u.username,
+      'att_' || to_char(target_date, 'YYYY-MM-DD') || '_' || u.username,
       u.username,
       coalesce(u.name, u.username),
-      target_date,
+      to_char(target_date, 'YYYY-MM-DD'),
       null,
       null,
       0.00,
@@ -290,7 +295,7 @@ begin
     where u.role in ('operator', 'staff', 'associate') and u.username <> 'sagar'
       and not exists (
         select 1 from public.cafe_attendance a
-        where a.staff_id = u.username and a.date = target_date
+        where a.staff_id = u.username and a.date::text = to_char(target_date, 'YYYY-MM-DD')
       )
     on conflict (id) do nothing;
 

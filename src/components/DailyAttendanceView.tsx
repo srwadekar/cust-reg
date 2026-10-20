@@ -1,6 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { evaluateWorkingHours } from '../lib/attendanceEngine';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import {
+  getActiveLocalSession,
+  saveActiveLocalSession,
+  clearActiveLocalSession,
+  formatISTTime,
+  getLiveTimerDetails,
+  syncPunchInToCloud,
+  syncPunchOutToCloud,
+  PunchSession,
+} from '../lib/punchManager';
+import { evaluateWorkingHours } from '../lib/attendanceEngine';
 
 export interface AttendanceRecord {
   id: string;
@@ -17,61 +27,96 @@ export interface AttendanceRecord {
 
 export const DailyAttendanceView: React.FC = () => {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  const [activePunchIn, setActivePunchIn] = useState<string | null>(null);
+  const [activePunchIn, setActivePunchIn] = useState<string | null>(() => {
+    const local = getActiveLocalSession();
+    return local ? local.punchInISO : null;
+  });
   const [liveHours, setLiveHours] = useState<number>(0);
+  const [timerBanner, setTimerBanner] = useState<string>('');
+  const [liveSummary, setLiveSummary] = useState<string>('गणना चालू आहे');
   const [loading, setLoading] = useState<boolean>(false);
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  // Fetch today's records
-  const loadAttendance = async () => {
+  // Fetch today's records from cloud
+  const loadAttendance = useCallback(async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('cafe_attendance')
         .select('*')
         .eq('date', todayStr);
 
-      if (data && data.length > 0) {
+      if (!error && data && data.length > 0) {
         setRecords(data);
-        const myRecord = data.find((r: AttendanceRecord) => r.staff_name?.includes('Sagar') || r.staff_id === 'current_user' || r.staff_id === 'sagar_wadekar');
+        const myRecord = data.find(
+          (r: AttendanceRecord) =>
+            r.staff_name?.includes('Sagar') ||
+            r.staff_id === 'current_user' ||
+            r.staff_id === 'sagar_wadekar' ||
+            r.staff_id === 'sagar'
+        );
         if (myRecord && myRecord.punch_in && !myRecord.punch_out) {
           setActivePunchIn(myRecord.punch_in);
-        } else {
+          saveActiveLocalSession({
+            staffId: myRecord.staff_id || 'sagar_wadekar',
+            staffName: myRecord.staff_name || 'Sagar Wadekar',
+            date: todayStr,
+            punchInISO: myRecord.punch_in,
+          });
+        } else if (myRecord && myRecord.punch_out) {
           setActivePunchIn(null);
+          clearActiveLocalSession();
         }
       }
     } catch (err) {
       console.warn('[Attendance Load]:', err);
     }
-  };
+  }, [todayStr]);
 
   useEffect(() => {
     loadAttendance();
-  }, [todayStr]);
+  }, [loadAttendance]);
 
-  // Live timer for active punch-in
+  // Live timer for active punch-in (1-second tick)
   useEffect(() => {
-    if (!activePunchIn) return;
+    if (!activePunchIn) {
+      setLiveHours(0);
+      setTimerBanner('');
+      setLiveSummary('');
+      return;
+    }
 
-    const interval = setInterval(() => {
-      const evalData = evaluateWorkingHours(activePunchIn);
-      setLiveHours(evalData.totalHours);
-    }, 30000); // Check every 30 seconds
+    const updateTimer = () => {
+      const details = getLiveTimerDetails(activePunchIn);
+      setLiveHours(details.totalHours);
+      setTimerBanner(details.bannerText);
+      setLiveSummary(details.summaryMarathi);
+    };
 
-    const initial = evaluateWorkingHours(activePunchIn);
-    setLiveHours(initial.totalHours);
-
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, [activePunchIn]);
 
-  // Handle Punch In
+  // Handle Instant Optimistic Punch In
   const handlePunchIn = async () => {
     setLoading(true);
     const nowISO = new Date().toISOString();
+    const session: PunchSession = {
+      staffId: 'sagar_wadekar',
+      staffName: 'Sagar Wadekar',
+      date: todayStr,
+      punchInISO: nowISO,
+    };
+
+    // 1. Instant local persistence and reactive UI switch (< 5ms)
+    saveActiveLocalSession(session);
+    setActivePunchIn(nowISO);
+
     const newRecord: AttendanceRecord = {
-      id: `att_${todayStr}_sagar`,
-      staff_id: 'sagar_wadekar',
-      staff_name: 'Sagar Wadekar',
+      id: `att_${todayStr}_sagar_wadekar`,
+      staff_id: session.staffId,
+      staff_name: session.staffName,
       date: todayStr,
       punch_in: nowISO,
       punch_out: null,
@@ -81,23 +126,14 @@ export const DailyAttendanceView: React.FC = () => {
       base_daily_salary: 300,
     };
 
-    setActivePunchIn(nowISO);
-    setRecords((prev) => [newRecord, ...prev.filter((r) => r.id !== newRecord.id)]);
+    setRecords((prev) => [newRecord, ...prev.filter((r) => r.staff_id !== session.staffId || r.date !== todayStr)]);
 
-    try {
-      await supabase.from('cafe_attendance').upsert(newRecord);
-    } catch (e) {
-      console.warn('cafe_attendance upsert error:', e);
-    }
-    try {
-      await supabase.from('attendance').upsert(newRecord);
-    } catch (e) {
-      // ignore if attendance table not present
-    }
+    // 2. Non-blocking asynchronous cloud sync
+    syncPunchInToCloud(session, 300).catch((err) => console.warn('[Attendance syncPunchIn err]:', err));
     setLoading(false);
   };
 
-  // Handle Punch Out
+  // Handle Instant Optimistic Punch Out
   const handlePunchOut = async () => {
     if (!activePunchIn) return;
     setLoading(true);
@@ -112,39 +148,25 @@ export const DailyAttendanceView: React.FC = () => {
       day_salary_multiplier: evaluation.salaryMultiplier,
     };
 
+    // 1. Instant UI update & storage clear
     setRecords((prev) =>
       prev.map((r) =>
-        r.punch_in === activePunchIn
+        r.punch_in === activePunchIn || (r.staff_id === 'sagar_wadekar' && !r.punch_out)
           ? { ...r, ...updatedData }
           : r
       )
     );
 
+    const savedPunchIn = activePunchIn;
     setActivePunchIn(null);
+    clearActiveLocalSession();
 
-    try {
-      await supabase
-        .from('cafe_attendance')
-        .update(updatedData)
-        .eq('date', todayStr)
-        .eq('staff_id', 'sagar_wadekar');
-    } catch (e) {
-      console.warn('cafe_attendance update error:', e);
-    }
-    try {
-      await supabase
-        .from('attendance')
-        .update(updatedData)
-        .eq('date', todayStr)
-        .eq('staff_id', 'sagar_wadekar');
-    } catch (e) {
-      // ignore if attendance table not present
-    }
-
+    // 2. Non-blocking asynchronous cloud sync
+    syncPunchOutToCloud('sagar_wadekar', 'Sagar Wadekar', todayStr, savedPunchIn, nowISO, 300).catch((err) =>
+      console.warn('[Attendance syncPunchOut err]:', err)
+    );
     setLoading(false);
   };
-
-  const currentEval = activePunchIn ? evaluateWorkingHours(activePunchIn) : null;
 
   return (
     <div className="space-y-4 max-w-full">
@@ -153,10 +175,10 @@ export const DailyAttendanceView: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm sm:text-base font-extrabold tracking-tight">
-              ⏱️ कामाच्या अचूक तासांवर आधारित हजेरी नियम
+              ⏱️ कामाच्या अचूक तासांवर आधारित हजेरी नियम (Instant Punch Engine)
             </h3>
             <p className="text-[11px] sm:text-xs text-slate-300 mt-1">
-              फक्त लॉगिन करून हजेरी ग्राह्य धरली जाणार नाही. प्रत्यक्ष कामाच्या वेळेनुसार पगार मोजला जाईल.
+              फक्त लॉगिन करून हजेरी ग्राह्य धरली जाणार नाही. प्रत्यक्ष कामाच्या वेळेनुसार (Duration) पगार मोजला जाईल.
             </p>
           </div>
 
@@ -166,32 +188,35 @@ export const DailyAttendanceView: React.FC = () => {
                 type="button"
                 onClick={handlePunchIn}
                 disabled={loading}
-                className="w-full sm:w-auto px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 font-black text-xs text-slate-950 rounded-xl transition shadow-xs cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 font-black text-xs text-slate-950 rounded-xl transition shadow-xs cursor-pointer flex items-center justify-center gap-2"
               >
-                ⏱️ Punch In करा
+                <span>⏱️</span>
+                <span>Punch In करा</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handlePunchOut}
                 disabled={loading}
-                className="w-full sm:w-auto px-5 py-2.5 bg-rose-500 hover:bg-rose-600 font-black text-xs text-white rounded-xl transition shadow-xs cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2.5 bg-rose-500 hover:bg-rose-600 font-black text-xs text-white rounded-xl transition shadow-xs cursor-pointer flex items-center justify-center gap-2"
               >
-                🛑 Punch Out & हजेरी नोंदवा
+                <span>🛑</span>
+                <span>Punch Out & हजेरी नोंदवा</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Live Active Session Status */}
-        {activePunchIn && currentEval && (
+        {/* Live Active Session Status (Instant Live Banner) */}
+        {activePunchIn && (
           <div className="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-              <span>सध्याचे कामाचे तास: <strong className="font-mono text-emerald-300 text-sm">{liveHours} hrs</strong></span>
+              <span className="font-bold text-emerald-300">{timerBanner || 'चालू वेळ गणना होत आहे...'}</span>
+              <span className="text-slate-400 font-mono text-[11px]">({liveHours} hrs)</span>
             </div>
             <div className="bg-white/10 px-3 py-1 rounded-lg text-[11px] font-semibold">
-              सध्याची स्थिती: <strong className="text-amber-300">{currentEval.summaryMarathi}</strong>
+              सध्याची स्थिती: <strong className="text-amber-300">{liveSummary}</strong>
             </div>
           </div>
         )}
@@ -218,7 +243,7 @@ export const DailyAttendanceView: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. TODAY'S ATTENDANCE RECORDS TABLE (RESPONSIVE WRAPPER) */}
+      {/* 3. TODAY'S ATTENDANCE RECORDS TABLE (IST TIME FORMATTED) */}
       <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs">
         <div className="p-3.5 border-b border-slate-100 flex items-center justify-between">
           <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">आजचा हजेरी तक्ता (Staff Logs)</h4>
@@ -246,15 +271,19 @@ export const DailyAttendanceView: React.FC = () => {
                 </tr>
               ) : (
                 records.map((r) => {
-                  const inTime = r.punch_in ? new Date(r.punch_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
-                  const outTime = r.punch_out ? new Date(r.punch_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (r.punch_in ? '🟢 चालू आहे' : '—');
+                  const inTime = formatISTTime(r.punch_in);
+                  const outTime = r.punch_out
+                    ? formatISTTime(r.punch_out)
+                    : r.punch_in
+                    ? '🟢 चालू आहे'
+                    : '—';
                   const hours = Number(r.total_hours || 0);
 
                   return (
                     <tr key={r.id} className="hover:bg-slate-50/60 transition">
                       <td className="py-3 px-4 font-bold text-slate-900">{r.staff_name}</td>
-                      <td className="py-3 px-4 font-mono">{inTime}</td>
-                      <td className="py-3 px-4 font-mono">{outTime}</td>
+                      <td className="py-3 px-4 font-mono font-semibold">{inTime}</td>
+                      <td className="py-3 px-4 font-mono font-semibold">{outTime}</td>
                       <td className="py-3 px-4 font-mono font-bold text-slate-900">{hours.toFixed(2)} hrs</td>
                       <td className="py-3 px-4">
                         <span
@@ -270,7 +299,11 @@ export const DailyAttendanceView: React.FC = () => {
                         </span>
                       </td>
                       <td className="py-3 px-4 font-mono font-bold text-slate-800">
-                        {r.day_salary_multiplier === 1 ? '१००% (Full)' : r.day_salary_multiplier === 0.5 ? '५०% (Half)' : '०% (None)'}
+                        {r.day_salary_multiplier === 1
+                          ? '१००% (Full)'
+                          : r.day_salary_multiplier === 0.5
+                          ? '५०% (Half)'
+                          : '०% (None)'}
                       </td>
                     </tr>
                   );

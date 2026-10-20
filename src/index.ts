@@ -12,4 +12,5 @@ export * from './components/Navbar';
 export * from './components/DashboardMetrics';
 export * from './components/CustomerLedgerCard';
 export * from './lib/attendanceEngine';
+export * from './lib/punchManager';
 export * from './components/DailyAttendanceView';

@@ -1102,7 +1102,8 @@
                         <div class="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
                             <div class="flex items-center gap-2">
                                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-                                <span>सध्याचे कामाचे तास: <strong class="font-mono text-emerald-300 text-sm" x-text="(activePunchHours || 0) + ' hrs (' + (activePunchDurationText || 'चालू') + ')'"></strong></span>
+                                <strong class="font-mono text-emerald-300 text-sm" x-text="activePunchBannerText || ('चालू वेळ: ' + (myTodayPunchRecord?.punchInTime || '') + ' (' + (activePunchDurationText || '0 hrs 0 min') + ')')"></strong>
+                                <span class="text-slate-400 font-mono text-[11px]">(<span x-text="(activePunchHours || 0) + ' hrs'"></span>)</span>
                             </div>
                             <div class="bg-white/10 px-3 py-1 rounded-lg text-[11px] font-semibold">
                                 सध्याची स्थिती: <strong class="text-amber-300" x-text="activePunchMarathi || 'गणना चालू आहे'"></strong>
@@ -3471,6 +3472,7 @@
 
                 // Live Active Punch Duration & Marathi Status State
                 activePunchDurationText: '',
+                activePunchBannerText: '',
                 activePunchHours: 0,
                 activePunchMarathi: '',
 
@@ -3620,7 +3622,7 @@
                     setInterval(() => this.updateClock(), 1000);
 
                     this.updateLivePunchTimer();
-                    setInterval(() => this.updateLivePunchTimer(), 10000);
+                    setInterval(() => this.updateLivePunchTimer(), 1000);
 
                     const savedUrl = localStorage.getItem('suravi_sb_url');
                     const savedKey = localStorage.getItem('suravi_sb_key');
@@ -3785,13 +3787,18 @@
                             return;
                         }
                         if (attData) {
+                            const activeRaw = localStorage.getItem('suravi_active_punch_session');
+                            let activeSess = null;
+                            try { if (activeRaw) activeSess = JSON.parse(activeRaw); } catch(e) {}
+
                             this.attendanceLogs = attData.map(a => ({
                                 id: a.id,
                                 staffId: a.staff_id,
+                                staff_id: a.staff_id,
                                 date: a.date,
                                 status: a.status || 'Present',
-                                punchInTime: a.punch_in_time || null,
-                                punchOutTime: a.punch_out_time || null,
+                                punchInTime: a.punch_in_time || (a.punch_in ? this.formatToISTTime(a.punch_in) : null),
+                                punchOutTime: a.punch_out_time || (a.punch_out ? this.formatToISTTime(a.punch_out) : null),
                                 punchInISO: a.punch_in || a.punch_in_iso || null,
                                 punchOutISO: a.punch_out || a.punch_out_iso || null,
                                 totalHours: Number(a.total_hours || 0),
@@ -3801,6 +3808,34 @@
                                 autoCalculated: Boolean(a.auto_calculated),
                                 createdAt: a.created_at || null
                             }));
+
+                            if (activeSess && activeSess.date === this.todayISODate) {
+                                const existIdx = this.attendanceLogs.findIndex(a => (a.staffId === activeSess.staffId || a.staff_id === activeSess.staffId) && a.date === activeSess.date);
+                                if (existIdx !== -1) {
+                                    if (!this.attendanceLogs[existIdx].punchOutTime && !this.attendanceLogs[existIdx].punchOutISO) {
+                                        this.attendanceLogs[existIdx].punchInISO = this.attendanceLogs[existIdx].punchInISO || activeSess.punchInISO;
+                                        this.attendanceLogs[existIdx].punchInTime = this.attendanceLogs[existIdx].punchInTime || this.formatToISTTime(activeSess.punchInISO);
+                                    }
+                                } else {
+                                    this.attendanceLogs.unshift({
+                                        id: `att_${activeSess.staffId}_${activeSess.date}`,
+                                        staffId: activeSess.staffId,
+                                        staff_id: activeSess.staffId,
+                                        date: activeSess.date,
+                                        status: 'Present',
+                                        punchInTime: this.formatToISTTime(activeSess.punchInISO),
+                                        punchOutTime: null,
+                                        punchInISO: activeSess.punchInISO,
+                                        punchOutISO: null,
+                                        totalHours: 0.00,
+                                        attendanceType: 'Absent',
+                                        daySalaryMultiplier: 0.00,
+                                        penaltyWaived: false,
+                                        autoCalculated: false
+                                    });
+                                }
+                            }
+
                             localStorage.setItem('sf_logs_data', JSON.stringify(this.attendanceLogs));
                             this.updateLivePunchTimer();
                         }
@@ -3977,13 +4012,18 @@
                         if (attError) {
                             console.error('Error fetching attendance_logs:', attError);
                         } else if (attData) {
+                            const activeRaw = localStorage.getItem('suravi_active_punch_session');
+                            let activeSess = null;
+                            try { if (activeRaw) activeSess = JSON.parse(activeRaw); } catch(e) {}
+
                             this.attendanceLogs = attData.map(a => ({
                                 id: a.id,
                                 staffId: a.staff_id,
+                                staff_id: a.staff_id,
                                 date: a.date,
                                 status: a.status || 'Present',
-                                punchInTime: a.punch_in_time || null,
-                                punchOutTime: a.punch_out_time || null,
+                                punchInTime: a.punch_in_time || (a.punch_in ? this.formatToISTTime(a.punch_in) : null),
+                                punchOutTime: a.punch_out_time || (a.punch_out ? this.formatToISTTime(a.punch_out) : null),
                                 punchInISO: a.punch_in || a.punch_in_iso || null,
                                 punchOutISO: a.punch_out || a.punch_out_iso || null,
                                 totalHours: Number(a.total_hours || 0),
@@ -3993,6 +4033,34 @@
                                 autoCalculated: Boolean(a.auto_calculated),
                                 createdAt: a.created_at || null
                             }));
+
+                            if (activeSess && activeSess.date === this.todayISODate) {
+                                const existIdx = this.attendanceLogs.findIndex(a => (a.staffId === activeSess.staffId || a.staff_id === activeSess.staffId) && a.date === activeSess.date);
+                                if (existIdx !== -1) {
+                                    if (!this.attendanceLogs[existIdx].punchOutTime && !this.attendanceLogs[existIdx].punchOutISO) {
+                                        this.attendanceLogs[existIdx].punchInISO = this.attendanceLogs[existIdx].punchInISO || activeSess.punchInISO;
+                                        this.attendanceLogs[existIdx].punchInTime = this.attendanceLogs[existIdx].punchInTime || this.formatToISTTime(activeSess.punchInISO);
+                                    }
+                                } else {
+                                    this.attendanceLogs.unshift({
+                                        id: `att_${activeSess.staffId}_${activeSess.date}`,
+                                        staffId: activeSess.staffId,
+                                        staff_id: activeSess.staffId,
+                                        date: activeSess.date,
+                                        status: 'Present',
+                                        punchInTime: this.formatToISTTime(activeSess.punchInISO),
+                                        punchOutTime: null,
+                                        punchInISO: activeSess.punchInISO,
+                                        punchOutISO: null,
+                                        totalHours: 0.00,
+                                        attendanceType: 'Absent',
+                                        daySalaryMultiplier: 0.00,
+                                        penaltyWaived: false,
+                                        autoCalculated: false
+                                    });
+                                }
+                            }
+
                             localStorage.setItem('sf_logs_data', JSON.stringify(this.attendanceLogs));
                             this.updateLivePunchTimer();
                         }
@@ -4794,20 +4862,78 @@
                 },
 
                 // ==================== WORKSPACE 3: DAILY ATTENDANCE & PUNCH-IN/OUT ====================
+                formatToISTTime(isoString) {
+                    if (!isoString) return '—';
+                    try {
+                        const date = new Date(isoString);
+                        return date.toLocaleTimeString('en-IN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true,
+                            timeZone: 'Asia/Kolkata',
+                        });
+                    } catch {
+                        return '—';
+                    }
+                },
+
                 get todayISODate() {
                     return new Date().toISOString().slice(0, 10);
                 },
 
                 get myTodayPunchRecord() {
-                    if (!this.currentUser) return null;
-                    return this.attendanceLogs.find(a => a.staffId === this.currentUser.username && a.date === this.todayISODate);
+                    const username = this.currentUser ? this.currentUser.username : null;
+                    const today = this.todayISODate;
+
+                    // 1. Instant check from localStorage active punch session (Zero delay on reload)
+                    try {
+                        const raw = localStorage.getItem('suravi_active_punch_session');
+                        if (raw) {
+                            const sess = JSON.parse(raw);
+                            if (sess && sess.date === today && (!username || sess.staffId === username || (username === 'sagar' && sess.staffId === 'sagar_wadekar') || (username === 'sagar_wadekar' && sess.staffId === 'sagar'))) {
+                                const existing = (this.attendanceLogs || []).find(a => 
+                                    (a.staffId === sess.staffId || a.staffId === username || a.staff_id === sess.staffId || a.staff_id === username) && 
+                                    (a.date === today || a.date?.startsWith(today))
+                                );
+                                if (existing) {
+                                    return {
+                                        ...existing,
+                                        punchInISO: existing.punchInISO || sess.punchInISO,
+                                        punchInTime: existing.punchInTime || this.formatToISTTime(sess.punchInISO),
+                                        punchOutTime: existing.punchOutTime || null,
+                                        punchOutISO: existing.punchOutISO || null,
+                                    };
+                                }
+                                return {
+                                    id: `att_${sess.staffId}_${today}`,
+                                    staffId: sess.staffId,
+                                    date: today,
+                                    status: 'Present',
+                                    punchInTime: this.formatToISTTime(sess.punchInISO),
+                                    punchOutTime: null,
+                                    punchInISO: sess.punchInISO,
+                                    punchOutISO: null,
+                                    totalHours: 0.00,
+                                    attendanceType: 'Absent',
+                                    daySalaryMultiplier: 0.00,
+                                    penaltyWaived: false,
+                                    autoCalculated: false
+                                };
+                            }
+                        }
+                    } catch (e) {}
+
+                    if (!username) return null;
+                    return (this.attendanceLogs || []).find(a => 
+                        (a.staffId === username || a.staff_id === username || (username === 'sagar' && a.staffId === 'sagar_wadekar') || (username === 'sagar_wadekar' && a.staffId === 'sagar')) && 
+                        (a.date === today || a.date?.startsWith(today))
+                    );
                 },
 
-                // Live Active Punch Duration & Status Updater
+                // Live Active Punch Duration & Status Updater (Per-Second IST Precision)
                 updateLivePunchTimer() {
-                    if (!this.currentUser) return;
                     const myRec = this.myTodayPunchRecord;
-                    if (myRec && myRec.punchInTime && !myRec.punchOutTime) {
+                    if (myRec && (myRec.punchInISO || myRec.punchInTime) && !myRec.punchOutTime && !myRec.punchOutISO) {
                         let startMs = myRec.punchInISO ? new Date(myRec.punchInISO).getTime() : NaN;
                         if (isNaN(startMs) && myRec.punchInTime) {
                             startMs = new Date(`${this.todayISODate} ${myRec.punchInTime}`).getTime();
@@ -4818,8 +4944,12 @@
                         const hrs = Math.floor(totalMins / 60);
                         const mins = totalMins % 60;
                         const totalHours = Number((diffMs / (1000 * 60 * 60)).toFixed(2));
+                        const inTimeFormatted = myRec.punchInTime || this.formatToISTTime(myRec.punchInISO);
+
                         this.activePunchHours = totalHours;
-                        this.activePunchDurationText = `${hrs} hrs ${mins} mins`;
+                        this.activePunchDurationText = `${hrs} hrs ${mins} min${mins === 1 ? '' : 's'}`;
+                        this.activePunchBannerText = `चालू वेळ: ${inTimeFormatted} (${hrs} hrs ${mins} min)`;
+
                         if (totalHours >= 4.0) {
                             this.activePunchMarathi = `पूर्ण दिवस (${totalHours} तास - १००% वेतन)`;
                         } else if (totalHours >= 2.0) {
@@ -4829,11 +4959,13 @@
                         }
                     } else {
                         this.activePunchDurationText = '';
+                        this.activePunchBannerText = '';
                         this.activePunchHours = 0;
                         this.activePunchMarathi = '';
                     }
                 },
 
+                // 1. INSTANT OPTIMISTIC PUNCH IN (< 5ms response, background cloud sync)
                 async punchInStaff(targetUsername = null) {
                     const username = targetUsername || (this.currentUser ? this.currentUser.username : null);
                     if (!username) {
@@ -4842,127 +4974,129 @@
                     }
 
                     const targetUser = this.users.find(u => u.username === username);
-
-                    if (!this.supabaseClient) {
-                        alert('Supabase क्लाउड कनेक्शन उपलब्ध नाही. कृपया प्रथम Supabase कनेक्ट करा.');
-                        return;
-                    }
-
                     const now = new Date();
                     const nowISO = now.toISOString();
-                    const nowTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    const nowTime = this.formatToISTTime(nowISO);
                     const today = this.todayISODate;
                     const recId = `att_${username}_${today}`;
 
-                    let existing = this.attendanceLogs.find(a => a.staffId === username && a.date === today);
+                    let existing = (this.attendanceLogs || []).find(a => (a.staffId === username || a.staff_id === username) && a.date === today);
                     const isWaived = existing ? Boolean(existing.penaltyWaived) : this.isStaffPenaltyWaived(username, today);
-                    const payload = {
+                    const staffDisplayName = targetUser ? targetUser.name : (username === 'sagar' ? 'Sagar Wadekar' : username);
+
+                    // 1. INSTANT LOCAL STATE & OPTIMISTIC RENDERING (Zero delay)
+                    const activeSession = {
+                        staffId: username,
+                        staffName: staffDisplayName,
+                        date: today,
+                        punchInISO: nowISO
+                    };
+                    try {
+                        localStorage.setItem('suravi_active_punch_session', JSON.stringify(activeSession));
+                    } catch (e) {}
+
+                    const updatedRecord = {
                         id: existing?.id || recId,
+                        staffId: username,
                         staff_id: username,
+                        staffName: staffDisplayName,
+                        staff_name: staffDisplayName,
                         date: today,
                         status: 'Present',
-                        punch_in_time: nowTime,
-                        punch_out_time: null,
-                        punch_in_iso: nowISO,
-                        punch_out_iso: null,
-                        total_hours: 0.00,
-                        attendance_type: 'Absent',
-                        day_salary_multiplier: 0.00,
-                        penalty_waived: isWaived,
-                        auto_calculated: false
+                        punchInTime: nowTime,
+                        punchOutTime: null,
+                        punchInISO: nowISO,
+                        punchOutISO: null,
+                        totalHours: 0.00,
+                        attendanceType: 'Absent',
+                        daySalaryMultiplier: 0.00,
+                        penaltyWaived: isWaived,
+                        autoCalculated: false
                     };
 
+                    const existingIdx = (this.attendanceLogs || []).findIndex(a => (a.staffId === username || a.staff_id === username) && a.date === today);
+                    if (existingIdx !== -1) {
+                        this.attendanceLogs[existingIdx] = { ...this.attendanceLogs[existingIdx], ...updatedRecord };
+                    } else {
+                        this.attendanceLogs = [updatedRecord, ...(this.attendanceLogs || [])];
+                    }
+                    this.attendanceLogs = [...this.attendanceLogs];
                     try {
-                        const { error } = await this.supabaseClient
-                            .from('attendance_logs')
-                            .upsert(payload, { onConflict: 'staff_id,date' });
-
-                        if (error) {
-                            console.error('Supabase Punch In error:', error);
-                            alert('हजेरी नोंदवताना त्रुटी आली: ' + error.message);
-                            return;
-                        }
-
-                        // Dual sync to cafe_attendance
-                        try {
-                            const sal = targetUser ? (this.getSalaryInfoForMonth(targetUser, this.currentTargetMonthKey).baseRate || 300) : 300;
-                            await this.supabaseClient.from('cafe_attendance').upsert({
-                                id: payload.id,
-                                staff_id: username,
-                                staff_name: targetUser ? targetUser.name : username,
-                                date: today,
-                                punch_in: nowISO,
-                                punch_out: null,
-                                total_hours: 0.00,
-                                attendance_type: 'Absent',
-                                day_salary_multiplier: 0.00,
-                                base_daily_salary: sal,
-                                auto_calculated: false
-                            });
-                        } catch(caErr) {
-                            console.warn('cafe_attendance punch-in warn:', caErr);
-                        }
-
-                        const updatedRecord = {
-                            id: payload.id,
-                            staffId: payload.staff_id,
-                            date: payload.date,
-                            status: payload.status,
-                            punchInTime: payload.punch_in_time,
-                            punchOutTime: payload.punch_out_time,
-                            punchInISO: nowISO,
-                            punchOutISO: null,
-                            totalHours: 0.00,
-                            attendanceType: 'Absent',
-                            daySalaryMultiplier: 0.00,
-                            penaltyWaived: payload.penalty_waived,
-                            autoCalculated: false
-                        };
-
-                        const existingIdx = this.attendanceLogs.findIndex(a => a.staffId === username && a.date === today);
-                        if (existingIdx !== -1) {
-                            this.attendanceLogs[existingIdx] = { ...this.attendanceLogs[existingIdx], ...updatedRecord };
-                        } else {
-                            this.attendanceLogs.push(updatedRecord);
-                        }
-
-                        this.attendanceLogs = [...this.attendanceLogs];
                         localStorage.setItem('sf_logs_data', JSON.stringify(this.attendanceLogs));
-                        this.updateLivePunchTimer();
+                    } catch (e) {}
 
-                        alert(`⏱️ Punch In यशस्वी (${nowTime})!\n\nकामाच्या अचूक तासांनुसार वेतन मोजले जाईल:\n• > ४.० तास: Full Day (१००% पगार)\n• २.० ते ४.० तास: Half Day (५०% पगार)\n• < २.० तास: Absent (०% पगार)`);
-                    } catch (e) {
-                        console.error('Punch In exception:', e);
-                        alert('हजेरी नोंदवताना अडचण आली: ' + e.message);
+                    // Instantly trigger live timer banner & button toggle
+                    this.updateLivePunchTimer();
+
+                    // 2. BACKGROUND ASYNCHRONOUS SUPABASE CLOUD SYNC
+                    if (this.supabaseClient) {
+                        (async () => {
+                            try {
+                                const payload = {
+                                    id: updatedRecord.id,
+                                    staff_id: username,
+                                    date: today,
+                                    status: 'Present',
+                                    punch_in_time: nowTime,
+                                    punch_out_time: null,
+                                    punch_in_iso: nowISO,
+                                    punch_out_iso: null,
+                                    total_hours: 0.00,
+                                    attendance_type: 'Absent',
+                                    day_salary_multiplier: 0.00,
+                                    penalty_waived: isWaived,
+                                    auto_calculated: false
+                                };
+                                await this.supabaseClient.from('attendance_logs').upsert(payload, { onConflict: 'staff_id,date' });
+
+                                const sal = targetUser ? (this.getSalaryInfoForMonth(targetUser, this.currentTargetMonthKey).baseRate || 300) : 300;
+                                await this.supabaseClient.from('cafe_attendance').upsert({
+                                    id: updatedRecord.id,
+                                    staff_id: username,
+                                    staff_name: staffDisplayName,
+                                    date: today,
+                                    punch_in: nowISO,
+                                    punch_out: null,
+                                    total_hours: 0.00,
+                                    attendance_type: 'Absent',
+                                    day_salary_multiplier: 0.00,
+                                    base_daily_salary: sal,
+                                    auto_calculated: false
+                                });
+                            } catch (cloudErr) {
+                                console.warn('[Supabase Punch In Cloud Sync Warn]:', cloudErr);
+                            }
+                        })();
                     }
                 },
 
+                // 2. INSTANT OPTIMISTIC PUNCH OUT (< 5ms response, background cloud sync)
                 async punchOutStaff(targetUsername = null) {
                     const username = targetUsername || (this.currentUser ? this.currentUser.username : null);
                     if (!username) return;
 
                     const targetUser = this.users.find(u => u.username === username);
-
-                    if (!this.supabaseClient) {
-                        alert('Supabase क्लाउड कनेक्शन उपलब्ध नाही. कृपया प्रथम Supabase कनेक्ट करा.');
-                        return;
-                    }
-
                     const today = this.todayISODate;
-                    let existing = this.attendanceLogs.find(a => a.staffId === username && a.date === today);
-                    if (!existing || (!existing.punchInTime && !existing.punchInISO)) {
+                    let existing = (this.attendanceLogs || []).find(a => (a.staffId === username || a.staff_id === username) && a.date === today);
+                    const myActive = this.myTodayPunchRecord;
+
+                    const effectivePunchInISO = existing?.punchInISO || myActive?.punchInISO || null;
+                    const effectivePunchInTime = existing?.punchInTime || myActive?.punchInTime || null;
+
+                    if (!effectivePunchInISO && !effectivePunchInTime) {
                         alert('प्रथम Punch In (हजेरी) नोंदवणे आवश्यक आहे.');
                         return;
                     }
 
                     const now = new Date();
                     const nowISO = now.toISOString();
-                    const nowTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-                    const recId = existing.id || `att_${username}_${today}`;
+                    const nowTime = this.formatToISTTime(nowISO);
+                    const recId = existing?.id || myActive?.id || `att_${username}_${today}`;
+                    const staffDisplayName = targetUser ? targetUser.name : (username === 'sagar' ? 'Sagar Wadekar' : username);
 
-                    let startMs = existing.punchInISO ? new Date(existing.punchInISO).getTime() : NaN;
-                    if (isNaN(startMs) && existing.punchInTime) {
-                        startMs = new Date(`${today} ${existing.punchInTime}`).getTime();
+                    let startMs = effectivePunchInISO ? new Date(effectivePunchInISO).getTime() : NaN;
+                    if (isNaN(startMs) && effectivePunchInTime) {
+                        startMs = new Date(`${today} ${effectivePunchInTime}`).getTime();
                     }
                     if (isNaN(startMs)) startMs = now.getTime();
 
@@ -4992,76 +5126,84 @@
                     }
 
                     const isWaived = existing ? Boolean(existing.penaltyWaived) : this.isStaffPenaltyWaived(username, today);
-                    const payload = {
+
+                    // 1. INSTANT LOCAL STATE & OPTIMISTIC RENDERING (Clear session, set punch out)
+                    try {
+                        localStorage.removeItem('suravi_active_punch_session');
+                    } catch (e) {}
+
+                    const existingIdx = (this.attendanceLogs || []).findIndex(a => (a.staffId === username || a.staff_id === username) && a.date === today);
+                    const updatedRecord = {
                         id: recId,
+                        staffId: username,
                         staff_id: username,
+                        staffName: staffDisplayName,
+                        staff_name: staffDisplayName,
                         date: today,
                         status: statusText,
-                        punch_in_time: existing.punchInTime || nowTime,
-                        punch_out_time: nowTime,
-                        punch_in_iso: existing.punchInISO || null,
-                        punch_out_iso: nowISO,
-                        total_hours: totalHours,
-                        attendance_type: attendanceType,
-                        day_salary_multiplier: salaryMultiplier,
-                        penalty_waived: isWaived,
-                        auto_calculated: false
+                        punchInTime: effectivePunchInTime || nowTime,
+                        punchOutTime: nowTime,
+                        punchInISO: effectivePunchInISO,
+                        punchOutISO: nowISO,
+                        totalHours: totalHours,
+                        attendanceType: attendanceType,
+                        daySalaryMultiplier: salaryMultiplier,
+                        penaltyWaived: isWaived,
+                        autoCalculated: false
                     };
 
+                    if (existingIdx !== -1) {
+                        this.attendanceLogs[existingIdx] = { ...this.attendanceLogs[existingIdx], ...updatedRecord };
+                    } else {
+                        this.attendanceLogs = [updatedRecord, ...(this.attendanceLogs || [])];
+                    }
+                    this.attendanceLogs = [...this.attendanceLogs];
                     try {
-                        const { error } = await this.supabaseClient
-                            .from('attendance_logs')
-                            .upsert(payload, { onConflict: 'staff_id,date' });
-
-                        if (error) {
-                            console.error('Supabase Punch Out error:', error);
-                            alert('निर्गमन नोंदवताना त्रुटी आली: ' + error.message);
-                            return;
-                        }
-
-                        // Dual sync to cafe_attendance
-                        try {
-                            const sal = targetUser ? (this.getSalaryInfoForMonth(targetUser, this.currentTargetMonthKey).baseRate || 300) : 300;
-                            await this.supabaseClient.from('cafe_attendance').upsert({
-                                id: recId,
-                                staff_id: username,
-                                staff_name: targetUser ? targetUser.name : username,
-                                date: today,
-                                punch_in: existing.punchInISO,
-                                punch_out: nowISO,
-                                total_hours: totalHours,
-                                attendance_type: attendanceType,
-                                day_salary_multiplier: salaryMultiplier,
-                                base_daily_salary: sal,
-                                auto_calculated: false
-                            });
-                        } catch(caErr) {
-                            console.warn('cafe_attendance punch-out warn:', caErr);
-                        }
-
-                        const existingIdx = this.attendanceLogs.findIndex(a => a.staffId === username && a.date === today);
-                        if (existingIdx !== -1) {
-                            this.attendanceLogs[existingIdx] = {
-                                ...this.attendanceLogs[existingIdx],
-                                id: recId,
-                                punchOutTime: nowTime,
-                                punchOutISO: nowISO,
-                                totalHours: totalHours,
-                                attendanceType: attendanceType,
-                                daySalaryMultiplier: salaryMultiplier,
-                                status: statusText,
-                                autoCalculated: false
-                            };
-                        }
-
-                        this.attendanceLogs = [...this.attendanceLogs];
                         localStorage.setItem('sf_logs_data', JSON.stringify(this.attendanceLogs));
-                        this.updateLivePunchTimer();
+                    } catch (e) {}
 
-                        alert(`🛑 Punch Out यशस्वी (${nowTime})!\n\n• कामाचे तास: ${totalHours} hrs\n• हजेरी प्रकार: ${attendanceType}\n• निष्कर्ष: ${marathiSummary}`);
-                    } catch (e) {
-                        console.error('Punch Out exception:', e);
-                        alert('निर्गमन नोंदवताना अडचण आली: ' + e.message);
+                    // Instantly trigger live timer banner & button toggle
+                    this.updateLivePunchTimer();
+
+                    // 2. BACKGROUND ASYNCHRONOUS SUPABASE CLOUD SYNC
+                    if (this.supabaseClient) {
+                        (async () => {
+                            try {
+                                const payload = {
+                                    id: recId,
+                                    staff_id: username,
+                                    date: today,
+                                    status: statusText,
+                                    punch_in_time: effectivePunchInTime || nowTime,
+                                    punch_out_time: nowTime,
+                                    punch_in_iso: effectivePunchInISO || null,
+                                    punch_out_iso: nowISO,
+                                    total_hours: totalHours,
+                                    attendance_type: attendanceType,
+                                    day_salary_multiplier: salaryMultiplier,
+                                    penalty_waived: isWaived,
+                                    auto_calculated: false
+                                };
+                                await this.supabaseClient.from('attendance_logs').upsert(payload, { onConflict: 'staff_id,date' });
+
+                                const sal = targetUser ? (this.getSalaryInfoForMonth(targetUser, this.currentTargetMonthKey).baseRate || 300) : 300;
+                                await this.supabaseClient.from('cafe_attendance').upsert({
+                                    id: recId,
+                                    staff_id: username,
+                                    staff_name: staffDisplayName,
+                                    date: today,
+                                    punch_in: effectivePunchInISO,
+                                    punch_out: nowISO,
+                                    total_hours: totalHours,
+                                    attendance_type: attendanceType,
+                                    day_salary_multiplier: salaryMultiplier,
+                                    base_daily_salary: sal,
+                                    auto_calculated: false
+                                });
+                            } catch (cloudErr) {
+                                console.warn('[Supabase Punch Out Cloud Sync Warn]:', cloudErr);
+                            }
+                        })();
                     }
                 },
 
@@ -5197,15 +5339,36 @@
                 },
 
                 getPunchTimes(username, dateStr) {
-                    const record = this.attendanceLogs.find(a => a.staffId === username && a.date === dateStr);
+                    if (dateStr === this.todayISODate && this.currentUser && (username === this.currentUser.username || (this.currentUser.username === 'sagar' && username === 'sagar_wadekar') || (this.currentUser.username === 'sagar_wadekar' && username === 'sagar'))) {
+                        const myRec = this.myTodayPunchRecord;
+                        if (myRec) {
+                            return {
+                                in: myRec.punchInTime || this.formatToISTTime(myRec.punchInISO),
+                                out: myRec.punchOutTime || this.formatToISTTime(myRec.punchOutISO)
+                            };
+                        }
+                    }
+                    const record = (this.attendanceLogs || []).find(a => 
+                        (a.staffId === username || a.staff_id === username || (username === 'sagar' && a.staffId === 'sagar_wadekar') || (username === 'sagar_wadekar' && a.staffId === 'sagar')) && 
+                        (a.date === dateStr || a.date?.startsWith(dateStr))
+                    );
                     return {
-                        in: record ? record.punchInTime : null,
-                        out: record ? record.punchOutTime : null
+                        in: record ? (record.punchInTime || this.formatToISTTime(record.punchInISO || record.punch_in)) : null,
+                        out: record ? (record.punchOutTime || this.formatToISTTime(record.punchOutISO || record.punch_out)) : null
                     };
                 },
 
                 getStaffDurationDisplay(username, dateStr) {
-                    const rec = this.attendanceLogs.find(a => a.staffId === username && a.date === dateStr);
+                    if (dateStr === this.todayISODate && this.currentUser && (username === this.currentUser.username || (this.currentUser.username === 'sagar' && username === 'sagar_wadekar') || (this.currentUser.username === 'sagar_wadekar' && username === 'sagar'))) {
+                        const myRec = this.myTodayPunchRecord;
+                        if (myRec && myRec.punchInTime && !myRec.punchOutTime) {
+                            return `🟢 ${(this.activePunchHours || 0).toFixed(2)} hrs (${this.activePunchDurationText || 'चालू'})`;
+                        }
+                    }
+                    const rec = (this.attendanceLogs || []).find(a => 
+                        (a.staffId === username || a.staff_id === username || (username === 'sagar' && a.staffId === 'sagar_wadekar') || (username === 'sagar_wadekar' && a.staffId === 'sagar')) && 
+                        (a.date === dateStr || a.date?.startsWith(dateStr))
+                    );
                     if (!rec) return '—';
                     if (rec.punchOutTime || rec.totalHours > 0) {
                         const hrs = Number(rec.totalHours || 0).toFixed(2);
@@ -5214,16 +5377,22 @@
                         return `${hrs} hrs (${pct})`;
                     }
                     if (rec.punchInTime && !rec.punchOutTime) {
-                        if (dateStr === this.todayISODate && this.currentUser && this.currentUser.username === username) {
-                            return `🟢 ${(this.activePunchHours || 0).toFixed(2)} hrs (चालू)`;
-                        }
                         return '🟢 चालू आहे';
                     }
                     return rec.status === 'Absent' ? '0.00 hrs (0%)' : '—';
                 },
 
                 getStaffSalaryCalculationDisplay(username, dateStr) {
-                    const rec = this.attendanceLogs.find(a => a.staffId === username && a.date === dateStr);
+                    if (dateStr === this.todayISODate && this.currentUser && (username === this.currentUser.username || (this.currentUser.username === 'sagar' && username === 'sagar_wadekar') || (this.currentUser.username === 'sagar_wadekar' && username === 'sagar'))) {
+                        const myRec = this.myTodayPunchRecord;
+                        if (myRec && myRec.punchInTime && !myRec.punchOutTime) {
+                            return (this.activePunchHours || 0) >= 4.0 ? '१००% (Full)' : (this.activePunchHours || 0) >= 2.0 ? '५०% (Half)' : '०% (Absent / चालू)';
+                        }
+                    }
+                    const rec = (this.attendanceLogs || []).find(a => 
+                        (a.staffId === username || a.staff_id === username || (username === 'sagar' && a.staffId === 'sagar_wadekar') || (username === 'sagar_wadekar' && a.staffId === 'sagar')) && 
+                        (a.date === dateStr || a.date?.startsWith(dateStr))
+                    );
                     if (!rec) return '०% (None)';
                     const mult = rec.daySalaryMultiplier !== undefined ? Number(rec.daySalaryMultiplier) : (rec.status === 'Present' ? 1.0 : rec.status === 'Half Day' ? 0.5 : 0.0);
                     if (mult === 1.0) return '१००% (Full Day)';
