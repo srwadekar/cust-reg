@@ -232,42 +232,9 @@ alter table if exists public.attendance_logs add column if not exists punch_out_
 create or replace function public.mark_daily_auto_absent(target_date date default current_date)
 returns void as $$
 begin
-  -- cafe_profiles किंवा users टेबलमधील सक्रिय कर्मचाऱ्यांसाठी cafe_attendance मध्ये Absent नोंद करणे
-  if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'cafe_profiles') then
-    insert into public.cafe_attendance (
-      id,
-      staff_id,
-      staff_name,
-      date,
-      punch_in,
-      punch_out,
-      total_hours,
-      attendance_type,
-      day_salary_multiplier,
-      auto_calculated
-    )
-    select 
-      'att_' || to_char(target_date, 'YYYY-MM-DD') || '_' || p.id,
-      p.id,
-      coalesce(p.name, p.full_name, 'Staff Member'),
-      to_char(target_date, 'YYYY-MM-DD'),
-      null,
-      null,
-      0.00,
-      'Absent',
-      0.00,
-      true
-    from public.cafe_profiles p
-    where (p.is_active = true or p.role in ('operator', 'staff', 'associate'))
-      and not exists (
-        select 1 from public.cafe_attendance a
-        where a.staff_id = p.id and a.date::text = to_char(target_date, 'YYYY-MM-DD')
-      )
-    on conflict (id) do nothing;
-  end if;
-
-  -- users टेबलमधील सक्रिय कर्मचाऱ्यांसाठी (जर users टेबल वापरले जात असेल)
+  -- users टेबलमधील सक्रिय कर्मचाऱ्यांसाठी (सध्याचे ऑपरेटर आणि असोसिएट्स)
   if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'users') then
+    -- cafe_attendance टेबलमध्ये Absent नोंद करणे
     insert into public.cafe_attendance (
       id,
       staff_id,
