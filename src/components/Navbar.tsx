@@ -7,7 +7,10 @@ export interface NavbarProps {
   onOpenDbConfig: () => void;
   onForceClearSync: () => void;
   onNewCustomerLog?: () => void;
-  onPunchIn?: () => void;
+  // Punch In / Out props
+  isPunchedIn: boolean;
+  onTogglePunch: () => void;
+  activeWorkDuration?: string; // e.g. "2h 15m"
   operatorName?: string;
   role?: string;
   onLogout?: () => void;
@@ -20,7 +23,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenDbConfig,
   onForceClearSync,
   onNewCustomerLog,
-  onPunchIn,
+  isPunchedIn,
+  onTogglePunch,
+  activeWorkDuration,
   operatorName = 'Sagar Wadekar',
   role = 'Operator',
   onLogout,
@@ -35,9 +40,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200/80 shadow-2xs">
-      {/* TIER 1: BRAND + QUICK ACTIONS + OPERATOR PROFILE */}
+      {/* TIER 1: BRAND + PUNCH TOGGLE + LOG + OPERATOR */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-100">
         <div className="flex items-center justify-between h-14">
+          {/* Logo & Cafe Brand */}
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-900 to-indigo-800 flex items-center justify-center text-white font-black text-base shadow-xs">
               S
@@ -47,7 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="font-extrabold text-sm text-slate-900 tracking-tight">
                   Suravi Cyber Cafe
                 </span>
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse" />
                   Live
                 </span>
@@ -56,25 +62,40 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
+          {/* Quick Actions & Header Controls */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* RESTORED: DYNAMIC PUNCH IN / PUNCH OUT BUTTON */}
             <button
               type="button"
-              onClick={onPunchIn}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100 transition shadow-2xs cursor-pointer"
+              onClick={onTogglePunch}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer ${
+                isPunchedIn
+                  ? 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 animate-pulse'
+                  : 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100'
+              }`}
+              title={isPunchedIn ? 'Click to Punch Out' : 'Click to Punch In'}
             >
-              <span>⏱️</span>
-              <span className="hidden sm:inline">Punch In</span>
+              <span>{isPunchedIn ? '🛑' : '⏱️'}</span>
+              <span>{isPunchedIn ? 'Punch Out' : 'Punch In'}</span>
+              {isPunchedIn && activeWorkDuration && (
+                <span className="hidden sm:inline-block font-mono text-[10px] bg-rose-200/60 text-rose-900 px-1.5 py-0.2 rounded-md ml-0.5">
+                  {activeWorkDuration}
+                </span>
+              )}
             </button>
 
+            {/* Quick New Customer Log */}
             <button
               type="button"
               onClick={onNewCustomerLog}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-black text-white shadow-2xs transition cursor-pointer"
             >
               <span>➕</span>
-              <span>New Customer Log</span>
+              <span className="hidden sm:inline">New Customer Log</span>
+              <span className="sm:hidden">New Log</span>
             </button>
 
+            {/* Sync Badge */}
             {pendingSyncCount > 0 ? (
               <button
                 type="button"
@@ -92,10 +113,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
+            {/* DB Config Trigger */}
             <button
               type="button"
               onClick={onOpenDbConfig}
-              className="p-1.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition cursor-pointer"
+              className="p-1.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition"
               title="Database Settings"
             >
               ⚡
@@ -103,6 +125,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             <div className="h-5 w-px bg-slate-200" />
 
+            {/* Operator Profile */}
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-xl px-2.5 py-1">
               <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-black">
                 SW
@@ -152,3 +175,5 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+
+export default Navbar;

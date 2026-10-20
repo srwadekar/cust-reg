@@ -84,7 +84,16 @@ export const DailyAttendanceView: React.FC = () => {
     setActivePunchIn(nowISO);
     setRecords((prev) => [newRecord, ...prev.filter((r) => r.id !== newRecord.id)]);
 
-    await supabase.from('cafe_attendance').upsert(newRecord);
+    try {
+      await supabase.from('cafe_attendance').upsert(newRecord);
+    } catch (e) {
+      console.warn('cafe_attendance upsert error:', e);
+    }
+    try {
+      await supabase.from('attendance').upsert(newRecord);
+    } catch (e) {
+      // ignore if attendance table not present
+    }
     setLoading(false);
   };
 
@@ -113,11 +122,24 @@ export const DailyAttendanceView: React.FC = () => {
 
     setActivePunchIn(null);
 
-    await supabase
-      .from('cafe_attendance')
-      .update(updatedData)
-      .eq('date', todayStr)
-      .eq('staff_id', 'sagar_wadekar');
+    try {
+      await supabase
+        .from('cafe_attendance')
+        .update(updatedData)
+        .eq('date', todayStr)
+        .eq('staff_id', 'sagar_wadekar');
+    } catch (e) {
+      console.warn('cafe_attendance update error:', e);
+    }
+    try {
+      await supabase
+        .from('attendance')
+        .update(updatedData)
+        .eq('date', todayStr)
+        .eq('staff_id', 'sagar_wadekar');
+    } catch (e) {
+      // ignore if attendance table not present
+    }
 
     setLoading(false);
   };
