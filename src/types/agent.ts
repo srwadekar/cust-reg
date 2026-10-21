@@ -30,3 +30,29 @@ export interface AppTypeDualPrice {
   default_challan: number;
   defaultChallan?: number;
 }
+
+export interface AgentBatchCustomerRow {
+  customerName: string;
+  mobileNo: string;
+  serviceName: string;
+  agentPrice: number | string;
+  challanFees: number | string;
+  netMargin: number | string;
+  paidAmount: number | string;
+}
+
+export interface AgentBatchForm {
+  agentId: number | string;
+  agentName: string;
+  date: string;
+  isCreatingInlineAgent: boolean;
+  inlineAgent: {
+    name: string;
+    centerName: string;
+    mobile: string;
+    village: string;
+    notes?: string;
+  };
+  rows: AgentBatchCustomerRow[];
+}
+

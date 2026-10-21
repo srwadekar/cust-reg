@@ -715,9 +715,28 @@
                                 </p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 self-start sm:self-auto">
+                        <div class="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+                            <!-- Batch Customer Ingestion for Agents -->
+                            <button
+                                type="button"
+                                @click="openAgentBatchModal()"
+                                class="px-3.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-xl text-xs shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+                            >
+                                <span>📑</span> + Batch Customer Entry (मल्टिपल ग्राहक नोंद)
+                            </button>
+
+                            <!-- Excel Export Button -->
+                            <button
+                                type="button"
+                                @click="exportAgentLedgerExcel()"
+                                class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+                            >
+                                <span>📊</span> Export Agent Excel (.xlsx)
+                            </button>
+
+                            <!-- Add Single Agent Button -->
                             <button type="button" @click="openModal('agent')" 
-                                class="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer">
+                                class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition shadow-2xs flex items-center gap-1.5 cursor-pointer">
                                 <i class="fa-solid fa-user-plus text-xs"></i>
                                 <span>+ नवीन एजंट जोडा (+ Add Agent)</span>
                             </button>
@@ -843,6 +862,15 @@
                                     class="flex-1 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer">
                                     <i class="fa-solid fa-table-list text-xs"></i>
                                     <span>अर्ज पहा (Ledger)</span>
+                                </button>
+                                <button type="button" @click="openAgentBatchModal(ag.id)" 
+                                    class="px-2 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer" title="या एजंटसाठी मल्टिपल ग्राहक नोंद (Batch Customer Entry)">
+                                    <span>📑</span>
+                                    <span class="hidden sm:inline">Batch</span>
+                                </button>
+                                <button type="button" @click="exportAgentLedgerExcel(ag.id)" 
+                                    class="p-1.5 border border-emerald-200 hover:bg-emerald-50 text-emerald-700 rounded-lg text-xs transition cursor-pointer" title="या एजंटचा Excel डेटा डाऊनलोड करा (.xlsx)">
+                                    <i class="fa-solid fa-file-excel text-xs"></i>
                                 </button>
                                 <button type="button" @click="editAgent(ag)" 
                                     class="p-1.5 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-lg text-xs transition cursor-pointer" title="Edit Agent">
@@ -3840,6 +3868,236 @@
         </div>
     </div>
 
+    <!-- ==================== I. AGENT BATCH CUSTOMER INGESTION MODAL ==================== -->
+    <div x-show="modals.agentBatch" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto no-print" @keydown.escape.window="closeModals()">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full p-4 sm:p-6 space-y-4 my-6 border border-slate-200" @click.away="closeModals()">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-base shadow-xs">
+                        📑
+                    </span>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">एजंट मल्टिपल ग्राहक नोंद (Agent Multi-Customer Batch Ingestion)</h3>
+                        <p class="text-xs text-slate-500">एकाच एजंट पार्टनरसाठी एकाच वेळी अनेक ग्राहकांचे अर्ज जलद नोंदवा</p>
+                    </div>
+                </div>
+                <button type="button" @click="closeModals()" class="text-slate-400 hover:text-slate-600 cursor-pointer p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Agent & Date Selection Bar -->
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 text-xs">
+                    <!-- Agent Dropdown -->
+                    <div class="sm:col-span-8">
+                        <label class="block font-bold text-slate-700 mb-1">
+                            एजंट पार्टनर निवडा (Select Agent Partner) *
+                        </label>
+                        <select x-model="agentBatchForm.agentId" @change="onBatchAgentChange()"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                            <option value="">-- एजंट निवडा (Select Agent) --</option>
+                            <template x-for="ag in agents" :key="ag.id">
+                                <option :value="ag.id" x-text="ag.name + ' - ' + (ag.centerName || 'केंद्राचे नाव') + ' (' + (ag.village || 'गाव') + ')'"></option>
+                            </template>
+                            <option value="__NEW_AGENT__">➕ नवीन एजंट तयार करा (+ Create New Agent)</option>
+                        </select>
+                    </div>
+
+                    <!-- Batch Date -->
+                    <div class="sm:col-span-4">
+                        <label class="block font-bold text-slate-700 mb-1">
+                            नोंद तारीख (Entry Date)
+                        </label>
+                        <input type="date" x-model="agentBatchForm.date"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-mono text-slate-800 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Inline Agent Creation Section (if selected) -->
+                <div x-show="agentBatchForm.isCreatingInlineAgent" x-transition class="pt-3 border-t border-purple-200 bg-purple-50/60 p-3 rounded-lg space-y-2.5 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-purple-900 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-plus text-xs text-purple-700"></i> नवीन एजंट त्वरित तपशील (Instant New Agent Setup)
+                        </span>
+                        <button type="button" @click="agentBatchForm.isCreatingInlineAgent = false; agentBatchForm.agentId = ''" class="text-xs text-slate-500 hover:text-slate-700 cursor-pointer">रद्द करा</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-0.5">नाव *</label>
+                            <input type="text" x-model="agentBatchForm.inlineAgent.name" placeholder="एजंट नाव"
+                                class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-0.5">केंद्र / शॉप *</label>
+                            <input type="text" x-model="agentBatchForm.inlineAgent.centerName" placeholder="केंद्राचे नाव"
+                                class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-0.5">मोबाईल *</label>
+                            <input type="text" x-model="agentBatchForm.inlineAgent.mobile" placeholder="१० अंकी मोबाईल"
+                                class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white font-mono">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-0.5">गाव / लोकेशन *</label>
+                            <input type="text" x-model="agentBatchForm.inlineAgent.village" placeholder="गाव"
+                                class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Customer Multi-Row Table -->
+            <div class="space-y-2">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <span>👥</span> ग्राहकांची यादी व सेवा तपशील (Customer Jobs Table)
+                        <span class="text-[11px] font-normal text-slate-500">(कमीत कमी १ ग्राहक आवश्यक)</span>
+                    </span>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" @click="addBatchRow(1)"
+                            class="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+                            <i class="fa-solid fa-plus text-[10px]"></i> +१ रो (+ Row)
+                        </button>
+                        <button type="button" @click="addBatchRow(5)"
+                            class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+                            <i class="fa-solid fa-plus text-[10px]"></i> +५ रो (+ 5 Rows)
+                        </button>
+                        <button type="button" @click="resetBatchRows()"
+                            class="px-2 py-1 text-slate-500 hover:text-slate-700 text-xs transition cursor-pointer" title="सर्व रो रिकामे करा">
+                            रीसेट
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-2xs max-h-80 overflow-y-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="bg-slate-100 text-slate-700 sticky top-0 z-10 font-bold border-b border-slate-200">
+                            <tr>
+                                <th class="p-2.5 w-8 text-center">#</th>
+                                <th class="p-2.5 min-w-[160px]">ग्राहकाचे नाव (Customer Name) *</th>
+                                <th class="p-2.5 min-w-[120px]">मोबाईल नंबर (Mobile)</th>
+                                <th class="p-2.5 min-w-[200px]">सेवेचे नाव (Service Name) *</th>
+                                <th class="p-2.5 w-24 text-right">एजंट दर (₹)</th>
+                                <th class="p-2.5 w-24 text-right">चलन (₹)</th>
+                                <th class="p-2.5 w-20 text-center">मार्जिन</th>
+                                <th class="p-2.5 w-24 text-right">जमा (Paid ₹)</th>
+                                <th class="p-2.5 w-10 text-center"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            <template x-for="(row, idx) in agentBatchForm.rows" :key="idx">
+                                <tr class="hover:bg-purple-50/30 transition">
+                                    <td class="p-2 text-center text-slate-400 font-mono text-[11px]" x-text="idx + 1"></td>
+                                    
+                                    <!-- Customer Name -->
+                                    <td class="p-1.5">
+                                        <input type="text" x-model="row.customerName" placeholder="उदा. सागर पाटील"
+                                            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg focus:ring-1 focus:ring-purple-500 font-semibold text-slate-800">
+                                    </td>
+
+                                    <!-- Mobile -->
+                                    <td class="p-1.5">
+                                        <input type="text" x-model="row.mobileNo" placeholder="१० अंकी नंबर"
+                                            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg focus:ring-1 focus:ring-purple-500 font-mono text-slate-700">
+                                    </td>
+
+                                    <!-- Service Select -->
+                                    <td class="p-1.5">
+                                        <select x-model="row.serviceName" @change="onBatchRowServiceChange(row)"
+                                            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white focus:ring-1 focus:ring-purple-500 text-slate-800 font-medium">
+                                            <option value="">-- सेवा निवडा --</option>
+                                            <template x-for="st in appTypes" :key="st.id">
+                                                <option :value="st.name" 
+                                                    x-text="st.name + ' (₹' + (st.defaultAgentAmount !== undefined && st.defaultAgentAmount !== null && st.defaultAgentAmount !== '' ? st.defaultAgentAmount : Math.round(Number(st.defaultAmount || 0) * 0.8)) + ')'"></option>
+                                            </template>
+                                        </select>
+                                    </td>
+
+                                    <!-- Agent Fee (Editable) -->
+                                    <td class="p-1.5">
+                                        <input type="number" x-model.number="row.agentPrice" @input="updateBatchRowMargin(row)" placeholder="0" min="0"
+                                            class="w-full px-2 py-1.5 border border-purple-200 rounded-lg font-bold text-purple-700 bg-purple-50/40 text-right focus:ring-1 focus:ring-purple-500 font-mono">
+                                    </td>
+
+                                    <!-- Challan Fees (Editable) -->
+                                    <td class="p-1.5">
+                                        <input type="number" x-model.number="row.challanFees" @input="updateBatchRowMargin(row)" placeholder="0" min="0"
+                                            class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-slate-600 text-right focus:ring-1 focus:ring-purple-500 font-mono">
+                                    </td>
+
+                                    <!-- Margin Preview -->
+                                    <td class="p-1.5 text-center font-bold text-emerald-600 font-mono text-xs"
+                                        x-text="'₹' + Math.max(0, Number(row.agentPrice || 0) - Number(row.challanFees || 0))">
+                                    </td>
+
+                                    <!-- Paid Amount -->
+                                    <td class="p-1.5">
+                                        <input type="number" x-model.number="row.paidAmount" placeholder="0" min="0"
+                                            class="w-full px-2 py-1.5 border border-emerald-200 rounded-lg font-bold text-emerald-700 bg-emerald-50/30 text-right focus:ring-1 focus:ring-emerald-500 font-mono">
+                                    </td>
+
+                                    <!-- Delete Row Action -->
+                                    <td class="p-1.5 text-center">
+                                        <button type="button" @click="removeBatchRow(idx)" 
+                                            class="p-1 text-slate-400 hover:text-rose-600 transition cursor-pointer rounded" title="ही ओळ काढा">
+                                            <i class="fa-solid fa-trash-can text-xs"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Summary Totals Footer Bar -->
+            <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200/80 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="flex items-center gap-4 flex-wrap">
+                    <div>
+                        <span class="text-slate-500 block text-[10px] font-bold uppercase">एकूण ग्राहक (Jobs)</span>
+                        <span class="text-sm font-black text-purple-900" x-text="batchSummary.validCount">0</span>
+                    </div>
+                    <div class="border-l border-purple-200 pl-3">
+                        <span class="text-slate-500 block text-[10px] font-bold uppercase">घाऊक बिल (Wholesale ₹)</span>
+                        <span class="text-sm font-black text-purple-700 font-mono" x-text="'₹' + batchSummary.totalBilling.toLocaleString('en-IN')">₹0</span>
+                    </div>
+                    <div class="border-l border-purple-200 pl-3">
+                        <span class="text-slate-500 block text-[10px] font-bold uppercase">सरकारी चलन (Challan ₹)</span>
+                        <span class="text-sm font-bold text-slate-700 font-mono" x-text="'₹' + batchSummary.totalChallan.toLocaleString('en-IN')">₹0</span>
+                    </div>
+                    <div class="border-l border-purple-200 pl-3">
+                        <span class="text-slate-500 block text-[10px] font-bold uppercase">निव्वळ नफा (Margin ₹)</span>
+                        <span class="text-sm font-black text-emerald-600 font-mono" x-text="'₹' + batchSummary.totalMargin.toLocaleString('en-IN')">₹0</span>
+                    </div>
+                    <div class="border-l border-purple-200 pl-3">
+                        <span class="text-slate-500 block text-[10px] font-bold uppercase">जमा रक्कम (Paid ₹)</span>
+                        <span class="text-sm font-black text-emerald-700 font-mono" x-text="'₹' + batchSummary.totalPaid.toLocaleString('en-IN')">₹0</span>
+                    </div>
+                    <div class="border-l border-purple-200 pl-3">
+                        <span class="text-slate-500 block text-[10px] font-bold uppercase">येणे बाकी (Due ₹)</span>
+                        <span class="text-sm font-black font-mono" 
+                            :class="batchSummary.totalDue > 0 ? 'text-rose-600' : 'text-emerald-600'"
+                            x-text="'₹' + batchSummary.totalDue.toLocaleString('en-IN')">₹0</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2 ml-auto">
+                    <button type="button" @click="closeModals()" class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded-lg border border-slate-200 cursor-pointer transition">
+                        रद्द करा (Cancel)
+                    </button>
+                    <button type="button" @click="saveAgentBatchLogs()" 
+                        class="px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-lg shadow-md transition flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-floppy-disk text-xs"></i>
+                        <span>💾 सर्व अर्ज सेव्ह करा (Save Batch)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ==================== 4. ALPINE.JS REACTIVE ENGINE ==================== -->
     <script>
         
@@ -3954,6 +4212,7 @@
                     customer: false,
                     agent: false,
                     editAgent: false,
+                    agentBatch: false,
                     appTypes: false,
                     operators: false,
                     editOperator: false,
@@ -3981,6 +4240,20 @@
                 tempAgent: { id: null, name: '', centerName: '', mobile: '', village: '', notes: '' },
                 agentSearchQuery: '',
                 agentStatusFilter: 'all',
+
+                // Agent Batch Ingestion State
+                agentBatchForm: {
+                    agentId: '',
+                    agentName: '',
+                    date: new Date().toISOString().slice(0, 10),
+                    isCreatingInlineAgent: false,
+                    inlineAgent: { name: '', centerName: '', mobile: '', village: '', notes: '' },
+                    rows: [
+                        { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' },
+                        { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' },
+                        { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' }
+                    ]
+                },
 
                 // Customer Form
                 customerForm: {
@@ -7927,6 +8200,366 @@
                     this.searchQuery = ag.name;
                 },
 
+                // ==================== AGENT BATCH CUSTOMER INGESTION & EXCEL EXPORT ====================
+                get batchSummary() {
+                    const validRows = (this.agentBatchForm?.rows || []).filter(r => (r.customerName || '').trim().length > 0);
+                    const totalBilling = validRows.reduce((sum, r) => sum + Number(r.agentPrice || 0), 0);
+                    const totalChallan = validRows.reduce((sum, r) => sum + Number(r.challanFees || 0), 0);
+                    const totalMargin = validRows.reduce((sum, r) => sum + Math.max(0, Number(r.agentPrice || 0) - Number(r.challanFees || 0)), 0);
+                    const totalPaid = validRows.reduce((sum, r) => sum + Number(r.paidAmount || 0), 0);
+                    const totalDue = Math.max(0, totalBilling - totalPaid);
+                    return {
+                        validCount: validRows.length,
+                        totalBilling,
+                        totalChallan,
+                        totalMargin,
+                        totalPaid,
+                        totalDue
+                    };
+                },
+
+                openAgentBatchModal(agentId = null) {
+                    const initialAgentId = agentId ? String(agentId) : (this.agents.length > 0 ? String(this.agents[0].id) : '');
+                    const foundAgent = this.agents.find(a => String(a.id) === String(initialAgentId));
+                    this.agentBatchForm = {
+                        agentId: initialAgentId,
+                        agentName: foundAgent ? foundAgent.name : '',
+                        date: new Date().toISOString().slice(0, 10),
+                        isCreatingInlineAgent: false,
+                        inlineAgent: { name: '', centerName: '', mobile: '', village: '', notes: '' },
+                        rows: [
+                            { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' },
+                            { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' },
+                            { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' }
+                        ]
+                    };
+                    this.modals.agentBatch = true;
+                },
+
+                onBatchAgentChange() {
+                    if (this.agentBatchForm.agentId === '__NEW_AGENT__') {
+                        this.agentBatchForm.isCreatingInlineAgent = true;
+                        this.agentBatchForm.agentName = '';
+                    } else {
+                        this.agentBatchForm.isCreatingInlineAgent = false;
+                        const ag = this.agents.find(a => String(a.id) === String(this.agentBatchForm.agentId));
+                        this.agentBatchForm.agentName = ag ? ag.name : '';
+                    }
+                },
+
+                addBatchRow(count = 1) {
+                    for (let i = 0; i < count; i++) {
+                        this.agentBatchForm.rows.push({
+                            customerName: '',
+                            mobileNo: '',
+                            serviceName: '',
+                            agentPrice: '',
+                            challanFees: 0,
+                            netMargin: 0,
+                            paidAmount: ''
+                        });
+                    }
+                },
+
+                removeBatchRow(idx) {
+                    if (this.agentBatchForm.rows.length <= 1) {
+                        this.agentBatchForm.rows[0] = { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' };
+                    } else {
+                        this.agentBatchForm.rows.splice(idx, 1);
+                    }
+                },
+
+                resetBatchRows() {
+                    this.agentBatchForm.rows = [
+                        { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' },
+                        { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' },
+                        { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' }
+                    ];
+                },
+
+                onBatchRowServiceChange(row) {
+                    if (!row.serviceName) {
+                        row.agentPrice = '';
+                        row.challanFees = 0;
+                        row.netMargin = 0;
+                        return;
+                    }
+                    const st = this.appTypes.find(t => t.name === row.serviceName);
+                    if (st) {
+                        const defaultAgent = (st.defaultAgentAmount !== undefined && st.defaultAgentAmount !== null && st.defaultAgentAmount !== '') 
+                            ? Number(st.defaultAgentAmount) 
+                            : Math.round(Number(st.defaultAmount || 0) * 0.8);
+                        const defaultChallan = Number(st.defaultChallan || 0);
+                        row.agentPrice = defaultAgent;
+                        row.challanFees = defaultChallan;
+                        row.netMargin = Math.max(0, defaultAgent - defaultChallan);
+                    }
+                },
+
+                updateBatchRowMargin(row) {
+                    row.netMargin = Math.max(0, Number(row.agentPrice || 0) - Number(row.challanFees || 0));
+                },
+
+                async saveAgentBatchLogs() {
+                    // 1. Resolve Agent
+                    let selectedAgent = null;
+                    if (this.agentBatchForm.isCreatingInlineAgent) {
+                        const inName = (this.agentBatchForm.inlineAgent.name || '').trim();
+                        const inMobile = (this.agentBatchForm.inlineAgent.mobile || '').trim();
+                        if (!inName) {
+                            alert('कृपया नवीन एजंटचे नाव प्रविष्ट करा.');
+                            return;
+                        }
+                        if (!inMobile) {
+                            alert('कृपया नवीन एजंटचा मोबाईल नंबर प्रविष्ट करा.');
+                            return;
+                        }
+                        const newAg = {
+                            id: Date.now(),
+                            name: inName,
+                            centerName: (this.agentBatchForm.inlineAgent.centerName || '').trim(),
+                            mobile: inMobile,
+                            village: (this.agentBatchForm.inlineAgent.village || '').trim(),
+                            notes: (this.agentBatchForm.inlineAgent.notes || '').trim(),
+                            createdAt: new Date().toISOString()
+                        };
+                        this.agents.push(newAg);
+                        localStorage.setItem('sf_agents_data', JSON.stringify(this.agents));
+
+                        if (this.supabaseClient) {
+                            try {
+                                await this.supabaseClient.from('agents').upsert({
+                                    id: newAg.id,
+                                    name: newAg.name,
+                                    center_name: newAg.centerName,
+                                    mobile: newAg.mobile,
+                                    village: newAg.village,
+                                    notes: newAg.notes
+                                });
+                            } catch (e) {
+                                console.warn('Inline agent upsert warning:', e);
+                            }
+                        }
+                        selectedAgent = newAg;
+                        this.agentBatchForm.agentId = newAg.id;
+                        this.agentBatchForm.agentName = newAg.name;
+                        this.agentBatchForm.isCreatingInlineAgent = false;
+                    } else {
+                        if (!this.agentBatchForm.agentId) {
+                            alert('कृपया एजंट पार्टनर निवडा किंवा नवीन एजंट तयार करा.');
+                            return;
+                        }
+                        selectedAgent = this.agents.find(a => String(a.id) === String(this.agentBatchForm.agentId));
+                        if (!selectedAgent && this.agentBatchForm.agentName) {
+                            selectedAgent = { id: this.agentBatchForm.agentId, name: this.agentBatchForm.agentName, village: '' };
+                        }
+                        if (!selectedAgent) {
+                            alert('निवडलेला एजंट सापडला नाही.');
+                            return;
+                        }
+                    }
+
+                    // 2. Validate Rows
+                    const validRows = this.agentBatchForm.rows.filter(r => (r.customerName || '').trim().length > 0);
+                    if (validRows.length === 0) {
+                        alert('कृपया किमान १ ग्राहकाचे नाव प्रविष्ट करा.');
+                        return;
+                    }
+
+                    // 3. Sequential App ID calculation
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const datePrefix = `${year}${month}${day}`;
+
+                    const todayLogs = this.logs.filter(l => l.appId && l.appId.startsWith(`SRV-${datePrefix}-`));
+                    let currentSerial = 1;
+                    if (todayLogs.length > 0) {
+                        const serials = todayLogs.map(l => {
+                            const parts = l.appId.split('-');
+                            return parseInt(parts[2], 10) || 0;
+                        });
+                        currentSerial = Math.max(...serials) + 1;
+                    }
+
+                    const formattedDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                    const newLogPayloads = [];
+                    const supabaseRows = [];
+
+                    validRows.forEach((row, i) => {
+                        const appId = `SRV-${datePrefix}-${String(currentSerial + i).padStart(2, '0')}`;
+                        const logId = Date.now() + i;
+                        const agentFee = Number(row.agentPrice || 0);
+                        const challan = Number(row.challanFees || 0);
+                        const margin = Math.max(0, agentFee - challan);
+                        const paid = Number(row.paidAmount || 0);
+                        const serviceName = (row.serviceName || 'General Service').trim();
+
+                        const serviceObj = {
+                            name: serviceName,
+                            customerPrice: agentFee,
+                            agentPrice: agentFee,
+                            amount: agentFee,
+                            challanFees: challan,
+                            netMargin: margin,
+                            status: 'In Process',
+                            physicalStatus: 'Pending',
+                            assignedTo: 'ALL',
+                            completedBy: null,
+                            completedAt: null,
+                            procCommission: 0,
+                            dispatchedBy: null,
+                            dispatchedAt: null,
+                            dispCommission: 0
+                        };
+
+                        const logPayload = {
+                            id: logId,
+                            appId: appId,
+                            clientType: 'agent',
+                            agentId: Number(selectedAgent.id),
+                            agentName: selectedAgent.name,
+                            customerName: row.customerName.trim(),
+                            mobileNo: (row.mobileNo || '').trim(),
+                            address: selectedAgent.village || '',
+                            applicationType: serviceName,
+                            services: [serviceObj],
+                            username: '',
+                            password: '',
+                            status: 'In Process',
+                            totalAmount: agentFee,
+                            paidAmount: paid,
+                            paymentDate: paid > 0 ? (this.agentBatchForm.date || formattedDate) : '',
+                            paymentHistory: paid > 0 ? [{
+                                id: Date.now() + i,
+                                amount: paid,
+                                date: this.agentBatchForm.date || formattedDate,
+                                method: 'Cash',
+                                note: 'Advance (Agent Batch Entry)'
+                            }] : [],
+                            notes: `Agent Batch Ingestion: ${selectedAgent.name} (${selectedAgent.centerName || ''})`,
+                            date: formattedDate,
+                            createdAt: new Date().toISOString(),
+                            createdBy: this.currentUser ? this.currentUser.username : 'admin',
+                            showPass: false
+                        };
+
+                        newLogPayloads.push(logPayload);
+                        supabaseRows.push({
+                            id: logPayload.id,
+                            app_id: logPayload.appId,
+                            client_type: 'agent',
+                            agent_id: Number(selectedAgent.id),
+                            agent_name: selectedAgent.name,
+                            customer_name: logPayload.customerName,
+                            mobile_no: logPayload.mobileNo,
+                            address: logPayload.address,
+                            application_type: logPayload.applicationType,
+                            services: logPayload.services,
+                            username: logPayload.username,
+                            password: logPayload.password,
+                            status: logPayload.status,
+                            total_amount: logPayload.totalAmount,
+                            paid_amount: logPayload.paidAmount,
+                            payment_date: logPayload.paymentDate,
+                            payment_history: logPayload.paymentHistory,
+                            notes: logPayload.notes,
+                            date: logPayload.date,
+                            created_by: logPayload.createdBy
+                        });
+                    });
+
+                    // Add new logs to beginning of this.logs
+                    for (let j = newLogPayloads.length - 1; j >= 0; j--) {
+                        this.logs.unshift(newLogPayloads[j]);
+                    }
+
+                    // Save to Supabase
+                    if (this.supabaseClient && supabaseRows.length > 0) {
+                        try {
+                            const { error } = await this.supabaseClient.from('logs').upsert(supabaseRows);
+                            if (error) {
+                                console.warn('Supabase batch upsert error:', error);
+                            }
+                        } catch (e) {
+                            console.error('Supabase batch logs error:', e);
+                        }
+                    }
+
+                    this.closeModals();
+                    alert(`यशस्वी: ${newLogPayloads.length} ग्राहकांच्या नोंदी एजंट ${selectedAgent.name} अंतर्गत जतन करण्यात आल्या आहेत!`);
+                },
+
+                exportAgentLedgerExcel(targetAgentId = null) {
+                    let targetLogs = this.logs.filter(l => (l.clientType === 'agent' || l.client_type === 'agent') || Boolean(l.agentId || l.agent_id));
+                    let agObj = null;
+                    if (targetAgentId) {
+                        agObj = this.agents.find(a => Number(a.id) === Number(targetAgentId));
+                        targetLogs = targetLogs.filter(l => Number(l.agentId || l.agent_id) === Number(targetAgentId));
+                    }
+
+                    if (targetLogs.length === 0) {
+                        alert('एजंटसाठी कोणताही डेटा उपलब्ध नाही. (No agent customer records found to export)');
+                        return;
+                    }
+
+                    const rows = [];
+                    targetLogs.forEach(log => {
+                        const ag = agObj || this.agents.find(a => Number(a.id) === Number(log.agentId || log.agent_id)) || {};
+                        const shopOrVillage = ag.centerName ? `${ag.centerName} (${ag.village || ''})` : (ag.village || log.address || '');
+                        const totalPaid = Number(log.paidAmount || log.paid_amount || 0) + (log.paymentHistory ? log.paymentHistory.reduce((s, p) => s + Number(p.amount || 0), 0) : 0);
+                        const totalDue = Math.max(0, Number(log.totalAmount || log.total_amount || 0) - totalPaid);
+
+                        if (log.services && log.services.length > 0) {
+                            log.services.forEach(s => {
+                                const wholesaleRate = Number(s.agentPrice !== undefined && s.agentPrice !== null ? s.agentPrice : (s.customerPrice || s.amount || 0));
+                                const challan = Number(s.challanFees || 0);
+                                const margin = s.netMargin !== undefined ? Number(s.netMargin) : Math.max(0, wholesaleRate - challan);
+                                rows.push({
+                                    "App ID": log.appId || log.app_id,
+                                    "Date": log.date,
+                                    "Agent Name": log.agentName || log.agent_name || ag.name || 'Agent',
+                                    "Shop/Village": shopOrVillage,
+                                    "Customer Name": log.customerName || log.customer_name,
+                                    "Mobile": log.mobileNo || log.mobile_no || '',
+                                    "Service Name": s.name || log.applicationType || log.application_type || '',
+                                    "Agent Wholesale Rate": wholesaleRate,
+                                    "Govt Challan": challan,
+                                    "Net Margin": margin,
+                                    "Paid Amount": totalPaid,
+                                    "Due Amount": totalDue,
+                                    "Processing Status": s.status || log.status || 'In Process',
+                                    "Physical Delivery": s.physicalStatus || 'Pending'
+                                });
+                            });
+                        } else {
+                            rows.push({
+                                "App ID": log.appId || log.app_id,
+                                "Date": log.date,
+                                "Agent Name": log.agentName || log.agent_name || ag.name || 'Agent',
+                                "Shop/Village": shopOrVillage,
+                                "Customer Name": log.customerName || log.customer_name,
+                                "Mobile": log.mobileNo || log.mobile_no || '',
+                                "Service Name": log.applicationType || log.application_type || 'General Service',
+                                "Agent Wholesale Rate": Number(log.totalAmount || log.total_amount || 0),
+                                "Govt Challan": 0,
+                                "Net Margin": Number(log.totalAmount || log.total_amount || 0),
+                                "Paid Amount": totalPaid,
+                                "Due Amount": totalDue,
+                                "Processing Status": log.status || 'In Process',
+                                "Physical Delivery": 'Pending'
+                            });
+                        }
+                    });
+
+                    const ws = XLSX.utils.json_to_sheet(rows);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Agent Records");
+                    const filePrefix = agObj ? `Agent_${(agObj.name || 'Partner').replace(/\s+/g, '_')}` : 'All_Agents_Records';
+                    XLSX.writeFile(wb, `${filePrefix}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+                },
+
                 openModal(type) {
                     if (type === 'operators' || type === 'salaryRevision' || type === 'commissionConfig' || type === 'recordPayment') {
                         if (!this.currentUser || (this.currentUser.role !== 'admin' && this.currentUser.username !== 'sagar')) {
@@ -7950,6 +8583,9 @@
                         setTimeout(() => document.getElementById('customerNameInput')?.focus(), 50);
                     } else if (type === 'agent') {
                         this.newAgent = { name: '', centerName: '', mobile: '', village: '', notes: '' };
+                    } else if (type === 'agentBatch') {
+                        this.openAgentBatchModal();
+                        return;
                     } else if (type === 'logoSettings') {
                         this.tempLogoInput = this.customLogoUrl;
                     } else if (type === 'waSettings') {

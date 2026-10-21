@@ -10,6 +10,8 @@ interface AgentsHubViewProps {
   onEditAgent: (agent: Agent) => void;
   onDeleteAgent: (id: number | string) => void;
   onViewLedger: (agentName: string) => void;
+  onOpenBatchModal?: (agentId?: number | string) => void;
+  onExportExcel?: (agentId?: number | string) => void;
 }
 
 export const AgentsHubView: React.FC<AgentsHubViewProps> = ({
@@ -18,7 +20,9 @@ export const AgentsHubView: React.FC<AgentsHubViewProps> = ({
   onAddAgent,
   onEditAgent,
   onDeleteAgent,
-  onViewLedger
+  onViewLedger,
+  onOpenBatchModal,
+  onExportExcel
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'due' | 'clear'>('all');
@@ -78,14 +82,36 @@ export const AgentsHubView: React.FC<AgentsHubViewProps> = ({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsAddModalOpen(true)}
-            className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl text-xs font-bold transition shadow flex items-center gap-2 cursor-pointer self-start sm:self-auto"
-          >
-            <i className="fa-solid fa-plus text-xs"></i>
-            <span>+ नवीन एजंट जोडा (+ Add Agent)</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+            {onOpenBatchModal && (
+              <button
+                type="button"
+                onClick={() => onOpenBatchModal()}
+                className="px-3.5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>📑</span>
+                <span>+ Batch Customer Entry</span>
+              </button>
+            )}
+            {onExportExcel && (
+              <button
+                type="button"
+                onClick={() => onExportExcel()}
+                className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>📊</span>
+                <span>Export Agent Excel</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="px-3.5 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <i className="fa-solid fa-plus text-xs"></i>
+              <span>+ नवीन एजंट (+ Add Agent)</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -254,6 +280,27 @@ export const AgentsHubView: React.FC<AgentsHubViewProps> = ({
                   <i className="fa-solid fa-table-list text-xs"></i>
                   <span>अर्ज पहा</span>
                 </button>
+                {onOpenBatchModal && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenBatchModal(agent.id)}
+                    className="px-2 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    title="Batch Customer Entry for this Agent"
+                  >
+                    <span>📑</span>
+                    <span className="hidden sm:inline">Batch</span>
+                  </button>
+                )}
+                {onExportExcel && (
+                  <button
+                    type="button"
+                    onClick={() => onExportExcel(agent.id)}
+                    className="px-2 py-1.5 border border-emerald-200 hover:bg-emerald-50 text-emerald-700 rounded-lg text-xs transition cursor-pointer"
+                    title="Export Agent Excel"
+                  >
+                    <i className="fa-solid fa-file-excel"></i>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => onEditAgent(agent)}
