@@ -12,23 +12,35 @@ export const calculateNetMargin = (fee: number, challanFees: number = 0): number
 };
 
 /**
+ * Calculates auto 20% discounted agent rate from customer retail price
+ * Formula: Math.round(custPrice * 0.8)
+ */
+export const calculateAutoAgentDiscount = (custPrice: number): number => {
+  return Math.round(Number(custPrice || 0) * 0.8);
+};
+
+/**
  * Resolves the service rate based on client type:
  * - Direct customer: defaultAmount (full retail)
- * - Agent work: defaultAgentAmount (wholesale discounted fee), fallback to defaultAmount
+ * - Agent work: defaultAgentAmount (wholesale discounted fee), fallback to 20% auto discount of defaultAmount
  */
 export const getServiceRate = (
   service: AppTypeDualPrice,
   clientType: 'direct' | 'agent' = 'direct'
 ): number => {
+  const retail = service.defaultAmount !== undefined && service.defaultAmount !== null
+    ? Number(service.defaultAmount)
+    : Number(service.default_amount || 0);
+
   if (clientType === 'agent') {
     const agentRate = service.defaultAgentAmount !== undefined && service.defaultAgentAmount !== null
       ? Number(service.defaultAgentAmount)
       : Number(service.default_agent_amount || 0);
     if (agentRate > 0) return agentRate;
+    // Auto 20% discount rule fallback when agent rate is not explicitly stored
+    if (retail > 0) return calculateAutoAgentDiscount(retail);
   }
-  return service.defaultAmount !== undefined && service.defaultAmount !== null
-    ? Number(service.defaultAmount)
-    : Number(service.default_amount || 0);
+  return retail;
 };
 
 /**
