@@ -38,18 +38,36 @@ on conflict (username) do update set
     name = excluded.name;
 
 
--- २. सेवांचे प्रकार आणि डीफॉल्ट दर टेबल (App / Service Types)
+-- २. सेवांचे प्रकार आणि डीफॉल्ट दर टेबल (App / Service Types with Dual Pricing)
 create table if not exists public.app_types (
     id bigint primary key,
     name text not null,
     default_amount numeric default 0,
+    default_agent_amount numeric default 0,
     default_challan numeric default 0,
     created_at timestamptz default now()
 );
 
 -- २.१ ॲप टाईप्स टेबल ऑटोमॅटिक मायग्रेशन (Add missing columns to existing app_types table)
 alter table public.app_types add column if not exists default_amount numeric default 0;
+alter table public.app_types add column if not exists default_agent_amount numeric default 0;
 alter table public.app_types add column if not exists default_challan numeric default 0;
+
+-- २.२ एजंट्स आणि बी२बी पार्टनर टेबल (Agents & B2B Wholesale Partners)
+create table if not exists public.agents (
+    id bigint primary key,
+    name text not null,
+    center_name text,
+    mobile text,
+    village text,
+    notes text,
+    created_at timestamptz default now()
+);
+
+alter table public.agents add column if not exists center_name text;
+alter table public.agents add column if not exists mobile text;
+alter table public.agents add column if not exists village text;
+alter table public.agents add column if not exists notes text;
 
 
 -- ३. कस्टमर लेजर आणि सर्विस लॉग्स टेबल (Customer Logs & Services with Challan / Net Margin)
@@ -76,9 +94,12 @@ create table if not exists public.logs (
     created_at timestamptz default now()
 );
 
--- ३.१ डिस्पॅच इव्हेंट्स टाईमस्टॅम्प ट्रॅकिंग (Dispatch Timestamp Tracking)
+-- ३.१ डिस्पॅच इव्हेंट्स आणि एजंट्स ट्रॅकिंग मायग्रेशन (Dispatch & Agent Workflow Tracking)
 -- 100% सुरक्षित आणि आयडेम्पोटेंट (IF EXISTS वापरल्याने टेबल अस्तित्वात नसले तरी एरर येत नाही)
 alter table if exists public.logs add column if not exists dispatched_at timestamptz default null;
+alter table if exists public.logs add column if not exists client_type text default 'direct';
+alter table if exists public.logs add column if not exists agent_id bigint default null;
+alter table if exists public.logs add column if not exists agent_name text default null;
 alter table if exists public.tasks add column if not exists dispatched_at timestamptz default null;
 alter table if exists public.cafe_tasks add column if not exists dispatched_at timestamptz default null;
 alter table if exists public.logs_rows add column if not exists dispatched_at timestamptz default null;
@@ -120,10 +141,13 @@ create table if not exists public.staff_payments (
 -- ६. कार्यक्षमता आणि वेगवान शोधासाठी इंडेक्स (Performance Indexes)
 create index if not exists idx_users_role on public.users(role);
 create index if not exists idx_app_types_name on public.app_types(name);
+create index if not exists idx_agents_name on public.agents(name);
 create index if not exists idx_logs_app_id on public.logs(app_id);
 create index if not exists idx_logs_customer on public.logs(customer_name);
 create index if not exists idx_logs_mobile on public.logs(mobile_no);
 create index if not exists idx_logs_date on public.logs(date);
+create index if not exists idx_logs_client_type on public.logs(client_type);
+create index if not exists idx_logs_agent_id on public.logs(agent_id);
 create index if not exists idx_attendance_staff_date on public.attendance_logs(staff_id, date);
 create index if not exists idx_staff_payments_staff_date on public.staff_payments(staff_id, date);
 
@@ -131,6 +155,7 @@ create index if not exists idx_staff_payments_staff_date on public.staff_payment
 -- ७. रो लेव्हल सिक्युरिटी (RLS) आणि ॲक्सेस पॉलिसी (Row Level Security & RBAC Rules)
 alter table public.users enable row level security;
 alter table public.app_types enable row level security;
+alter table public.agents enable row level security;
 alter table public.logs enable row level security;
 alter table public.attendance_logs enable row level security;
 alter table public.staff_payments enable row level security;
@@ -161,6 +186,9 @@ create policy "Allow all operations on users" on public.users for all using (tru
 drop policy if exists "Allow all operations on app_types" on public.app_types;
 create policy "Allow all operations on app_types" on public.app_types for all using (true) with check (true);
 
+drop policy if exists "Allow all operations on agents" on public.agents;
+create policy "Allow all operations on agents" on public.agents for all using (true) with check (true);
+
 drop policy if exists "Allow all operations on logs" on public.logs;
 create policy "Allow all operations on logs" on public.logs for all using (true) with check (true);
 
@@ -180,6 +208,9 @@ begin
     if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'app_types') then
         alter publication supabase_realtime add table public.app_types;
     end if;
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'agents') then
+        alter publication supabase_realtime add table public.agents;
+    end if;
     if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'logs') then
         alter publication supabase_realtime add table public.logs;
     end if;
@@ -190,6 +221,18 @@ begin
         alter publication supabase_realtime add table public.staff_payments;
     end if;
 end $$;
+
+-- ८.१ डीफॉल्ट प्राथमिक एजंट्स इन्सर्ट (Seed Default Agents)
+insert into public.agents (id, name, center_name, mobile, village, notes)
+values
+    (101, 'रामेश्वर पाटील', 'पाटील महा-ई-सेवा केंद्र', '9822334455', 'वीरगाव', 'नियमित एजंट (सटाणा रोड)'),
+    (102, 'योगेश अहिरे', 'अहिरे डिजिटल सेवा केंद्र', '9860112233', 'देवळा', 'दाखले व पॅन कार्ड पार्टनर'),
+    (103, 'सचिन सोनवणे', 'सोनवणे ऑनलाइन सर्व्हिसेस', '9765443322', 'ताहाराबाद', 'शिष्यवृत्ती व रेशन कार्ड')
+on conflict (id) do update set
+    name = excluded.name,
+    center_name = excluded.center_name,
+    mobile = excluded.mobile,
+    village = excluded.village;
 
 -- ९. कॅफे अटेंडन्स आणि अचूक कामाचे तास आधारित हजेरी (Cafe Attendance & Duration-Based Attendance)
 create table if not exists public.cafe_attendance (

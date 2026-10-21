@@ -29,6 +29,8 @@ export interface CustomerServiceItem {
   procCommission?: number;
   disp_commission?: number;
   dispCommission?: number;
+  agent_price?: number;
+  agentPrice?: number;
 }
 
 export interface CustomerLog {
@@ -38,6 +40,12 @@ export interface CustomerLog {
   mobile_no?: string;
   address?: string;
   application_type?: string;
+  client_type?: 'direct' | 'agent';
+  clientType?: 'direct' | 'agent';
+  agent_id?: number | string | null;
+  agentId?: number | string | null;
+  agent_name?: string | null;
+  agentName?: string | null;
   services: CustomerServiceItem[];
   username?: string;
   password?: string;

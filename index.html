@@ -304,6 +304,18 @@
                         <span :class="activeTab === 'ledger' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'" class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold" x-text="logs.length"></span>
                     </button>
 
+                    <!-- Add in Tier 2 Nav bar -->
+                    <button
+                        type="button"
+                        @click="activeTab = 'agents'"
+                        :class="activeTab === 'agents' ? 'bg-slate-900 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'"
+                        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
+                    >
+                        <span class="text-sm">🤝</span>
+                        <span>Agents Hub (एजंट्स)</span>
+                        <span :class="activeTab === 'agents' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'" class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold" x-text="agents.length"></span>
+                    </button>
+
                     <button
                         type="button"
                         @click="activeTab = 'tasks'"
@@ -536,6 +548,14 @@
                                         </td>
                                         <td class="p-3 align-top">
                                             <div class="font-semibold text-slate-800 text-sm" x-text="log.customerName"></div>
+                                            <template x-if="log.clientType === 'agent' || log.agentName">
+                                                <div class="mt-0.5">
+                                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200" :title="'Agent Work: ' + (log.agentName || 'Agent')">
+                                                        <i class="fa-solid fa-handshake text-[9px]"></i>
+                                                        <span x-text="log.agentName || 'एजंटचे काम (Agent)'"></span>
+                                                    </span>
+                                                </div>
+                                            </template>
                                             <div class="text-slate-500 font-mono" x-text="log.mobileNo"></div>
                                             <div class="text-[11px] text-slate-500 mt-0.5 italic" x-text="log.address ? 'Addr: ' + log.address : ''"></div>
                                         </td>
@@ -669,6 +689,186 @@
                             <button @click="goToPage(currentPage + 1)" :disabled="currentPage >= totalPages" class="px-2.5 py-1 bg-white border border-slate-300 rounded font-medium disabled:opacity-50">Next</button>
                         </div>
                     </div>
+                </div>
+
+            </div>
+
+            <!-- ============================================================== -->
+            <!-- TAB: AGENTS HUB (B2B WHOLESALE PARTNERS & DUAL PRICING)        -->
+            <!-- ============================================================== -->
+            <div x-show="activeTab === 'agents'" class="space-y-4">
+                
+                <!-- Agents Hub Banner -->
+                <div class="bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 text-white p-4 rounded-2xl shadow-md border border-purple-800/40">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center text-2xl border border-purple-500/30">
+                                🤝
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-white flex items-center gap-2">
+                                    <span>Agents & B2B Wholesale Hub</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-purple-500/20 text-purple-200 border border-purple-400/30">B2B Portal</span>
+                                </h2>
+                                <p class="text-xs text-purple-200/80 mt-0.5">
+                                    गाव पातळीवरील सब-सेंटर्स, एजंट्स पार्टनर, होलसेल सवलत दर आणि बाकी रकमेचा हिशोब
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 self-start sm:self-auto">
+                            <button type="button" @click="openModal('agent')" 
+                                class="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-user-plus text-xs"></i>
+                                <span>+ नवीन एजंट जोडा (+ Add Agent)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI Metric Cards for Agents -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Active Agent Network</span>
+                        <div class="text-2xl font-black text-slate-900 mt-1" x-text="agents.length">0</div>
+                        <span class="text-[11px] font-medium text-purple-700 mt-0.5 block">नोंदणीकृत सब-केंद्रे</span>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Agent Applications</span>
+                        <div class="text-2xl font-black text-indigo-700 font-mono mt-1" x-text="agentMetrics.totalApps">0</div>
+                        <span class="text-[11px] font-medium text-indigo-600 mt-0.5 block">एजंट्समार्फत आलेले अर्ज</span>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total B2B Volume</span>
+                        <div class="text-2xl font-black text-emerald-700 font-mono mt-1" x-text="'₹ ' + agentMetrics.totalBilled.toLocaleString('en-IN')">₹ 0</div>
+                        <span class="text-[11px] font-medium text-emerald-600 mt-0.5 block">एकूण घाऊक व्यवसाय</span>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+                        <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider block">Outstanding Balances</span>
+                        <div class="text-2xl font-black text-rose-600 font-mono mt-1" x-text="'₹ ' + agentMetrics.totalDue.toLocaleString('en-IN')">₹ 0</div>
+                        <span class="text-[11px] font-medium text-rose-500 mt-0.5 block">एजंट्सकडून येणे बाकी</span>
+                    </div>
+                </div>
+
+                <!-- Agent Search & Filter Toolbar -->
+                <div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                    <div class="relative w-full sm:w-80">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                        <input type="text" x-model="agentSearchQuery" placeholder="एजंट नाव, केंद्र, मोबाईल किंवा गाव शोधा..." 
+                            class="w-full pl-8 pr-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none text-xs">
+                    </div>
+                    <div class="flex items-center gap-1.5 self-end sm:self-auto">
+                        <button type="button" @click="agentStatusFilter = 'all'" 
+                            :class="agentStatusFilter === 'all' ? 'bg-slate-900 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                            class="px-3 py-1.5 rounded-lg text-xs transition cursor-pointer">
+                            सर्व एजंट (<span x-text="agents.length"></span>)
+                        </button>
+                        <button type="button" @click="agentStatusFilter = 'due'" 
+                            :class="agentStatusFilter === 'due' ? 'bg-rose-600 text-white font-bold' : 'bg-rose-50 text-rose-700 hover:bg-rose-100'"
+                            class="px-3 py-1.5 rounded-lg text-xs transition cursor-pointer flex items-center gap-1">
+                            <span>बाकी असलेले</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-white/20" x-text="agents.filter(a => getAgentStats(a.id).totalDue > 0).length"></span>
+                        </button>
+                        <button type="button" @click="agentStatusFilter = 'clear'" 
+                            :class="agentStatusFilter === 'clear' ? 'bg-emerald-600 text-white font-bold' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'"
+                            class="px-3 py-1.5 rounded-lg text-xs transition cursor-pointer">
+                            हिशोब पूर्ण
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Active Agents List Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <template x-for="ag in filteredAgents" :key="ag.id">
+                        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md transition p-4 flex flex-col justify-between space-y-3">
+                            <div>
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center font-bold text-sm">
+                                            🤝
+                                        </div>
+                                        <div>
+                                            <h3 class="font-bold text-slate-900 text-sm" x-text="ag.name"></h3>
+                                            <div class="text-[11px] text-purple-700 font-semibold" x-text="ag.centerName || 'महा-ई-सेवा केंद्र'"></div>
+                                        </div>
+                                    </div>
+                                    <span class="px-2 py-0.5 bg-slate-100 text-slate-700 font-bold rounded-md text-[10px]" x-text="ag.village || 'गाव'"></span>
+                                </div>
+
+                                <div class="mt-3 flex items-center justify-between text-xs text-slate-600 pt-2 border-t border-slate-100">
+                                    <span class="flex items-center gap-1.5">
+                                        <i class="fa-solid fa-phone text-slate-400 text-[11px]"></i>
+                                        <span class="font-mono font-medium" x-text="ag.mobile"></span>
+                                    </span>
+                                    <template x-if="ag.mobile">
+                                        <a :href="'https://wa.me/91' + ag.mobile.replace(/\\D/g, '')" target="_blank" rel="noopener noreferrer" 
+                                            class="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-bold text-[11px] bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-200 transition">
+                                            <i class="fa-brands fa-whatsapp text-emerald-600"></i>
+                                            <span>WhatsApp</span>
+                                        </a>
+                                    </template>
+                                </div>
+                                <template x-if="ag.notes">
+                                    <div class="mt-1.5 text-[11px] text-slate-500 italic bg-slate-50 px-2 py-1 rounded" x-text="'शेरा: ' + ag.notes"></div>
+                                </template>
+                            </div>
+
+                            <!-- Financial Summary Breakdown Box -->
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 text-xs">
+                                <div class="flex justify-between items-center text-[11px]">
+                                    <span class="text-slate-500">एकूण अर्ज (Apps):</span>
+                                    <span class="font-bold font-mono text-slate-800" x-text="getAgentStats(ag.id).appCount + ' अर्ज'"></span>
+                                </div>
+                                <div class="flex justify-between items-center text-[11px]">
+                                    <span class="text-slate-500">एकूण बिल (Billed):</span>
+                                    <span class="font-bold font-mono text-slate-800" x-text="'₹ ' + getAgentStats(ag.id).totalBilled.toLocaleString('en-IN')"></span>
+                                </div>
+                                <div class="flex justify-between items-center text-[11px]">
+                                    <span class="text-slate-500">जमा रक्कम (Paid):</span>
+                                    <span class="font-bold font-mono text-emerald-700" x-text="'₹ ' + getAgentStats(ag.id).totalPaid.toLocaleString('en-IN')"></span>
+                                </div>
+                                <div class="flex justify-between items-center pt-1.5 border-t border-slate-200">
+                                    <span class="font-bold text-slate-700 text-xs">बाकी रक्कम (Due):</span>
+                                    <span class="font-black font-mono text-sm" 
+                                          :class="getAgentStats(ag.id).totalDue > 0 ? 'text-rose-600' : 'text-emerald-600'"
+                                          x-text="'₹ ' + getAgentStats(ag.id).totalDue.toLocaleString('en-IN')"></span>
+                                </div>
+                            </div>
+
+                            <!-- Action Toolbar for Agent -->
+                            <div class="flex items-center gap-1.5 pt-1 border-t border-slate-100">
+                                <button type="button" @click="viewAgentInLedger(ag)" 
+                                    class="flex-1 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer">
+                                    <i class="fa-solid fa-table-list text-xs"></i>
+                                    <span>अर्ज पहा (Ledger)</span>
+                                </button>
+                                <button type="button" @click="editAgent(ag)" 
+                                    class="p-1.5 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-lg text-xs transition cursor-pointer" title="Edit Agent">
+                                    <i class="fa-solid fa-pen text-xs"></i>
+                                </button>
+                                <button type="button" @click="deleteAgent(ag.id)" 
+                                    class="p-1.5 border border-rose-200 hover:bg-rose-50 text-rose-600 rounded-lg text-xs transition cursor-pointer" title="Delete Agent">
+                                    <i class="fa-solid fa-trash text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Empty State -->
+                <div x-show="filteredAgents.length === 0" class="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3">
+                    <div class="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center mx-auto text-xl">
+                        🤝
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-slate-800 text-sm">कोणतेही एजंट सापडले नाहीत</h4>
+                        <p class="text-xs text-slate-500">नवीन एजंट जोडण्यासाठी खालील बटनावर क्लिक करा.</p>
+                    </div>
+                    <button type="button" @click="openModal('agent')" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-xs shadow-sm transition">
+                        + नवीन एजंट जोडा
+                    </button>
                 </div>
 
             </div>
@@ -2201,6 +2401,57 @@
             </div>
 
             <form @submit.prevent="saveCustomerLog" class="space-y-4 text-xs">
+                <!-- Client Type Toggle: Direct Customer (Retail) vs Agent Work (Wholesale B2B) -->
+                <div class="bg-gradient-to-r from-slate-50 via-purple-50/50 to-slate-50 p-3 rounded-xl border border-slate-200 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block font-bold text-slate-800 text-xs">
+                            <i class="fa-solid fa-users text-purple-700 mr-1"></i> ग्राहकाचा प्रकार (Client / Customer Type) *
+                        </label>
+                        <span class="text-[10px] text-purple-700 font-semibold bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                            एजंट कामासाठी घाऊक सवलत दर (Wholesale B2B Rates)
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button type="button" 
+                            @click="setClientType('direct')" 
+                            :class="customerForm.clientType !== 'agent' ? 'bg-slate-900 text-white font-bold shadow-sm border-slate-900' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'"
+                            class="px-3.5 py-2 rounded-lg border text-xs flex items-center justify-center gap-2 transition cursor-pointer">
+                            <i class="fa-solid fa-user text-xs"></i>
+                            <span>किरकोळ ग्राहक (Direct Customer - Retail ₹)</span>
+                        </button>
+                        <button type="button" 
+                            @click="setClientType('agent')" 
+                            :class="customerForm.clientType === 'agent' ? 'bg-purple-700 text-white font-bold shadow-sm border-purple-800 ring-2 ring-purple-300' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'"
+                            class="px-3.5 py-2 rounded-lg border text-xs flex items-center justify-center gap-2 transition cursor-pointer">
+                            <i class="fa-solid fa-handshake text-xs"></i>
+                            <span>एजंटचे काम (Agent Work - Wholesale ₹)</span>
+                        </button>
+                    </div>
+
+                    <!-- If Agent Work is selected, show Agent Selector Dropdown -->
+                    <div x-show="customerForm.clientType === 'agent'" x-transition class="pt-2 border-t border-purple-200 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                        <div class="sm:col-span-8">
+                            <label class="block text-[10px] font-bold text-purple-900 uppercase mb-0.5">
+                                संबंधित एजंट / केंद्र निवडा (Select Active Agent Partner) *
+                            </label>
+                            <select x-model="customerForm.agentId" @change="onAgentSelect()" 
+                                class="w-full px-3 py-2 border border-purple-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 font-semibold text-xs text-purple-900">
+                                <option value="">-- एजंट निवडा (Select Agent Center) --</option>
+                                <template x-for="ag in agents" :key="ag.id">
+                                    <option :value="ag.id" x-text="ag.name + ' (' + (ag.centerName || 'केंद्र') + ' - ' + (ag.village || '') + ')'"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-4 flex items-center gap-1.5 pt-1 sm:pt-4">
+                            <button type="button" @click="openModal('agent')" class="w-full py-2 bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold rounded-lg border border-purple-300 text-[11px] transition flex items-center justify-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-plus text-[10px]"></i>
+                                <span>+ नवीन एजंट जोडा</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Customer Name, Mobile, Address -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -2240,37 +2491,37 @@
                             <span class="text-[10px] text-purple-600 font-medium">सेटिंग्ज टॅबवर न जाता त्वरित सेवा जोडा व निवडा</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
-                            <div class="sm:col-span-5">
+                            <div class="sm:col-span-4">
                                 <label class="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">सेवेचे नाव (Service Name) *</label>
                                 <input type="text" x-model="inlineNewService.name" placeholder="उदा. ड्रायव्हिंग लायसन्स, शॉप ॲक्ट..." 
                                     @keydown.enter.prevent="saveAndSelectInlineService"
                                     class="w-full px-2.5 py-1.5 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white font-semibold text-xs">
                             </div>
                             <div class="sm:col-span-2">
-                                <label class="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">डीफॉल्ट ग्राहक शुल्क ₹</label>
+                                <label class="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">ग्राहक शुल्क ₹</label>
                                 <input type="number" x-model.number="inlineNewService.defaultAmount" placeholder="Cust ₹" 
                                     @keydown.enter.prevent="saveAndSelectInlineService"
                                     class="w-full px-2.5 py-1.5 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white font-bold text-slate-800 text-xs">
-                                <div class="flex items-center gap-1 mt-1">
-                                    <button type="button" @click="inlineNewService.defaultAmount = 25" class="px-1 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition cursor-pointer">₹25</button>
-                                    <button type="button" @click="inlineNewService.defaultAmount = 50" class="px-1 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition cursor-pointer">₹50</button>
-                                    <button type="button" @click="inlineNewService.defaultAmount = 100" class="px-1 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition cursor-pointer">₹100</button>
-                                    <button type="button" @click="inlineNewService.defaultAmount = 200" class="px-1 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition cursor-pointer">₹200</button>
-                                </div>
                             </div>
                             <div class="sm:col-span-2">
-                                <label class="block text-[10px] font-bold text-rose-600 uppercase mb-0.5">डीफॉल्ट चलन ₹</label>
+                                <label class="block text-[10px] font-bold text-purple-700 uppercase mb-0.5">एजंट शुल्क ₹</label>
+                                <input type="number" x-model.number="inlineNewService.defaultAgentAmount" placeholder="Agent ₹" 
+                                    @keydown.enter.prevent="saveAndSelectInlineService"
+                                    class="w-full px-2.5 py-1.5 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white font-bold text-purple-800 text-xs">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-[10px] font-bold text-rose-600 uppercase mb-0.5">सरकारी चलन ₹</label>
                                 <input type="number" x-model.number="inlineNewService.defaultChallan" placeholder="Challan ₹" 
                                     @keydown.enter.prevent="saveAndSelectInlineService"
                                     class="w-full px-2.5 py-1.5 border border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 bg-white font-bold text-rose-700 text-xs">
                             </div>
-                            <div class="sm:col-span-3 flex items-center gap-1.5">
+                            <div class="sm:col-span-2 flex items-center gap-1">
                                 <button type="button" @click="saveAndSelectInlineService" 
                                     class="flex-1 py-1.5 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-1 text-xs">
-                                    <i class="fa-solid fa-check text-xs"></i> <span>Save & Select</span>
+                                    <i class="fa-solid fa-check text-xs"></i> <span>Save</span>
                                 </button>
                                 <button type="button" @click="showInlineServiceCreator = false" 
-                                    class="px-2.5 py-1.5 border border-slate-300 hover:bg-slate-100 text-slate-600 rounded-lg transition text-xs">
+                                    class="px-2 py-1.5 border border-slate-300 hover:bg-slate-100 text-slate-600 rounded-lg transition text-xs">
                                     रद्द
                                 </button>
                             </div>
@@ -2292,14 +2543,17 @@
                                 <option value="">-- सेवा निवडा (Select Service) --</option>
                                 <option value="__CREATE_NEW__" class="font-bold text-purple-700 bg-purple-50">+ नवीन सेवा तयार करा (+ Create New Service)...</option>
                                 <template x-for="type in appTypes" :key="type.id">
-                                    <option :value="type.name" x-text="type.name + ' (₹' + (type.defaultAmount || 0) + ' / Ch: ₹' + (type.defaultChallan || 0) + ')'"></option>
+                                    <option :value="type.name" 
+                                        x-text="type.name + (customerForm.clientType === 'agent' ? ' [एजंट: ₹' + (type.defaultAgentAmount !== undefined && type.defaultAgentAmount !== null ? type.defaultAgentAmount : (type.defaultAmount || 0)) + ']' : ' [ग्राहक: ₹' + (type.defaultAmount || 0) + ']') + ' (चलन: ₹' + (type.defaultChallan || 0) + ')'"></option>
                                 </template>
                             </select>
                         </div>
                         <div class="sm:col-span-2">
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">ग्राहक शुल्क (₹)</label>
-                            <input type="number" x-model.number="tempService.customerPrice" @input="tempService.amount = tempService.customerPrice; tempService.netMargin = Math.max(0, Number(tempService.customerPrice || 0) - Number(tempService.challanFees || 0))" placeholder="Customer ₹" 
-                                class="w-full px-2.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs font-bold text-slate-800">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5" 
+                                   x-text="customerForm.clientType === 'agent' ? 'एजंट शुल्क ₹ (Wholesale)' : 'ग्राहक शुल्क ₹ (Retail)'"></label>
+                            <input type="number" x-model.number="tempService.customerPrice" @input="tempService.amount = tempService.customerPrice; tempService.netMargin = Math.max(0, Number(tempService.customerPrice || 0) - Number(tempService.challanFees || 0))" placeholder="Fee ₹" 
+                                class="w-full px-2.5 py-2 border rounded-lg focus:ring-2 focus:outline-none text-xs font-bold"
+                                :class="customerForm.clientType === 'agent' ? 'border-purple-300 focus:ring-purple-500 text-purple-900 bg-purple-50/30' : 'border-slate-300 focus:ring-indigo-500 text-slate-800'">
                             <!-- Quick Rate Action Buttons (25 / 50 / 100 / 200) -->
                             <div class="flex items-center gap-1 mt-1">
                                 <button type="button" @click="tempService.customerPrice = 25; tempService.amount = 25; tempService.netMargin = Math.max(0, 25 - Number(tempService.challanFees || 0))" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 border border-slate-200 transition cursor-pointer">₹25</button>
@@ -2314,13 +2568,13 @@
                                 class="w-full px-2.5 py-2 border border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-xs font-bold text-rose-700 bg-rose-50/40">
                         </div>
                         <div class="sm:col-span-2">
-                            <label class="block text-[10px] font-bold text-emerald-700 uppercase mb-0.5">निव्वळ नफा (Profit)</label>
+                            <label class="block text-[10px] font-bold text-emerald-700 uppercase mb-0.5">निव्वळ नफा (Margin)</label>
                             <div class="px-2 py-2 bg-emerald-50 border border-emerald-300 rounded-lg text-xs font-extrabold text-emerald-700 font-mono text-center"
                                  x-text="'₹ ' + Math.max(0, Number(tempService.customerPrice || tempService.amount || 0) - Number(tempService.challanFees || 0))">
                             </div>
                         </div>
                         <div class="sm:col-span-1">
-                            <button type="button" @click="addServiceToForm" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm transition text-xs flex items-center justify-center" title="Add Service">
+                            <button type="button" @click="addServiceToForm" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm transition text-xs flex items-center justify-center cursor-pointer" title="Add Service">
                                 <i class="fa-solid fa-plus text-xs"></i>
                             </button>
                         </div>
@@ -2350,7 +2604,7 @@
                                     <span class="font-semibold text-slate-800" x-text="srv.name"></span>
                                 </div>
                                 <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-                                    <span class="font-bold text-slate-800" x-text="'Cust: ₹ ' + (srv.customerPrice || srv.amount || 0)"></span>
+                                    <span class="font-bold text-slate-800" x-text="(customerForm.clientType === 'agent' ? 'Ag: ₹ ' : 'Fee: ₹ ') + (srv.customerPrice || srv.amount || 0)"></span>
                                     <span class="font-semibold text-rose-600 font-mono" x-text="'Challan: ₹ ' + (srv.challanFees || 0)"></span>
                                     <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-extrabold rounded font-mono" x-text="'Profit: ₹ ' + (srv.netMargin !== undefined ? srv.netMargin : Math.max(0, Number(srv.customerPrice || srv.amount || 0) - Number(srv.challanFees || 0)))"></span>
                                     <span class="px-1.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold rounded font-mono text-[10px] hidden sm:inline" x-text="'Proc: ₹' + calcProcComm(srv.netMargin !== undefined ? srv.netMargin : Math.max(0, Number(srv.customerPrice || srv.amount || 0) - Number(srv.challanFees || 0)), currentUser ? getUserCommissionConfig(currentUser.username).procRate : 15, currentUser ? getUserCommissionConfig(currentUser.username).procCap : 20)"></span>
@@ -2682,10 +2936,11 @@
                 <button @click="closeModals()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <form @submit.prevent="addAppType" class="grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
-                <input type="text" x-model="newAppType.name" placeholder="Service Name (उदा. पॅन कार्ड)" required class="sm:col-span-5 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500">
-                <input type="number" x-model.number="newAppType.defaultAmount" placeholder="Cust ₹" required class="sm:col-span-3 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 font-bold" title="Customer Fee">
-                <input type="number" x-model.number="newAppType.defaultChallan" placeholder="Challan ₹" class="sm:col-span-2 px-3 py-2 border border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 font-bold text-rose-700 bg-rose-50/30" title="Govt Challan Fee">
-                <button type="submit" class="sm:col-span-2 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition">Add</button>
+                <input type="text" x-model="newAppType.name" placeholder="Service Name (उदा. पॅन कार्ड)" required class="sm:col-span-4 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500">
+                <input type="number" x-model.number="newAppType.defaultAmount" placeholder="Cust ₹" required class="sm:col-span-2 px-2.5 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 font-bold" title="Direct Customer Fee">
+                <input type="number" x-model.number="newAppType.defaultAgentAmount" placeholder="Agent ₹" class="sm:col-span-2 px-2.5 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-bold text-purple-700 bg-purple-50/30" title="Agent Wholesale Fee">
+                <input type="number" x-model.number="newAppType.defaultChallan" placeholder="Challan ₹" class="sm:col-span-2 px-2.5 py-2 border border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 font-bold text-rose-700 bg-rose-50/30" title="Govt Challan Fee">
+                <button type="submit" class="sm:col-span-2 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition cursor-pointer">Add</button>
             </form>
             <div class="max-h-64 overflow-y-auto divide-y divide-slate-100 border rounded-lg text-xs">
                 <template x-for="type in appTypes" :key="type.id">
@@ -2694,17 +2949,19 @@
                         <div x-show="!editingAppType || editingAppType.id !== type.id" class="flex justify-between items-center">
                             <div>
                                 <span class="font-semibold text-slate-800" x-text="type.name"></span>
-                                <div class="text-[11px] text-slate-500 mt-0.5 space-x-2">
+                                <div class="text-[11px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-2">
                                     <span class="text-indigo-600 font-bold" x-text="'Cust: ₹' + (type.defaultAmount || 0)"></span>
+                                    <span class="text-purple-700 font-bold" x-text="'Agent: ₹' + (type.defaultAgentAmount !== undefined && type.defaultAgentAmount !== null ? type.defaultAgentAmount : (type.defaultAmount || 0))"></span>
                                     <span class="text-rose-600 font-mono" x-text="'Challan: ₹' + (type.defaultChallan || 0)"></span>
-                                    <span class="text-emerald-700 font-bold font-mono" x-text="'Margin: ₹' + Math.max(0, (Number(type.defaultAmount || 0) - Number(type.defaultChallan || 0)))"></span>
+                                    <span class="text-emerald-700 font-bold font-mono" x-text="'Cust Margin: ₹' + Math.max(0, (Number(type.defaultAmount || 0) - Number(type.defaultChallan || 0)))"></span>
+                                    <span class="text-teal-700 font-bold font-mono text-[10px]" x-text="'(Ag Margin: ₹' + Math.max(0, (Number(type.defaultAgentAmount !== undefined && type.defaultAgentAmount !== null ? type.defaultAgentAmount : (type.defaultAmount || 0)) - Number(type.defaultChallan || 0))) + ')'"></span>
                                 </div>
                             </div>
                             <div class="flex items-center gap-1.5">
-                                <button type="button" @click="editAppType(type)" class="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded" title="Edit Service">
+                                <button type="button" @click="editAppType(type)" class="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded cursor-pointer" title="Edit Service">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
-                                <button type="button" @click="deleteAppType(type.id)" class="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded" title="Delete Service">
+                                <button type="button" @click="deleteAppType(type.id)" class="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer" title="Delete Service">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
                             </div>
@@ -2713,10 +2970,14 @@
                         <!-- Inline Edit View -->
                         <div x-show="editingAppType && editingAppType.id === type.id" class="space-y-2 bg-indigo-50/40 p-2.5 rounded-lg border border-indigo-200">
                             <input type="text" x-model="tempAppType.name" placeholder="Service Name" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-indigo-500 bg-white">
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-3 gap-2">
                                 <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Customer Fee (₹)</label>
+                                    <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Cust Fee (₹)</label>
                                     <input type="number" x-model.number="tempAppType.defaultAmount" placeholder="Cust ₹" class="w-full px-2.5 py-1 border border-slate-300 rounded-lg text-xs font-bold text-indigo-700 bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-purple-700 mb-0.5">Agent Fee (₹)</label>
+                                    <input type="number" x-model.number="tempAppType.defaultAgentAmount" placeholder="Agent ₹" class="w-full px-2.5 py-1 border border-purple-300 rounded-lg text-xs font-bold text-purple-800 bg-white">
                                 </div>
                                 <div>
                                     <label class="block text-[10px] font-bold text-rose-500 mb-0.5">Govt Challan (₹)</label>
@@ -2724,10 +2985,10 @@
                                 </div>
                             </div>
                             <div class="flex justify-between items-center pt-1 border-t border-indigo-100">
-                                <span class="text-[11px] font-bold text-emerald-700 font-mono" x-text="'Net Margin: ₹' + Math.max(0, Number(tempAppType.defaultAmount || 0) - Number(tempAppType.defaultChallan || 0))"></span>
+                                <span class="text-[11px] font-bold text-emerald-700 font-mono" x-text="'Net Margin (Cust): ₹' + Math.max(0, Number(tempAppType.defaultAmount || 0) - Number(tempAppType.defaultChallan || 0))"></span>
                                 <div class="flex items-center gap-1.5">
-                                    <button type="button" @click="cancelEditAppType()" class="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-xs font-semibold transition">Cancel</button>
-                                    <button type="button" @click="saveEditAppType()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold shadow-xs transition">Save</button>
+                                    <button type="button" @click="cancelEditAppType()" class="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-xs font-semibold transition cursor-pointer">Cancel</button>
+                                    <button type="button" @click="saveEditAppType()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold shadow-xs transition cursor-pointer">Save</button>
                                 </div>
                             </div>
                         </div>
@@ -3425,23 +3686,135 @@
         </div>
     </div>
 
+    <!-- ==================== G. ADD AGENT MODAL ==================== -->
+    <div x-show="modals.agent" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto no-print" @keydown.escape.window="closeModals()">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4 my-8 border border-slate-200" @click.away="closeModals()">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center font-bold text-sm">🤝</span>
+                    <h3 class="text-base font-bold text-slate-900">नवीन एजंट जोडा (Add New Agent Partner)</h3>
+                </div>
+                <button type="button" @click="closeModals()" class="text-slate-400 hover:text-slate-600 cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form @submit.prevent="addAgent" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">एजंट पूर्ण नाव (Agent Full Name) *</label>
+                    <input type="text" x-model="newAgent.name" required placeholder="उदा. रामदास पाटील" 
+                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">केंद्र / शॉपचे नाव (Center / Shop Name) *</label>
+                    <input type="text" x-model="newAgent.centerName" required placeholder="उदा. समर्थ महा-ई-सेवा केंद्र" 
+                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">मोबाईल नंबर (WhatsApp No) *</label>
+                        <input type="text" x-model="newAgent.mobile" required placeholder="१० अंकी मोबाईल नंबर" 
+                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none font-mono">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">गाव / पत्ता (Village / Location) *</label>
+                        <input type="text" x-model="newAgent.village" required placeholder="उदा. नामपूर, ताहाराबाद..." 
+                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">शेरा / टीप (Notes / Reference)</label>
+                    <input type="text" x-model="newAgent.notes" placeholder="उदा. विशेष सवलत दर, नियमित पॅन कार्ड एजंट..." 
+                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" @click="closeModals()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg cursor-pointer">रद्द करा</button>
+                    <button type="submit" class="px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-lg shadow-sm transition cursor-pointer">
+                        एजंट सेव्ह करा
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== H. EDIT AGENT MODAL ==================== -->
+    <div x-show="modals.editAgent" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto no-print" @keydown.escape.window="closeModals()">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4 my-8 border border-slate-200" @click.away="closeModals()">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-sm"><i class="fa-solid fa-pen text-xs"></i></span>
+                    <h3 class="text-base font-bold text-slate-900">एजंट माहिती दुरुस्त करा (Edit Agent Partner)</h3>
+                </div>
+                <button type="button" @click="closeModals()" class="text-slate-400 hover:text-slate-600 cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form @submit.prevent="saveEditAgent" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">एजंट पूर्ण नाव (Agent Full Name) *</label>
+                    <input type="text" x-model="tempAgent.name" required placeholder="एजंट नाव" 
+                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">केंद्र / शॉपचे नाव (Center / Shop Name) *</label>
+                    <input type="text" x-model="tempAgent.centerName" required placeholder="केंद्र नाव" 
+                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">मोबाईल नंबर (WhatsApp No) *</label>
+                        <input type="text" x-model="tempAgent.mobile" required placeholder="१० अंकी मोबाईल नंबर" 
+                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">गाव / पत्ता (Village / Location) *</label>
+                        <input type="text" x-model="tempAgent.village" required placeholder="गाव" 
+                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">शेरा / टीप (Notes / Reference)</label>
+                    <input type="text" x-model="tempAgent.notes" placeholder="शेरा..." 
+                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" @click="closeModals()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg cursor-pointer">रद्द करा</button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition cursor-pointer">
+                        बदल सेव्ह करा
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- ==================== 4. ALPINE.JS REACTIVE ENGINE ==================== -->
     <script>
         
         const DEFAULT_APP_TYPES = [
-            { id: 1, name: 'नवीन पॅन कार्ड (New PAN Card)', defaultAmount: 250, defaultChallan: 107 },
-            { id: 2, name: 'पॅन कार्ड दुरुस्ती (PAN Card Correction)', defaultAmount: 250, defaultChallan: 107 },
-            { id: 3, name: 'उत्पन्न दाखला (Income Certificate - 1 Yr)', defaultAmount: 150, defaultChallan: 50 },
-            { id: 4, name: 'उत्पन्न दाखला (Income Certificate - 3 Yr)', defaultAmount: 250, defaultChallan: 100 },
-            { id: 5, name: 'अधिवास प्रमाणपत्र (Domicile Certificate)', defaultAmount: 200, defaultChallan: 70 },
-            { id: 6, name: 'जातीचा दाखला (Caste Certificate)', defaultAmount: 300, defaultChallan: 100 },
-            { id: 7, name: 'पासपोर्ट अर्ज (Passport Application)', defaultAmount: 2000, defaultChallan: 1500 },
-            { id: 8, name: 'ड्रायव्हिंग लायसन्स (Driving License - LL)', defaultAmount: 400, defaultChallan: 200 },
-            { id: 9, name: 'ई-श्रम कार्ड (E-Shram Card)', defaultAmount: 100, defaultChallan: 0 },
-            { id: 10, name: 'मतदार ओळखपत्र (Voter ID Card)', defaultAmount: 100, defaultChallan: 0 }
+            { id: 1, name: 'नवीन पॅन कार्ड (New PAN Card)', defaultAmount: 250, defaultAgentAmount: 200, defaultChallan: 107 },
+            { id: 2, name: 'पॅन कार्ड दुरुस्ती (PAN Card Correction)', defaultAmount: 250, defaultAgentAmount: 200, defaultChallan: 107 },
+            { id: 3, name: 'उत्पन्न दाखला (Income Certificate - 1 Yr)', defaultAmount: 150, defaultAgentAmount: 100, defaultChallan: 50 },
+            { id: 4, name: 'उत्पन्न दाखला (Income Certificate - 3 Yr)', defaultAmount: 250, defaultAgentAmount: 180, defaultChallan: 100 },
+            { id: 5, name: 'अधिवास प्रमाणपत्र (Domicile Certificate)', defaultAmount: 200, defaultAgentAmount: 140, defaultChallan: 70 },
+            { id: 6, name: 'जातीचा दाखला (Caste Certificate)', defaultAmount: 300, defaultAgentAmount: 220, defaultChallan: 100 },
+            { id: 7, name: 'पासपोर्ट अर्ज (Passport Application)', defaultAmount: 2000, defaultAgentAmount: 1800, defaultChallan: 1500 },
+            { id: 8, name: 'ड्रायव्हिंग लायसन्स (Driving License - LL)', defaultAmount: 400, defaultAgentAmount: 300, defaultChallan: 200 },
+            { id: 9, name: 'ई-श्रम कार्ड (E-Shram Card)', defaultAmount: 100, defaultAgentAmount: 70, defaultChallan: 0 },
+            { id: 10, name: 'मतदार ओळखपत्र (Voter ID Card)', defaultAmount: 100, defaultAgentAmount: 70, defaultChallan: 0 }
         ];
 
-        const SUPABASE_SCHEMA_SQL = "-- =========================================================================\n-- SURAVI CYBER CAFE - UNIFIED SUPABASE CLOUD ERP SCHEMA\n-- (Net-Margin Commission, Official Challan, Punch-In/Out & Biometric Roll-Call)\n-- =========================================================================\n\n-- Enable Required PostgreSQL Extensions\ncreate extension if not exists \"uuid-ossp\";\ncreate extension if not exists \"pgcrypto\";\n\n-- =========================================================================\n-- 1. USERS & OPERATORS TABLE\n-- =========================================================================\ncreate table if not exists public.users (\n    username text primary key,\n    password text not null,\n    name text not null,\n    role text not null default 'associate' check (role in ('admin', 'associate')),\n    proc_rate numeric not null default 15,  -- 15% Processing Commission on Net Margin\n    proc_cap numeric not null default 20,   -- Max ₹20 Cap per Processing task\n    disp_rate numeric not null default 5,   -- 5% Dispatch Commission on Net Margin\n    disp_cap numeric not null default 5,    -- Max ₹5 Cap per Dispatch task\n    salary_history jsonb not null default '[{\"effectiveFrom\":\"2026-01\",\"payType\":\"Monthly\",\"baseRate\":15000}]'::jsonb,\n    waivers jsonb not null default '{}'::jsonb, -- Admin waivers for 5-day absence penalty: {\"YYYY-MM\": true}\n    created_at timestamptz not null default now()\n);\n\n-- Migrate existing users table if created previously without commission/salary columns\nalter table public.users add column if not exists proc_rate numeric not null default 15;\nalter table public.users add column if not exists proc_cap numeric not null default 20;\nalter table public.users add column if not exists disp_rate numeric not null default 5;\nalter table public.users add column if not exists disp_cap numeric not null default 5;\nalter table public.users add column if not exists salary_history jsonb not null default '[{\"effectiveFrom\":\"2026-01\",\"payType\":\"Monthly\",\"baseRate\":15000}]'::jsonb;\nalter table public.users add column if not exists waivers jsonb not null default '{}'::jsonb;\nnotify pgrst, 'reload schema';\n\n-- =========================================================================\n-- 2. APPLICATION / SERVICE TYPES CATALOG\n-- =========================================================================\ncreate table if not exists public.app_types (\n    id bigint primary key,\n    name text not null,\n    default_amount numeric not null default 0,  -- Default Customer Fee (₹)\n    default_challan numeric not null default 0, -- Official Govt Challan / Fees (₹)\n    created_at timestamptz not null default now()\n);\n\nalter table public.app_types add column if not exists default_amount numeric not null default 0;\nalter table public.app_types add column if not exists default_challan numeric not null default 0;\n\n-- =========================================================================\n-- 3. CUSTOMER LOGS & MULTI-SERVICE LEDGER\n-- =========================================================================\ncreate table if not exists public.logs (\n    id bigint primary key,\n    app_id text not null,\n    customer_name text not null,\n    mobile_no text,\n    address text,\n    application_type text,\n    -- Each JSON item in services stores:\n    -- { name, customerPrice, challanFees, netMargin, amount, status, physicalStatus,\n    --   assignedTo, completedBy, procCommission, dispatchedBy, dispCommission }\n    services jsonb not null default '[]'::jsonb,\n    username text,\n    password text,\n    status text not null default 'In Process',\n    total_amount numeric not null default 0,\n    paid_amount numeric not null default 0,\n    payment_date text,\n    payment_history jsonb not null default '[]'::jsonb,\n    notes text,\n    date text not null,\n    created_by text,\n    created_at timestamptz not null default now()\n);\n\n-- =========================================================================\n-- 4. DAILY ATTENDANCE & BIOMETRIC PUNCH-IN/OUT\n-- =========================================================================\ncreate table if not exists public.attendance_logs (\n    id text primary key,\n    staff_id text not null references public.users(username) on delete cascade on update cascade,\n    date text not null, -- Format: 'YYYY-MM-DD'\n    status text not null default 'Present' check (status in ('Present', 'Half Day', 'Absent')),\n    punch_in_time text,   -- Format: 'HH:MM AM/PM'\n    punch_out_time text,  -- Format: 'HH:MM AM/PM'\n    penalty_waived boolean not null default false,\n    created_at timestamptz not null default now(),\n    constraint uq_attendance_staff_date unique(staff_id, date)\n);\n\n-- =========================================================================\n-- 5. STAFF SALARY, ADVANCES & DISBURSEMENTS\n-- =========================================================================\ncreate table if not exists public.staff_payments (\n    id text primary key,\n    staff_id text not null references public.users(username) on delete cascade on update cascade,\n    type text not null check (type in ('Salary Payment', 'Advance Loan', 'Bonus / Incentive', 'Overtime Pay', 'Deduction')),\n    amount numeric not null,\n    date text not null,\n    method text not null default 'Cash',\n    note text,\n    created_at timestamptz not null default now()\n);\n\n-- =========================================================================\n-- 6. INDEXES FOR PERFORMANCE & FAST SEARCH\n-- =========================================================================\ncreate index if not exists idx_users_role on public.users(role);\ncreate index if not exists idx_app_types_name on public.app_types(name);\ncreate index if not exists idx_logs_app_id on public.logs(app_id);\ncreate index if not exists idx_logs_customer on public.logs(customer_name);\ncreate index if not exists idx_logs_mobile on public.logs(mobile_no);\ncreate index if not exists idx_logs_date on public.logs(date);\ncreate index if not exists idx_logs_status on public.logs(status);\ncreate index if not exists idx_logs_services on public.logs using gin (services);\ncreate index if not exists idx_attendance_staff_date on public.attendance_logs(staff_id, date);\ncreate index if not exists idx_attendance_status on public.attendance_logs(status);\ncreate index if not exists idx_staff_payments_staff_date on public.staff_payments(staff_id, date);\n\n-- =========================================================================\n-- 7. ROW LEVEL SECURITY (RLS) POLICIES & RBAC RULES\n-- =========================================================================\nalter table public.users enable row level security;\nalter table public.app_types enable row level security;\nalter table public.logs enable row level security;\nalter table public.attendance_logs enable row level security;\nalter table public.staff_payments enable row level security;\n\n-- Master Admin (sagar) Protection Trigger\ncreate or replace function public.protect_master_admin()\nreturns trigger as $$\nbegin\n    if (TG_OP = 'DELETE' and OLD.username = 'sagar') then\n        raise exception 'सुरक्षा नियम: मुख्य ॲडमिन खाते (sagar) डिलीट करण्यास सक्त मनाई आहे.';\n    end if;\n    if (TG_OP = 'UPDATE' and OLD.username = 'sagar' and NEW.role <> 'admin') then\n        raise exception 'सुरक्षा नियम: मुख्य ॲडमिन (sagar) चा रोल नेहमी admin असावा.';\n    end if;\n    return NEW;\nend;\n$$ language plpgsql;\n\ndrop trigger if exists trg_protect_master_admin on public.users;\ncreate trigger trg_protect_master_admin\nbefore update or delete on public.users\nfor each row execute function public.protect_master_admin();\n\n-- USERS Policies\ndrop policy if exists \"Allow all operations on users\" on public.users;\ncreate policy \"Allow all operations on users\"\n    on public.users for all\n    using (true)\n    with check (true);\n\n-- APP_TYPES Policies\ndrop policy if exists \"Allow all operations on app_types\" on public.app_types;\ncreate policy \"Allow all operations on app_types\"\n    on public.app_types for all\n    using (true)\n    with check (true);\n\n-- LOGS Policies\ndrop policy if exists \"Allow all operations on logs\" on public.logs;\ncreate policy \"Allow all operations on logs\"\n    on public.logs for all\n    using (true)\n    with check (true);\n\n-- ATTENDANCE_LOGS Policies\ndrop policy if exists \"Allow all operations on attendance_logs\" on public.attendance_logs;\ncreate policy \"Allow all operations on attendance_logs\"\n    on public.attendance_logs for all\n    using (true)\n    with check (true);\n\n-- STAFF_PAYMENTS Policies\ndrop policy if exists \"Allow all operations on staff_payments\" on public.staff_payments;\ncreate policy \"Allow all operations on staff_payments\"\n    on public.staff_payments for all\n    using (true)\n    with check (true);\n\n-- =========================================================================\n-- 8. REALTIME REPLICATION SETUP\n-- =========================================================================\ndo $\nbegin\n    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'users') then\n        alter publication supabase_realtime add table public.users;\n    end if;\n    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'app_types') then\n        alter publication supabase_realtime add table public.app_types;\n    end if;\n    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'logs') then\n        alter publication supabase_realtime add table public.logs;\n    end if;\n    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'attendance_logs') then\n        alter publication supabase_realtime add table public.attendance_logs;\n    end if;\n    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'staff_payments') then\n        alter publication supabase_realtime add table public.staff_payments;\n    end if;\nend $;\n\n-- =========================================================================\n-- 9. INITIAL SEED DATA (DEFAULT ADMIN, ASSOCIATES & SERVICE TYPES)\n-- =========================================================================\n\n-- Insert Default Admin (Username: sagar, Password: 123451)\ninsert into public.users (username, password, name, role, proc_rate, proc_cap, disp_rate, disp_cap, salary_history)\nvalues (\n    'sagar',\n    '123451',\n    'Sagar Wadekar',\n    'admin',\n    15,\n    20,\n    5,\n    5,\n    '[{\"effectiveFrom\":\"2026-01\",\"payType\":\"Monthly\",\"baseRate\":15000}]'::jsonb\n)\non conflict (username) do update set\n    role = excluded.role,\n    name = excluded.name;\n\n-- Insert Default Associates\ninsert into public.users (username, password, name, role, proc_rate, proc_cap, disp_rate, disp_cap, salary_history)\nvalues \n    ('nikhil', '123451', 'Nikhil Patil', 'associate', 15, 20, 5, 5, '[{\"effectiveFrom\":\"2026-01\",\"payType\":\"Daily\",\"baseRate\":400}]'::jsonb),\n    ('pooja', '123451', 'Pooja Jadhav', 'associate', 15, 20, 5, 5, '[{\"effectiveFrom\":\"2026-01\",\"payType\":\"Daily\",\"baseRate\":400}]'::jsonb)\non conflict (username) do nothing;\n\n-- Insert Seed Application Types with Realistic Customer Price & Official Govt Challan Fees\ninsert into public.app_types (id, name, default_amount, default_challan)\nvalues\n    (1, 'नवीन पॅन कार्ड (New PAN Card)', 200, 107),\n    (2, 'पॅन कार्ड सुधारणा (PAN Card Correction)', 220, 107),\n    (3, 'उत्पन्न दाखला (Income Certificate 1/3 Year)', 150, 33.60),\n    (4, 'रहिवासी दाखला (Domicile / Nationality)', 180, 33.60),\n    (5, 'जात प्रमाणपत्र (Caste Certificate)', 250, 55.60),\n    (6, 'नॉन-क्रिमीलेअर (Non-Creamy Layer)', 250, 55.60),\n    (7, 'नवीन मतदान कार्ड (Voter ID Form 6)', 100, 0),\n    (8, 'ई-श्रम कार्ड (e-Shram Card Registration)', 80, 0),\n    (9, 'रेशन कार्ड नाव नोंदणी / विभक्तीकरण', 150, 20),\n    (10, 'महाडीबीटी शिष्यवृत्ती फॉर्म (MahaDBT Scholarship)', 250, 0)\non conflict (id) do update set\n    name = excluded.name,\n    default_amount = excluded.default_amount,\n    default_challan = excluded.default_challan;\n\n-- =========================================================================\n-- 10. STORAGE BUCKET FOR DOCUMENTS & CHALLAN RECEIPTS (OPTIONAL)\n-- =========================================================================\ninsert into storage.buckets (id, name, public)\nvalues ('suravi_docs', 'suravi_docs', true)\non conflict (id) do nothing;\n\ndrop policy if exists \"Public bucket access\" on storage.objects;\ncreate policy \"Public bucket access\"\n    on storage.objects for all\n    using (bucket_id = 'suravi_docs')\n    with check (bucket_id = 'suravi_docs');\n\n-- Dispatch Timestamp Tracking Migrations\nalter table if exists public.tasks add column if not exists dispatched_at timestamptz default null;\nalter table if exists public.cafe_tasks add column if not exists dispatched_at timestamptz default null;\nalter table if exists public.logs_rows add column if not exists dispatched_at timestamptz default null;\nalter table if exists public.cafe_customer_logs add column if not exists dispatched_at timestamptz default null;\nalter table if exists public.logs add column if not exists dispatched_at timestamptz default null;\n\nnotify pgrst, 'reload schema';\n";
+        const DEFAULT_AGENTS = [
+            { id: 101, name: 'रामदास पाटील', centerName: 'समर्थ महा-ई-सेवा केंद्र', mobile: '9822011223', village: 'नामपूर', notes: 'नियमित एजंट' },
+            { id: 102, name: 'योगेश अहिरे', centerName: 'ओम साई कॉम्प्युटर्स', mobile: '9423156789', village: 'ताहाराबाद', notes: 'दाखले व पॅन कार्ड' },
+            { id: 103, name: 'प्रवीण मोरे', centerName: 'शिवनेरी ग्राहक सेवा केंद्र', mobile: '9765432100', village: 'सटाणा', notes: 'ऑनलाइन अर्ज' }
+        ];
+
+        const SUPABASE_SCHEMA_SQL = "-- =========================================================================\n-- SURAVI CYBER CAFE & SHOPFLOW UNIFIED SUPABASE DATABASE TABLES\n-- 100% Idempotent, Production-Ready, Real-Time & RLS Enabled\n-- =========================================================================\n\n-- १. ऑपरेटर्स आणि युजर्स टेबल (Operators & Staff Roster)\ncreate table if not exists public.users (\n    username text primary key,\n    password text not null,\n    name text not null,\n    role text default 'associate', -- 'admin' किंवा 'associate'\n    proc_rate numeric default 15,  -- १५% प्रोसेसिंग कमिशन (नेट मार्जिनवर)\n    proc_cap numeric default 20,   -- कमाल ₹२० प्रोसेसिंग कॅप\n    disp_rate numeric default 5,   -- ५% डिस्पॅच कमिशन (नेट मार्जिनवर)\n    disp_cap numeric default 5,    -- कमाल ₹५ डिस्पॅच कॅप\n    salary_history jsonb default '[{\"effectiveFrom\":\"2026-01\",\"payType\":\"Daily\",\"baseRate\":500}]'::jsonb,\n    waivers jsonb default '{}'::jsonb, -- ॲडमिन गैरहजर पेनल्टी वेव्हर्स: {\"YYYY-MM\": true}\n    created_at timestamptz default now()\n);\n\n-- १.१ जुन्या युजर्स टेबलसाठी ऑटोमॅटिक मायग्रेशन (Add missing columns to existing users table)\nalter table public.users add column if not exists proc_rate numeric default 15;\nalter table public.users add column if not exists proc_cap numeric default 20;\nalter table public.users add column if not exists disp_rate numeric default 5;\nalter table public.users add column if not exists disp_cap numeric default 5;\nalter table public.users add column if not exists salary_history jsonb default '[{\"effectiveFrom\":\"2026-01\",\"payType\":\"Daily\",\"baseRate\":500}]'::jsonb;\nalter table public.users add column if not exists waivers jsonb default '{}'::jsonb;\n\n-- PostgREST स्कीमा कॅशे रीफ्रेश (Reload PostgREST Schema Cache)\nnotify pgrst, 'reload schema';\n\n-- डीफॉल्ट ॲडमिन इन्सर्ट (Username: sagar, Password: 123451, Role: admin)\n-- ॲडमिन (sagar) दैनिक हजेरी, पंच-इन/आउट व गैरहजेरी पेनल्टीतून मुक्त (Exempted) आहे\ninsert into public.users (username, password, name, role, proc_rate, proc_cap, disp_rate, disp_cap) \nvalues ('sagar', '123451', 'Sagar Wadekar', 'admin', 15, 20, 5, 5)\non conflict (username) do update set\n    role = excluded.role,\n    name = excluded.name;\n\n\n-- २. सेवांचे प्रकार आणि डीफॉल्ट दर टेबल (App / Service Types with Dual Pricing)\ncreate table if not exists public.app_types (\n    id bigint primary key,\n    name text not null,\n    default_amount numeric default 0,\n    default_agent_amount numeric default 0,\n    default_challan numeric default 0,\n    created_at timestamptz default now()\n);\n\n-- २.१ ॲप टाईप्स टेबल ऑटोमॅटिक मायग्रेशन (Add missing columns to existing app_types table)\nalter table public.app_types add column if not exists default_amount numeric default 0;\nalter table public.app_types add column if not exists default_agent_amount numeric default 0;\nalter table public.app_types add column if not exists default_challan numeric default 0;\n\n-- २.२ एजंट्स आणि बी२बी पार्टनर टेबल (Agents & B2B Wholesale Partners)\ncreate table if not exists public.agents (\n    id bigint primary key,\n    name text not null,\n    center_name text,\n    mobile text,\n    village text,\n    notes text,\n    created_at timestamptz default now()\n);\n\nalter table public.agents add column if not exists center_name text;\nalter table public.agents add column if not exists mobile text;\nalter table public.agents add column if not exists village text;\nalter table public.agents add column if not exists notes text;\n\n\n-- ३. कस्टमर लेजर आणि सर्विस लॉग्स टेबल (Customer Logs & Services with Challan / Net Margin)\ncreate table if not exists public.logs (\n    id bigint primary key,\n    app_id text not null,\n    customer_name text not null,\n    mobile_no text,\n    address text,\n    application_type text,\n    services jsonb default '[]'::jsonb, \n    -- प्रत्येक सर्विस: { name, customerPrice, challanFees, netMargin, status, physicalStatus, assignedTo, completedBy, procCommission, dispatchedBy, dispCommission }\n    username text,\n    password text,\n    status text default 'In Process',\n    total_amount numeric default 0,\n    paid_amount numeric default 0,\n    payment_date text,\n    payment_history jsonb default '[]'::jsonb,\n    notes text,\n    date text,\n    created_by text,\n    dispatched_at timestamptz default null,\n    created_at timestamptz default now()\n);\n\n-- ३.१ डिस्पॅच इव्हेंट्स आणि एजंट्स ट्रॅकिंग मायग्रेशन (Dispatch & Agent Workflow Tracking)\n-- 100% सुरक्षित आणि आयडेम्पोटेंट (IF EXISTS वापरल्याने टेबल अस्तित्वात नसले तरी एरर येत नाही)\nalter table if exists public.logs add column if not exists dispatched_at timestamptz default null;\nalter table if exists public.logs add column if not exists client_type text default 'direct';\nalter table if exists public.logs add column if not exists agent_id bigint default null;\nalter table if exists public.logs add column if not exists agent_name text default null;\nalter table if exists public.tasks add column if not exists dispatched_at timestamptz default null;\nalter table if exists public.cafe_tasks add column if not exists dispatched_at timestamptz default null;\nalter table if exists public.logs_rows add column if not exists dispatched_at timestamptz default null;\nalter table if exists public.cafe_customer_logs add column if not exists dispatched_at timestamptz default null;\n\nnotify pgrst, 'reload schema';\n\n\n-- ४. दैनंदिन हजेरी आणि पंच-इन/पंच-आऊट टेबल (Daily Attendance & Punch-In/Out Logs)\ncreate table if not exists public.attendance_logs (\n    id text primary key,\n    staff_id text references public.users(username) on delete cascade on update cascade,\n    date text not null, -- 'YYYY-MM-DD'\n    status text not null default 'Present', -- 'Present', 'Half Day', 'Absent'\n    punch_in_time text,   -- पंच-इन वेळ (उदा. '09:30 AM')\n    punch_out_time text,  -- पंच-आऊट वेळ (उदा. '07:00 PM')\n    penalty_waived boolean default false, -- ५ दिवस गैरहजर पेनल्टी माफ करण्यासाठी ॲडमिन टॉगल\n    created_at timestamptz default now(),\n    unique(staff_id, date)\n);\n\n-- ४.१ हजेरी टेबल ऑटोमॅटिक मायग्रेशन (Add missing columns to existing attendance_logs table)\nalter table public.attendance_logs add column if not exists penalty_waived boolean default false;\n\n\n-- ५. पेमेंट लॉग्स, पे-रोल आणि उचल/ॲडव्हान्स टेबल (Staff Payments, Salary & Advance Logs)\ncreate table if not exists public.staff_payments (\n    id text primary key,\n    staff_id text references public.users(username) on delete cascade on update cascade,\n    type text not null, -- 'Salary Payment', 'Advance Loan', 'Bonus / Incentive', 'Overtime Pay', 'Deduction'\n    amount numeric not null,\n    date text not null,\n    method text default 'Cash',\n    note text,\n    created_at timestamptz default now()\n);\n\n\n-- ६. कार्यक्षमता आणि वेगवान शोधासाठी इंडेक्स (Performance Indexes)\ncreate index if not exists idx_users_role on public.users(role);\ncreate index if not exists idx_app_types_name on public.app_types(name);\ncreate index if not exists idx_agents_name on public.agents(name);\ncreate index if not exists idx_logs_app_id on public.logs(app_id);\ncreate index if not exists idx_logs_customer on public.logs(customer_name);\ncreate index if not exists idx_logs_mobile on public.logs(mobile_no);\ncreate index if not exists idx_logs_date on public.logs(date);\ncreate index if not exists idx_logs_client_type on public.logs(client_type);\ncreate index if not exists idx_logs_agent_id on public.logs(agent_id);\ncreate index if not exists idx_attendance_staff_date on public.attendance_logs(staff_id, date);\ncreate index if not exists idx_staff_payments_staff_date on public.staff_payments(staff_id, date);\n\n\n-- ७. रो लेव्हल सिक्युरिटी (RLS) आणि ॲक्सेस पॉलिसी (Row Level Security & RBAC Rules)\nalter table public.users enable row level security;\nalter table public.app_types enable row level security;\nalter table public.agents enable row level security;\nalter table public.logs enable row level security;\nalter table public.attendance_logs enable row level security;\nalter table public.staff_payments enable row level security;\n\n-- ७.१ मास्टर ॲडमिन (sagar) संरक्षण ट्रिगर (Master Admin Protection Trigger)\ncreate or replace function public.protect_master_admin()\nreturns trigger as $$\nbegin\n    if (TG_OP = 'DELETE' and OLD.username = 'sagar') then\n        raise exception 'सुरक्षा नियम: मुख्य ॲडमिन खाते (sagar) डिलीट करण्यास सक्त मनाई आहे.';\n    end if;\n    if (TG_OP = 'UPDATE' and OLD.username = 'sagar' and NEW.role <> 'admin') then\n        raise exception 'सुरक्षा नियम: मुख्य ॲडमिन (sagar) चा रोल नेहमी admin असावा.';\n    end if;\n    return NEW;\nend;\n$$ language plpgsql;\n\ndrop trigger if exists trg_protect_master_admin on public.users;\ncreate trigger trg_protect_master_admin\nbefore update or delete on public.users\nfor each row execute function public.protect_master_admin();\n\n-- ७.२ युझर्स आणि ऑपरेटर RBAC पॉलिसी (Users & Credentials Master Policies)\ndrop policy if exists \"Allow all operations on users\" on public.users;\ncreate policy \"Allow all operations on users\" on public.users for all using (true) with check (true);\n\ndrop policy if exists \"Allow all operations on app_types\" on public.app_types;\ncreate policy \"Allow all operations on app_types\" on public.app_types for all using (true) with check (true);\n\ndrop policy if exists \"Allow all operations on agents\" on public.agents;\ncreate policy \"Allow all operations on agents\" on public.agents for all using (true) with check (true);\n\ndrop policy if exists \"Allow all operations on logs\" on public.logs;\ncreate policy \"Allow all operations on logs\" on public.logs for all using (true) with check (true);\n\ndrop policy if exists \"Allow all operations on attendance_logs\" on public.attendance_logs;\ncreate policy \"Allow all operations on attendance_logs\" on public.attendance_logs for all using (true) with check (true);\n\ndrop policy if exists \"Allow all operations on staff_payments\" on public.staff_payments;\ncreate policy \"Allow all operations on staff_payments\" on public.staff_payments for all using (true) with check (true);\n\n\n-- ८. सर्व टेबल्ससाठी सुरक्षित रिअल-टाइम (Real-Time) सिंक\ndo $$\nbegin\n    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'users') then\n        alter publication supabase_realtime add table public.users;\n    end if;\n    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'app_types') then\n        alter publication supabase_realtime add table public.app_types;\n    end if;\n    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'agents') then\n        alter publication supabase_realtime add table public.agents;\n    end if;\n    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'logs') then\n        alter publication supabase_realtime add table public.logs;\n    end if;\n    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'attendance_logs') then\n        alter publication supabase_realtime add table public.attendance_logs;\n    end if;\n    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'staff_payments') then\n        alter publication supabase_realtime add table public.staff_payments;\n    end if;\nend $$;\n\n-- ८.१ डीफॉल्ट प्राथमिक एजंट्स इन्सर्ट (Seed Default Agents)\ninsert into public.agents (id, name, center_name, mobile, village, notes)\nvalues\n    (101, 'रामेश्वर पाटील', 'पाटील महा-ई-सेवा केंद्र', '9822334455', 'वीरगाव', 'नियमित एजंट (सटाणा रोड)'),\n    (102, 'योगेश अहिरे', 'अहिरे डिजिटल सेवा केंद्र', '9860112233', 'देवळा', 'दाखले व पॅन कार्ड पार्टनर'),\n    (103, 'सचिन सोनवणे', 'सोनवणे ऑनलाइन सर्व्हिसेस', '9765443322', 'ताहाराबाद', 'शिष्यवृत्ती व रेशन कार्ड')\non conflict (id) do update set\n    name = excluded.name,\n    center_name = excluded.center_name,\n    mobile = excluded.mobile,\n    village = excluded.village;\n\n-- ९. कॅफे अटेंडन्स आणि अचूक कामाचे तास आधारित हजेरी (Cafe Attendance & Duration-Based Attendance)\ncreate table if not exists public.cafe_attendance (\n    id text primary key,\n    staff_id text,\n    staff_name text,\n    date date not null default current_date,\n    punch_in timestamptz,\n    punch_out timestamptz,\n    total_hours numeric default 0,\n    attendance_type text default 'Absent', -- 'Full Day', 'Half Day', 'Absent'\n    day_salary_multiplier numeric default 0, -- 1.0 (Full), 0.5 (Half), 0.0 (Absent)\n    base_daily_salary numeric default 300,\n    auto_calculated boolean default false,\n    created_at timestamptz default now()\n);\n\n-- जुन्या / विद्यमान टेबल्ससाठी सेफ कॉलम मायग्रेशन\nalter table if exists public.cafe_attendance add column if not exists staff_id text;\nalter table if exists public.cafe_attendance add column if not exists staff_name text;\nalter table if exists public.cafe_attendance add column if not exists date date default current_date;\nalter table if exists public.cafe_attendance add column if not exists punch_in timestamptz;\nalter table if exists public.cafe_attendance add column if not exists punch_out timestamptz;\nalter table if exists public.cafe_attendance add column if not exists total_hours numeric default 0;\nalter table if exists public.cafe_attendance add column if not exists attendance_type text default 'Absent';\nalter table if exists public.cafe_attendance add column if not exists day_salary_multiplier numeric default 0;\nalter table if exists public.cafe_attendance add column if not exists base_daily_salary numeric default 300;\nalter table if exists public.cafe_attendance add column if not exists auto_calculated boolean default false;\nalter table if exists public.cafe_attendance add column if not exists created_at timestamptz default now();\n\n-- attendance_logs टेबलसाठी देखील कॉलम सेफ ऍड करणे (Dual Compatibility)\nalter table if exists public.attendance_logs add column if not exists total_hours numeric default 0;\nalter table if exists public.attendance_logs add column if not exists attendance_type text default 'Absent';\nalter table if exists public.attendance_logs add column if not exists day_salary_multiplier numeric default 0;\nalter table if exists public.attendance_logs add column if not exists auto_calculated boolean default false;\nalter table if exists public.attendance_logs add column if not exists punch_in_iso timestamptz;\nalter table if exists public.attendance_logs add column if not exists punch_out_iso timestamptz;\n\n-- १०. ऑटो-अॅब्सेंट रेकन्सिलिएशन फंक्शन (Automatic Daily Absent Reconciliation Function)\ncreate or replace function public.mark_daily_auto_absent(target_date date default current_date)\nreturns void as $$\nbegin\n  -- users टेबलमधील सक्रिय कर्मचाऱ्यांसाठी (सध्याचे ऑपरेटर आणि असोसिएट्स)\n  if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'users') then\n    -- cafe_attendance टेबलमध्ये Absent नोंद करणे\n    insert into public.cafe_attendance (\n      id,\n      staff_id,\n      staff_name,\n      date,\n      punch_in,\n      punch_out,\n      total_hours,\n      attendance_type,\n      day_salary_multiplier,\n      auto_calculated\n    )\n    select \n      'att_' || to_char(target_date, 'YYYY-MM-DD') || '_' || u.username,\n      u.username,\n      coalesce(u.name, u.username),\n      target_date,\n      null,\n      null,\n      0.00,\n      'Absent',\n      0.00,\n      true\n    from public.users u\n    where u.role in ('operator', 'staff', 'associate') and u.username <> 'sagar'\n      and not exists (\n        select 1 from public.cafe_attendance a\n        where a.staff_id = u.username and a.date::text = to_char(target_date, 'YYYY-MM-DD')\n      )\n    on conflict (id) do nothing;\n\n    -- attendance_logs टेबलमध्ये देखील सेफ रेकॉर्ड करणे\n    insert into public.attendance_logs (\n      id,\n      staff_id,\n      date,\n      status,\n      punch_in_time,\n      punch_out_time,\n      total_hours,\n      attendance_type,\n      day_salary_multiplier,\n      auto_calculated\n    )\n    select \n      'att_' || u.username || '_' || to_char(target_date, 'YYYY-MM-DD'),\n      u.username,\n      to_char(target_date, 'YYYY-MM-DD'),\n      'Absent',\n      null,\n      null,\n      0.00,\n      'Absent',\n      0.00,\n      true\n    from public.users u\n    where u.role in ('operator', 'staff', 'associate') and u.username <> 'sagar'\n      and not exists (\n        select 1 from public.attendance_logs al\n        where al.staff_id = u.username and al.date = to_char(target_date, 'YYYY-MM-DD')\n      )\n    on conflict (id) do nothing;\n  end if;\nend;\n$$ language plpgsql;\n\n-- तात्काळ आजच्या तारखेसाठी चालवणे\nselect public.mark_daily_auto_absent(current_date);\n\n-- RLS & Realtime Rules\nalter table if exists public.cafe_attendance enable row level security;\ndrop policy if exists \"Allow all operations on cafe_attendance\" on public.cafe_attendance;\ncreate policy \"Allow all operations on cafe_attendance\" on public.cafe_attendance for all using (true) with check (true);\n\ndo $$\nbegin\n    if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'cafe_attendance') then\n        if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'cafe_attendance') then\n            alter publication supabase_realtime add table public.cafe_attendance;\n        end if;\n    end if;\nend $$;\n\n-- ११. PostgREST स्कीमा कॅशे रीलोड (Reload PostgREST Schema Cache)\nnotify pgrst, 'reload schema';\n";
 
         const DEFAULT_WA_TEMPLATE = `नमस्कार *{customerName}*,
 
@@ -3531,6 +3904,8 @@
                 // Modals
                 modals: {
                     customer: false,
+                    agent: false,
+                    editAgent: false,
                     appTypes: false,
                     operators: false,
                     editOperator: false,
@@ -3551,15 +3926,25 @@
                 editMode: false,
                 editId: null,
 
+                // Agents Hub Management State
+                agents: [],
+                newAgent: { name: '', centerName: '', mobile: '', village: '', notes: '' },
+                editingAgent: null,
+                tempAgent: { id: null, name: '', centerName: '', mobile: '', village: '', notes: '' },
+                agentSearchQuery: '',
+                agentStatusFilter: 'all',
+
                 // Customer Form
                 customerForm: {
-                    customerName: '', mobileNo: '', address: '', services: [],
+                    customerName: '', mobileNo: '', address: '',
+                    clientType: 'direct', agentId: null, agentName: '',
+                    services: [],
                     username: '', password: '', status: 'In Process',
                     totalAmount: 0, paidAmount: '', paymentDate: '', paymentHistory: [], notes: ''
                 },
                 tempService: { name: '', customerPrice: '', challanFees: 0, amount: '', netMargin: 0 },
                 showInlineServiceCreator: false,
-                inlineNewService: { name: '', defaultAmount: '', defaultChallan: 0 },
+                inlineNewService: { name: '', defaultAmount: '', defaultAgentAmount: '', defaultChallan: 0 },
                 SUPABASE_SCHEMA_SQL: SUPABASE_SCHEMA_SQL,
 
                 // Payment Form
@@ -3592,9 +3977,9 @@
                 },
 
                 // App Types & Operator Credentials State
-                newAppType: { name: '', defaultAmount: '', defaultChallan: 0 },
+                newAppType: { name: '', defaultAmount: '', defaultAgentAmount: '', defaultChallan: 0 },
                 editingAppType: null,
-                tempAppType: { id: null, name: '', defaultAmount: 0, defaultChallan: 0 },
+                tempAppType: { id: null, name: '', defaultAmount: 0, defaultAgentAmount: 0, defaultChallan: 0 },
                 newOperator: { name: '', username: '', password: '', role: 'associate', payType: 'Daily', baseRate: 500, procRate: 15, procCap: 20, dispRate: 5, dispCap: 5, showPassword: false },
                 editingOperator: null,
                 tempOperator: { name: '', username: '', oldUsername: '', password: '', role: 'associate', procRate: 15, procCap: 20, dispRate: 5, dispCap: 5, payType: 'Daily', baseRate: 500, showPassword: false },
@@ -3675,6 +4060,18 @@
                                 this.appTypes = parsedTypes;
                             }
                         } catch(e){}
+                    }
+                    const localAgents = localStorage.getItem('sf_agents_data');
+                    if (localAgents) {
+                        try {
+                            const parsedAgents = JSON.parse(localAgents);
+                            if (Array.isArray(parsedAgents) && parsedAgents.length > 0) {
+                                this.agents = parsedAgents;
+                            }
+                        } catch(e){}
+                    }
+                    if (this.agents.length === 0) {
+                        this.agents = JSON.parse(JSON.stringify(DEFAULT_AGENTS));
                     }
                     const localRoster = localStorage.getItem('sf_roster_data');
                     if (localRoster && this.users.length === 0) {
@@ -3773,6 +4170,9 @@
                             await this.pullDataFromCloud();
                         })
                         .on('postgres_changes', { event: '*', schema: 'public', table: 'app_types' }, async () => {
+                            await this.pullDataFromCloud();
+                        })
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'agents' }, async () => {
                             await this.pullDataFromCloud();
                         })
                         .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance_logs' }, async (payload) => {
@@ -3955,11 +4355,33 @@
                                 id: t.id, 
                                 name: t.name, 
                                 defaultAmount: Number(t.default_amount !== undefined ? t.default_amount : (t.defaultAmount || 0)),
+                                defaultAgentAmount: Number(t.default_agent_amount !== undefined ? t.default_agent_amount : (t.defaultAgentAmount || 0)),
                                 defaultChallan: Number(t.default_challan !== undefined ? t.default_challan : (t.defaultChallan || 0))
                             }));
                             localStorage.setItem('sf_app_types_data', JSON.stringify(this.appTypes));
                         } else if (this.appTypes.length === 0) {
                             this.appTypes = JSON.parse(JSON.stringify(DEFAULT_APP_TYPES));
+                        }
+
+                        // 2.5 Agents Hub Hydration
+                        try {
+                            let { data: agentsData, error: agentsErr } = await this.supabaseClient.from('agents').select('*').order('name', { ascending: true });
+                            if (!agentsErr && agentsData && agentsData.length > 0) {
+                                this.agents = agentsData.map(a => ({
+                                    id: Number(a.id),
+                                    name: a.name || '',
+                                    centerName: a.center_name || a.centerName || '',
+                                    mobile: a.mobile || '',
+                                    village: a.village || '',
+                                    notes: a.notes || '',
+                                    createdAt: a.created_at || null
+                                }));
+                                localStorage.setItem('sf_agents_data', JSON.stringify(this.agents));
+                            } else if (this.agents.length === 0) {
+                                this.agents = JSON.parse(JSON.stringify(DEFAULT_AGENTS));
+                            }
+                        } catch (agErr) {
+                            console.warn('Agents fetch error:', agErr);
                         }
 
                         // 3. Customer Logs
@@ -3972,11 +4394,13 @@
                                 let srvs = l.services || (l.application_type ? [{ name: l.application_type, amount: l.total_amount, status: l.status, physicalStatus: 'Pending' }] : []);
                                 srvs = srvs.map(s => {
                                     const custPrice = Number(s.customerPrice !== undefined ? s.customerPrice : (s.amount || 0));
+                                    const agentPrice = Number(s.agentPrice !== undefined ? s.agentPrice : (s.agent_price !== undefined ? s.agent_price : 0));
                                     const challan = Number(s.challanFees || 0);
                                     const margin = Math.max(0, s.netMargin !== undefined ? Number(s.netMargin) : (custPrice - challan));
                                     return {
                                         name: s.name,
                                         customerPrice: custPrice,
+                                        agentPrice: agentPrice,
                                         challanFees: challan,
                                         netMargin: margin,
                                         amount: custPrice,
@@ -3995,6 +4419,9 @@
                                 return {
                                     id: Number(l.id),
                                     appId: l.app_id,
+                                    clientType: l.client_type || 'direct',
+                                    agentId: l.agent_id ? Number(l.agent_id) : null,
+                                    agentName: l.agent_name || '',
                                     customerName: l.customer_name,
                                     mobileNo: l.mobile_no,
                                     address: l.address || '',
@@ -4165,6 +4592,32 @@
                     return 'In Process';
                 },
 
+                setClientType(type) {
+                    this.customerForm.clientType = type;
+                    if (type === 'direct') {
+                        this.customerForm.agentId = null;
+                        this.customerForm.agentName = '';
+                    } else if (this.customerForm.agentId) {
+                        const ag = this.agents.find(a => Number(a.id) === Number(this.customerForm.agentId));
+                        if (ag) this.customerForm.agentName = ag.name;
+                    }
+                    if (this.tempService.name) {
+                        this.onTempServiceChange();
+                    }
+                },
+
+                onAgentSelect() {
+                    const ag = this.agents.find(a => Number(a.id) === Number(this.customerForm.agentId));
+                    if (ag) {
+                        this.customerForm.agentName = ag.name;
+                    } else {
+                        this.customerForm.agentName = '';
+                    }
+                    if (this.tempService.name) {
+                        this.onTempServiceChange();
+                    }
+                },
+
                 onTempServiceChange() {
                     if (this.tempService.name === '__CREATE_NEW__') {
                         this.tempService.name = '';
@@ -4177,12 +4630,19 @@
                     }
                     const selected = this.appTypes.find(t => t.name === this.tempService.name);
                     if (selected) {
-                        const price = selected.defaultAmount !== undefined && selected.defaultAmount !== null ? selected.defaultAmount : (selected.default_amount !== undefined ? selected.default_amount : '');
-                        const challan = selected.defaultChallan !== undefined && selected.defaultChallan !== null ? selected.defaultChallan : (selected.default_challan !== undefined ? selected.default_challan : 0);
-                        this.tempService.customerPrice = price;
+                        const isAgent = this.customerForm.clientType === 'agent';
+                        const retailPrice = Number(selected.defaultAmount !== undefined && selected.defaultAmount !== null ? selected.defaultAmount : (selected.default_amount !== undefined ? selected.default_amount : 0));
+                        const agentDiscountPrice = Number(selected.defaultAgentAmount !== undefined && selected.defaultAgentAmount !== null ? selected.defaultAgentAmount : (selected.default_agent_amount !== undefined ? selected.default_agent_amount : 0));
+                        const challan = Number(selected.defaultChallan !== undefined && selected.defaultChallan !== null ? selected.defaultChallan : (selected.default_challan !== undefined ? selected.default_challan : 0));
+                        
+                        // Wholesale agent fee if Agent Work, else regular customer retail fee
+                        const effectivePrice = isAgent ? (agentDiscountPrice > 0 ? agentDiscountPrice : retailPrice) : retailPrice;
+
+                        this.tempService.customerPrice = effectivePrice;
                         this.tempService.challanFees = challan;
-                        this.tempService.amount = price;
-                        this.tempService.netMargin = Math.max(0, Number(price || 0) - Number(challan || 0));
+                        this.tempService.amount = effectivePrice;
+                        // Net Margin is Agent Fee - Govt Challan for agents, or Retail Fee - Govt Challan for direct customers
+                        this.tempService.netMargin = Math.max(0, Number(effectivePrice || 0) - Number(challan || 0));
                     } else {
                         this.tempService.customerPrice = '';
                         this.tempService.challanFees = 0;
@@ -4196,10 +4656,13 @@
                     if (!this.tempService.name || !custPrice) return;
                     const challan = Number(this.tempService.challanFees || 0);
                     const margin = Math.max(0, custPrice - challan);
+                    const selected = this.appTypes.find(t => t.name === this.tempService.name);
+                    const agentPrice = selected ? Number(selected.defaultAgentAmount || selected.default_agent_amount || 0) : 0;
 
                     this.customerForm.services.push({ 
                         name: this.tempService.name, 
                         customerPrice: custPrice,
+                        agentPrice: agentPrice > 0 ? agentPrice : custPrice,
                         challanFees: challan,
                         netMargin: margin,
                         amount: custPrice,
@@ -4334,6 +4797,9 @@
                     await this.supabaseClient.from('logs').upsert({
                         id: logPayload.id,
                         app_id: logPayload.appId,
+                        client_type: logPayload.clientType || 'direct',
+                        agent_id: logPayload.agentId ? Number(logPayload.agentId) : null,
+                        agent_name: logPayload.agentName || null,
                         customer_name: logPayload.customerName,
                         mobile_no: logPayload.mobileNo,
                         address: logPayload.address || '',
@@ -4358,6 +4824,9 @@
                     this.editMode = true;
                     this.editId = log.id;
                     this.customerForm = JSON.parse(JSON.stringify(log));
+                    this.customerForm.clientType = log.clientType || 'direct';
+                    this.customerForm.agentId = log.agentId || null;
+                    this.customerForm.agentName = log.agentName || '';
                     if (!this.customerForm.services) {
                         this.customerForm.services = [{ name: log.applicationType, amount: log.totalAmount, status: log.status, physicalStatus: 'Pending', assignedTo: 'ALL', completedBy: null, procCommission: 0, dispatchedBy: null, dispCommission: 0 }];
                     }
@@ -4487,7 +4956,7 @@
                 get filteredLogs() {
                     return this.logs.filter(log => {
                         const srvStr = (log.services || []).map(s => s.name).join(' ');
-                        const textMatch = (log.customerName + log.mobileNo + (log.address || '') + log.appId + (log.applicationType || '') + srvStr)
+                        const textMatch = (log.customerName + log.mobileNo + (log.address || '') + log.appId + (log.applicationType || '') + (log.agentName || '') + srvStr)
                             .toLowerCase().includes(this.searchQuery.toLowerCase());
                         
                         const statusMatch = this.statusFilter === 'All' || log.status === this.statusFilter;
@@ -6561,13 +7030,14 @@
                         id: type.id,
                         name: type.name,
                         defaultAmount: Number(type.defaultAmount !== undefined ? type.defaultAmount : (type.default_amount || 0)),
+                        defaultAgentAmount: Number(type.defaultAgentAmount !== undefined ? type.defaultAgentAmount : (type.default_agent_amount || 0)),
                         defaultChallan: Number(type.defaultChallan !== undefined ? type.defaultChallan : (type.default_challan || 0))
                     };
                 },
 
                 cancelEditAppType() {
                     this.editingAppType = null;
-                    this.tempAppType = { id: null, name: '', defaultAmount: 0, defaultChallan: 0 };
+                    this.tempAppType = { id: null, name: '', defaultAmount: 0, defaultAgentAmount: 0, defaultChallan: 0 };
                 },
 
                 async saveEditAppType() {
@@ -6575,12 +7045,14 @@
                     const id = this.tempAppType.id;
                     const name = (this.tempAppType.name || '').trim();
                     const defaultAmount = Number(this.tempAppType.defaultAmount || 0);
+                    const defaultAgentAmount = Number(this.tempAppType.defaultAgentAmount || 0);
                     const defaultChallan = Number(this.tempAppType.defaultChallan || 0);
 
                     const idx = this.appTypes.findIndex(t => t.id === id);
                     if (idx !== -1) {
                         this.appTypes[idx].name = name;
                         this.appTypes[idx].defaultAmount = defaultAmount;
+                        this.appTypes[idx].defaultAgentAmount = defaultAgentAmount;
                         this.appTypes[idx].defaultChallan = defaultChallan;
                     }
                     localStorage.setItem('sf_app_types_data', JSON.stringify(this.appTypes));
@@ -6590,6 +7062,7 @@
                             const { error } = await this.supabaseClient.from('app_types').update({
                                 name: name,
                                 default_amount: defaultAmount,
+                                default_agent_amount: defaultAgentAmount,
                                 default_challan: defaultChallan
                             }).eq('id', id);
                             if (error) {
@@ -6601,7 +7074,7 @@
                         }
                     }
                     this.editingAppType = null;
-                    this.tempAppType = { id: null, name: '', defaultAmount: 0, defaultChallan: 0 };
+                    this.tempAppType = { id: null, name: '', defaultAmount: 0, defaultAgentAmount: 0, defaultChallan: 0 };
                 },
 
                 async addAppType() {
@@ -6610,6 +7083,7 @@
                         id: Date.now(), 
                         name: this.newAppType.name.trim(), 
                         defaultAmount: Number(this.newAppType.defaultAmount || 0),
+                        defaultAgentAmount: Number(this.newAppType.defaultAgentAmount || 0),
                         defaultChallan: Number(this.newAppType.defaultChallan || 0)
                     };
                     this.appTypes.push(newType);
@@ -6620,13 +7094,14 @@
                                 id: newType.id, 
                                 name: newType.name, 
                                 default_amount: newType.defaultAmount,
+                                default_agent_amount: newType.defaultAgentAmount,
                                 default_challan: newType.defaultChallan
                             });
                         } catch(e) {
                             console.error('addAppType upsert error:', e);
                         }
                     }
-                    this.newAppType = { name: '', defaultAmount: '', defaultChallan: 0 };
+                    this.newAppType = { name: '', defaultAmount: '', defaultAgentAmount: '', defaultChallan: 0 };
                 },
 
                 // Customer Modal Inline Service Addition & Instant Selection
@@ -6637,16 +7112,19 @@
                     }
                     const name = this.inlineNewService.name.trim();
                     const custPrice = Number(this.inlineNewService.defaultAmount || 0);
+                    const agentPrice = Number(this.inlineNewService.defaultAgentAmount || 0);
                     const challan = Number(this.inlineNewService.defaultChallan || 0);
 
                     let existing = this.appTypes.find(t => t.name.toLowerCase() === name.toLowerCase());
                     if (existing) {
                         existing.defaultAmount = custPrice;
+                        existing.defaultAgentAmount = agentPrice;
                         existing.defaultChallan = challan;
                         if (this.supabaseClient) {
                             try {
                                 await this.supabaseClient.from('app_types').update({
                                     default_amount: custPrice,
+                                    default_agent_amount: agentPrice,
                                     default_challan: challan
                                 }).eq('id', existing.id);
                             } catch (err) {
@@ -6658,6 +7136,7 @@
                             id: Date.now(),
                             name: name,
                             defaultAmount: custPrice,
+                            defaultAgentAmount: agentPrice,
                             defaultChallan: challan
                         };
                         this.appTypes.push(newType);
@@ -6667,6 +7146,7 @@
                                     id: newType.id,
                                     name: newType.name,
                                     default_amount: newType.defaultAmount,
+                                    default_agent_amount: newType.defaultAgentAmount,
                                     default_challan: newType.defaultChallan
                                 });
                             } catch (err) {
@@ -6677,14 +7157,17 @@
                     localStorage.setItem('sf_app_types_data', JSON.stringify(this.appTypes));
 
                     // Instantly populate into tempService and auto-calculate net margin
+                    const isAgent = this.customerForm.clientType === 'agent';
+                    const effectivePrice = isAgent ? (agentPrice > 0 ? agentPrice : custPrice) : custPrice;
+
                     this.tempService.name = name;
-                    this.tempService.customerPrice = custPrice;
+                    this.tempService.customerPrice = effectivePrice;
                     this.tempService.challanFees = challan;
-                    this.tempService.amount = custPrice;
-                    this.tempService.netMargin = Math.max(0, custPrice - challan);
+                    this.tempService.amount = effectivePrice;
+                    this.tempService.netMargin = Math.max(0, effectivePrice - challan);
 
                     // Reset inline form state and close creator
-                    this.inlineNewService = { name: '', defaultAmount: '', defaultChallan: 0 };
+                    this.inlineNewService = { name: '', defaultAmount: '', defaultAgentAmount: '', defaultChallan: 0 };
                     this.showInlineServiceCreator = false;
                 },
 
@@ -7175,6 +7658,210 @@
                     }
                 },
 
+                // ==================== AGENTS HUB MANAGEMENT METHODS ====================
+                getAgentStats(agentId) {
+                    if (!agentId) return { totalApps: 0, totalBilled: 0, totalPaid: 0, balanceDue: 0, completedApps: 0, pendingApps: 0 };
+                    const agentLogs = this.logs.filter(l => (l.clientType === 'agent' || l.client_type === 'agent') && Number(l.agentId || l.agent_id) === Number(agentId));
+                    let totalBilled = 0;
+                    let totalPaid = 0;
+                    let completedApps = 0;
+                    let pendingApps = 0;
+
+                    agentLogs.forEach(l => {
+                        const billed = Number(l.totalAmount || l.total_amount || 0);
+                        const paid = Number(l.paidAmount || l.paid_amount || 0) + (l.paymentHistory ? l.paymentHistory.reduce((s, p) => s + Number(p.amount || 0), 0) : 0);
+                        totalBilled += billed;
+                        totalPaid += paid;
+                        if (l.status === 'Completed') completedApps++;
+                        else pendingApps++;
+                    });
+
+                    return {
+                        totalApps: agentLogs.length,
+                        totalBilled: totalBilled,
+                        totalPaid: totalPaid,
+                        balanceDue: Math.max(0, totalBilled - totalPaid),
+                        completedApps: completedApps,
+                        pendingApps: pendingApps
+                    };
+                },
+
+                get agentMetrics() {
+                    const totalAgents = this.agents.length;
+                    let activeWithWork = 0;
+                    let totalAgentApplications = 0;
+                    let totalAgentBilled = 0;
+                    let totalAgentOutstanding = 0;
+
+                    this.agents.forEach(ag => {
+                        const stats = this.getAgentStats(ag.id);
+                        if (stats.totalApps > 0) activeWithWork++;
+                        totalAgentApplications += stats.totalApps;
+                        totalAgentBilled += stats.totalBilled;
+                        totalAgentOutstanding += stats.balanceDue;
+                    });
+
+                    return {
+                        totalAgents,
+                        activeWithWork,
+                        totalAgentApplications,
+                        totalAgentBilled,
+                        totalAgentOutstanding
+                    };
+                },
+
+                get filteredAgents() {
+                    return this.agents.filter(ag => {
+                        const q = (this.agentSearchQuery || '').toLowerCase().trim();
+                        const textMatch = !q || (
+                            (ag.name || '') + ' ' + 
+                            (ag.centerName || '') + ' ' + 
+                            (ag.village || '') + ' ' + 
+                            (ag.mobile || '')
+                        ).toLowerCase().includes(q);
+
+                        if (!textMatch) return false;
+
+                        if (this.agentStatusFilter === 'all') return true;
+                        const stats = this.getAgentStats(ag.id);
+                        if (this.agentStatusFilter === 'with_due') return stats.balanceDue > 0;
+                        if (this.agentStatusFilter === 'active') return stats.totalApps > 0;
+                        if (this.agentStatusFilter === 'inactive') return stats.totalApps === 0;
+                        return true;
+                    });
+                },
+
+                async addAgent() {
+                    const name = (this.newAgent.name || '').trim();
+                    const mobile = (this.newAgent.mobile || '').trim();
+                    if (!name) {
+                        alert('कृपया एजंटचे नाव प्रविष्ट करा.');
+                        return;
+                    }
+                    if (!mobile) {
+                        alert('कृपया एजंटचा मोबाईल नंबर प्रविष्ट करा.');
+                        return;
+                    }
+
+                    const newAg = {
+                        id: Date.now(),
+                        name: name,
+                        centerName: (this.newAgent.centerName || '').trim(),
+                        mobile: mobile,
+                        village: (this.newAgent.village || '').trim(),
+                        notes: (this.newAgent.notes || '').trim(),
+                        createdAt: new Date().toISOString()
+                    };
+
+                    this.agents.push(newAg);
+                    localStorage.setItem('sf_agents_data', JSON.stringify(this.agents));
+
+                    if (this.supabaseClient) {
+                        try {
+                            const { error } = await this.supabaseClient.from('agents').upsert({
+                                id: newAg.id,
+                                name: newAg.name,
+                                center_name: newAg.centerName,
+                                mobile: newAg.mobile,
+                                village: newAg.village,
+                                notes: newAg.notes
+                            });
+                            if (error) {
+                                console.warn('addAgent Supabase error:', error);
+                            }
+                        } catch(e) {
+                            console.error('addAgent exception:', e);
+                        }
+                    }
+
+                    this.newAgent = { name: '', centerName: '', mobile: '', village: '', notes: '' };
+                    this.closeModals();
+                },
+
+                editAgent(agent) {
+                    this.editingAgent = agent;
+                    this.tempAgent = {
+                        id: agent.id,
+                        name: agent.name || '',
+                        centerName: agent.centerName || agent.center_name || '',
+                        mobile: agent.mobile || '',
+                        village: agent.village || '',
+                        notes: agent.notes || ''
+                    };
+                    this.modals.editAgent = true;
+                },
+
+                cancelEditAgent() {
+                    this.editingAgent = null;
+                    this.tempAgent = { id: null, name: '', centerName: '', mobile: '', village: '', notes: '' };
+                    this.modals.editAgent = false;
+                },
+
+                async saveEditAgent() {
+                    if (!this.tempAgent || !this.tempAgent.id) return;
+                    const id = Number(this.tempAgent.id);
+                    const name = (this.tempAgent.name || '').trim();
+                    const mobile = (this.tempAgent.mobile || '').trim();
+                    const centerName = (this.tempAgent.centerName || '').trim();
+                    const village = (this.tempAgent.village || '').trim();
+                    const notes = (this.tempAgent.notes || '').trim();
+
+                    if (!name) {
+                        alert('कृपया एजंटचे नाव प्रविष्ट करा.');
+                        return;
+                    }
+
+                    const idx = this.agents.findIndex(a => Number(a.id) === id);
+                    if (idx !== -1) {
+                        this.agents[idx].name = name;
+                        this.agents[idx].centerName = centerName;
+                        this.agents[idx].mobile = mobile;
+                        this.agents[idx].village = village;
+                        this.agents[idx].notes = notes;
+                    }
+                    localStorage.setItem('sf_agents_data', JSON.stringify(this.agents));
+
+                    if (this.supabaseClient) {
+                        try {
+                            const { error } = await this.supabaseClient.from('agents').update({
+                                name: name,
+                                center_name: centerName,
+                                mobile: mobile,
+                                village: village,
+                                notes: notes
+                            }).eq('id', id);
+                            if (error) {
+                                console.warn('saveEditAgent Supabase error:', error);
+                            }
+                        } catch(e) {
+                            console.error('saveEditAgent exception:', e);
+                        }
+                    }
+
+                    this.editingAgent = null;
+                    this.tempAgent = { id: null, name: '', centerName: '', mobile: '', village: '', notes: '' };
+                    this.modals.editAgent = false;
+                },
+
+                async deleteAgent(id) {
+                    if (!confirm('हा एजंट डिलीट करायचा आहे का?')) return;
+                    this.agents = this.agents.filter(a => Number(a.id) !== Number(id));
+                    localStorage.setItem('sf_agents_data', JSON.stringify(this.agents));
+
+                    if (this.supabaseClient) {
+                        try {
+                            await this.supabaseClient.from('agents').delete().eq('id', id);
+                        } catch(e) {
+                            console.error('deleteAgent exception:', e);
+                        }
+                    }
+                },
+
+                viewAgentInLedger(ag) {
+                    this.activeTab = 'ledger';
+                    this.searchQuery = ag.name;
+                },
+
                 openModal(type) {
                     if (type === 'operators' || type === 'salaryRevision' || type === 'commissionConfig' || type === 'recordPayment') {
                         if (!this.currentUser || (this.currentUser.role !== 'admin' && this.currentUser.username !== 'sagar')) {
@@ -7185,15 +7872,19 @@
                     if (type === 'customer') {
                         this.editMode = false;
                         this.showInlineServiceCreator = false;
-                        this.inlineNewService = { name: '', defaultAmount: '', defaultChallan: 0 };
+                        this.inlineNewService = { name: '', defaultAmount: '', defaultAgentAmount: '', defaultChallan: 0 };
                         const todayStr = new Date().toISOString().slice(0, 10);
                         this.customerForm = { 
-                            customerName: '', mobileNo: '', address: '', services: [], 
+                            customerName: '', mobileNo: '', address: '', 
+                            clientType: 'direct', agentId: null, agentName: '',
+                            services: [], 
                             username: '', password: '', status: 'In Process', 
                             totalAmount: 0, paidAmount: '', paymentDate: todayStr, paymentHistory: [], notes: '' 
                         };
                         this.tempService = { name: '', customerPrice: '', challanFees: 0, amount: '', netMargin: 0 };
                         setTimeout(() => document.getElementById('customerNameInput')?.focus(), 50);
+                    } else if (type === 'agent') {
+                        this.newAgent = { name: '', centerName: '', mobile: '', village: '', notes: '' };
                     } else if (type === 'logoSettings') {
                         this.tempLogoInput = this.customLogoUrl;
                     } else if (type === 'waSettings') {
