@@ -2559,12 +2559,12 @@
                 </div>
 
                 <!-- ============================================================== -->
-                <!-- CASE B: AGENT BATCH CUSTOMERS (WHEN clientType === 'agent')    -->
+                <!-- AGENT BATCH CUSTOMERS TABLE (NAME, MOBILE, USER, PASS, DUES)   -->
                 <!-- ============================================================== -->
                 <div x-show="customerForm.clientType === 'agent'" class="space-y-3">
-                    <!-- Select Agent -->
-                    <div class="p-3 bg-purple-50/70 rounded-xl border border-purple-200 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
+                    <!-- 1. Select Agent & Batch Date -->
+                    <div class="p-3 bg-purple-50/70 rounded-xl border border-purple-200 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="sm:col-span-2">
                             <label class="block text-xs font-bold text-purple-900 mb-1">एजंट निवडा (Select Agent) *</label>
                             <select x-model="customerForm.agentId" @change="onAgentSelectInCustomerModal()" class="w-full px-3 py-2 border rounded-lg bg-white text-xs font-semibold">
                                 <option value="">-- एजंट निवडा --</option>
@@ -2574,44 +2574,60 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">जमा रक्कम / ॲडव्हान्स (Paid ₹)</label>
-                            <input type="number" x-model.number="customerForm.paidAmount" placeholder="₹ 0" class="w-full px-3 py-2 border rounded-lg bg-white font-bold text-emerald-700 text-xs">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">नोंद तारीख (Date)</label>
+                            <input type="date" x-model="customerForm.paymentDate" class="w-full px-3 py-2 border rounded-lg bg-white text-xs">
                         </div>
                     </div>
 
-                    <!-- Batch Customers Table -->
+                    <!-- 2. Streamlined Multi-Customer Table -->
                     <div class="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
                         <div class="p-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                            <span class="font-bold text-xs text-slate-700">एजंटकडील ग्राहकांची यादी (Customers in Batch)</span>
+                            <span class="font-bold text-xs text-slate-800">एजंटकडील ग्राहकांची यादी (Customer List)</span>
                             <button type="button" @click="addAgentBatchRow()" class="px-3 py-1 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 cursor-pointer">
                                 <span>➕</span> ग्राहक ओळ जोडा (+ Add Customer)
                             </button>
                         </div>
 
-                        <div class="overflow-x-auto max-h-[300px]">
+                        <div class="overflow-x-auto max-h-[350px]">
                             <table class="w-full text-left text-xs border-collapse">
                                 <thead class="bg-slate-100 text-[10px] uppercase font-bold text-slate-600 border-b">
                                     <tr>
-                                        <th class="p-2 w-8 text-center">#</th>
-                                        <th class="p-2 min-w-[150px]">ग्राहक पूर्ण नाव *</th>
-                                        <th class="p-2 min-w-[110px]">मोबाईल नंबर</th>
-                                        <th class="p-2 min-w-[170px]">सेवा (Service) *</th>
-                                        <th class="p-2 w-24 text-center">एजंट दर (₹)</th>
-                                        <th class="p-2 w-20 text-center">चलन (₹)</th>
-                                        <th class="p-2 w-20 text-center">नफा (₹)</th>
-                                        <th class="p-2 w-8 text-center"></th>
+                                        <th class="p-2.5 w-8 text-center">#</th>
+                                        <th class="p-2.5 min-w-[150px]">ग्राहक पूर्ण नाव *</th>
+                                        <th class="p-2.5 min-w-[110px]">मोबाईल नंबर</th>
+                                        <th class="p-2.5 min-w-[120px]">पोर्टल युझरनेम</th>
+                                        <th class="p-2.5 min-w-[110px]">पोर्टल पासवर्ड</th>
+                                        <th class="p-2.5 min-w-[160px]">सेवा निवडा *</th>
+                                        <th class="p-2.5 w-24 text-center">एजंट दर (₹)</th>
+                                        <th class="p-2.5 w-8 text-center"></th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 font-medium">
                                     <template x-for="(row, idx) in customerForm.agentBatchRows" :key="idx">
                                         <tr class="hover:bg-slate-50/80">
-                                            <td class="p-2 text-center text-slate-400 font-mono" x-text="idx + 1"></td>
+                                            <td class="p-2.5 text-center text-slate-400 font-mono" x-text="idx + 1"></td>
+                                            
+                                            <!-- Customer Name -->
                                             <td class="p-2">
-                                                <input type="text" x-model="row.customerName" placeholder="उदा. सागर वाडेकर" :required="customerForm.clientType === 'agent'" class="w-full px-2.5 py-1.5 border rounded-lg bg-white text-xs">
+                                                <input type="text" x-model="row.customerName" placeholder="उदा. राहुल पवार" :required="customerForm.clientType === 'agent'" class="w-full px-2.5 py-1.5 border rounded-lg bg-white text-xs">
                                             </td>
+
+                                            <!-- Mobile No -->
                                             <td class="p-2">
-                                                <input type="text" x-model="row.mobileNo" placeholder="मोबाईल" class="w-full px-2.5 py-1.5 border rounded-lg bg-white text-xs font-mono">
+                                                <input type="text" x-model="row.mobileNo" placeholder="मोबाईल नंबर" class="w-full px-2.5 py-1.5 border rounded-lg bg-white text-xs font-mono">
                                             </td>
+
+                                            <!-- Username -->
+                                            <td class="p-2">
+                                                <input type="text" x-model="row.username" placeholder="Username / ID" class="w-full px-2.5 py-1.5 border rounded-lg bg-white text-xs font-mono">
+                                            </td>
+
+                                            <!-- Password -->
+                                            <td class="p-2">
+                                                <input type="text" x-model="row.password" placeholder="Password" class="w-full px-2.5 py-1.5 border rounded-lg bg-white text-xs font-mono">
+                                            </td>
+
+                                            <!-- Service Selector -->
                                             <td class="p-2">
                                                 <select x-model="row.serviceName" :required="customerForm.clientType === 'agent'" @change="onAgentBatchRowServiceChange(row)" class="w-full px-2.5 py-1.5 border rounded-lg bg-white text-xs">
                                                     <option value="">-- सेवा निवडा --</option>
@@ -2620,19 +2636,15 @@
                                                     </template>
                                                 </select>
                                             </td>
+
+                                            <!-- Agent Fee -->
                                             <td class="p-2">
                                                 <input type="number" x-model.number="row.agentFee" 
-                                                    @input="row.netMargin = Math.max(0, Number(row.agentFee || 0) - Number(row.challan || 0)); recalculateAgentBatchTotal()"
-                                                    class="w-full px-2 py-1.5 border border-purple-300 rounded-lg text-center font-bold text-purple-700 bg-purple-50/20 text-xs">
+                                                    @input="recalculateAgentBatchTotal()"
+                                                    class="w-full px-2.5 py-1.5 border border-purple-300 rounded-lg text-center font-bold text-purple-700 bg-purple-50/20 text-xs">
                                             </td>
-                                            <td class="p-2">
-                                                <input type="number" x-model.number="row.challan" 
-                                                    @input="row.netMargin = Math.max(0, Number(row.agentFee || 0) - Number(row.challan || 0)); recalculateAgentBatchTotal()"
-                                                    class="w-full px-2 py-1.5 border border-rose-200 rounded-lg text-center font-bold text-rose-700 bg-rose-50/20 text-xs">
-                                            </td>
-                                            <td class="p-2">
-                                                <div class="px-2 py-1.5 bg-emerald-50 rounded-lg text-xs font-bold text-emerald-700 font-mono text-center" x-text="'₹ ' + (row.netMargin || 0)"></div>
-                                            </td>
+
+                                            <!-- Delete Row -->
                                             <td class="p-2 text-center">
                                                 <button type="button" @click="removeAgentBatchRow(idx)" class="text-rose-500 hover:text-rose-700 p-1 cursor-pointer" title="Delete">
                                                     🗑️
@@ -2644,23 +2656,42 @@
                             </table>
                         </div>
 
-                        <!-- Agent Batch Calculation Footer -->
-                        <div class="p-2.5 bg-slate-50 border-t flex flex-wrap items-center justify-between text-xs font-semibold">
-                            <div>एकूण ग्राहक: <strong class="text-purple-700 font-mono" x-text="(customerForm.agentBatchRows || []).length"></strong></div>
-                            <div>एकूण बिल: <strong class="text-slate-900 font-mono" x-text="'₹ ' + (customerForm.totalAmount || 0)"></strong></div>
-                            <div>निव्वळ नफा (Net Margin): <strong class="text-emerald-700 font-mono" x-text="'₹ ' + getAgentBatchTotalMargin()"></strong></div>
-                        </div>
-                    </div>
+                        <!-- 3. FINANCIAL SUMMARY: TOTAL, PAID, DUE BALANCE -->
+                        <div class="p-3 bg-gradient-to-r from-slate-50 via-purple-50/40 to-slate-50 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs items-center">
+                            <!-- Total Billed Amount -->
+                            <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">एकूण रक्कम (Total Bill)</span>
+                                <div class="text-base font-extrabold text-slate-900 font-mono mt-0.5" x-text="'₹ ' + (customerForm.totalAmount || 0)">₹ 0</div>
+                                <span class="text-[10px] text-purple-700 font-medium" x-text="customerForm.agentBatchRows.length + ' अर्ज जोडले'"></span>
+                            </div>
 
-                    <!-- Agent Batch Date & Remarks -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-semibold text-slate-700 mb-1">नोंद तारीख (Batch / Payment Date)</label>
-                            <input type="date" x-model="customerForm.paymentDate" class="w-full px-3 py-2 border rounded-lg bg-white text-xs">
-                        </div>
-                        <div>
-                            <label class="block font-semibold text-slate-700 mb-1">टीप / शेरा (Notes / Remarks)</label>
-                            <input type="text" x-model="customerForm.notes" placeholder="उदा. एजंट बॅच नोंद..." class="w-full px-3 py-2 border rounded-lg text-xs">
+                            <!-- Amount Paid / Advance -->
+                            <div class="bg-white p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                                <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">जमा रक्कम (Paid Amount)</span>
+                                <div class="flex items-center gap-1 mt-0.5">
+                                    <span class="font-bold text-slate-600">₹</span>
+                                    <input type="number" x-model.number="customerForm.paidAmount" placeholder="0" 
+                                        class="w-full font-extrabold text-emerald-700 font-mono text-base px-1.5 py-0.5 border-b border-emerald-300 focus:outline-none focus:border-emerald-600 bg-transparent">
+                                </div>
+                                <span class="text-[10px] text-slate-400">एजंटने जमा केलेली रक्कम</span>
+                            </div>
+
+                            <!-- Balance Due -->
+                            <div class="bg-white p-2.5 rounded-xl border shadow-2xs"
+                                :class="(customerForm.totalAmount - (customerForm.paidAmount || 0)) > 0 ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200'">
+                                <span class="text-[10px] font-bold uppercase tracking-wider block"
+                                    :class="(customerForm.totalAmount - (customerForm.paidAmount || 0)) > 0 ? 'text-amber-800' : 'text-slate-500'">
+                                    बाकी शिल्लक (Balance Due)
+                                </span>
+                                <div class="text-base font-extrabold font-mono mt-0.5"
+                                    :class="(customerForm.totalAmount - (customerForm.paidAmount || 0)) > 0 ? 'text-amber-700' : 'text-slate-700'"
+                                    x-text="'₹ ' + Math.max(0, (customerForm.totalAmount || 0) - Number(customerForm.paidAmount || 0))">
+                                    ₹ 0
+                                </div>
+                                <span class="text-[10px]" :class="(customerForm.totalAmount - (customerForm.paidAmount || 0)) > 0 ? 'text-amber-700 font-semibold' : 'text-emerald-600 font-medium'">
+                                    <span x-text="(customerForm.totalAmount - (customerForm.paidAmount || 0)) > 0 ? 'एजंटकडे येणे बाकी' : 'पूर्ण भरणा झाला'"></span>
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3963,40 +3994,51 @@
 
                 <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-2xs max-h-80 overflow-y-auto">
                     <table class="w-full text-left text-xs border-collapse">
-                        <thead class="bg-slate-100 text-slate-700 sticky top-0 z-10 font-bold border-b border-slate-200">
+                        <thead class="bg-slate-100 text-[10px] uppercase font-bold text-slate-600 sticky top-0 z-10 border-b border-slate-200">
                             <tr>
                                 <th class="p-2.5 w-8 text-center">#</th>
-                                <th class="p-2.5 min-w-[160px]">ग्राहकाचे नाव (Customer Name) *</th>
-                                <th class="p-2.5 min-w-[120px]">मोबाईल नंबर (Mobile)</th>
-                                <th class="p-2.5 min-w-[200px]">सेवेचे नाव (Service Name) *</th>
-                                <th class="p-2.5 w-24 text-right">एजंट दर (₹)</th>
-                                <th class="p-2.5 w-24 text-right">चलन (₹)</th>
-                                <th class="p-2.5 w-20 text-center">मार्जिन</th>
-                                <th class="p-2.5 w-24 text-right">जमा (Paid ₹)</th>
-                                <th class="p-2.5 w-10 text-center"></th>
+                                <th class="p-2.5 min-w-[150px]">ग्राहक पूर्ण नाव *</th>
+                                <th class="p-2.5 min-w-[110px]">मोबाईल नंबर</th>
+                                <th class="p-2.5 min-w-[120px]">पोर्टल युझरनेम</th>
+                                <th class="p-2.5 min-w-[110px]">पोर्टल पासवर्ड</th>
+                                <th class="p-2.5 min-w-[160px]">सेवा निवडा *</th>
+                                <th class="p-2.5 w-24 text-center">एजंट दर (₹)</th>
+                                <th class="p-2.5 w-8 text-center"></th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100 bg-white">
+                        <tbody class="divide-y divide-slate-100 bg-white font-medium">
                             <template x-for="(row, idx) in agentBatchForm.rows" :key="idx">
                                 <tr class="hover:bg-purple-50/30 transition">
-                                    <td class="p-2 text-center text-slate-400 font-mono text-[11px]" x-text="idx + 1"></td>
+                                    <td class="p-2.5 text-center text-slate-400 font-mono text-[11px]" x-text="idx + 1"></td>
                                     
                                     <!-- Customer Name -->
-                                    <td class="p-1.5">
-                                        <input type="text" x-model="row.customerName" placeholder="उदा. सागर पाटील"
-                                            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg focus:ring-1 focus:ring-purple-500 font-semibold text-slate-800">
+                                    <td class="p-2">
+                                        <input type="text" x-model="row.customerName" placeholder="उदा. राहुल पवार" required
+                                            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg focus:ring-1 focus:ring-purple-500 font-semibold text-slate-800 text-xs">
                                     </td>
 
                                     <!-- Mobile -->
-                                    <td class="p-1.5">
-                                        <input type="text" x-model="row.mobileNo" placeholder="१० अंकी नंबर"
-                                            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg focus:ring-1 focus:ring-purple-500 font-mono text-slate-700">
+                                    <td class="p-2">
+                                        <input type="text" x-model="row.mobileNo" placeholder="मोबाईल नंबर"
+                                            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg focus:ring-1 focus:ring-purple-500 font-mono text-slate-700 text-xs">
+                                    </td>
+
+                                    <!-- Username -->
+                                    <td class="p-2">
+                                        <input type="text" x-model="row.username" placeholder="Username / ID"
+                                            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg focus:ring-1 focus:ring-purple-500 font-mono text-slate-700 text-xs">
+                                    </td>
+
+                                    <!-- Password -->
+                                    <td class="p-2">
+                                        <input type="text" x-model="row.password" placeholder="Password"
+                                            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg focus:ring-1 focus:ring-purple-500 font-mono text-slate-700 text-xs">
                                     </td>
 
                                     <!-- Service Select -->
-                                    <td class="p-1.5">
-                                        <select x-model="row.serviceName" @change="onBatchRowServiceChange(row)"
-                                            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white focus:ring-1 focus:ring-purple-500 text-slate-800 font-medium">
+                                    <td class="p-2">
+                                        <select x-model="row.serviceName" required @change="onBatchRowServiceChange(row)"
+                                            class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white focus:ring-1 focus:ring-purple-500 text-slate-800 font-medium text-xs">
                                             <option value="">-- सेवा निवडा --</option>
                                             <template x-for="st in appTypes" :key="st.id">
                                                 <option :value="st.name" 
@@ -4006,33 +4048,16 @@
                                     </td>
 
                                     <!-- Agent Fee (Editable) -->
-                                    <td class="p-1.5">
+                                    <td class="p-2">
                                         <input type="number" x-model.number="row.agentPrice" @input="updateBatchRowMargin(row)" placeholder="0" min="0"
-                                            class="w-full px-2 py-1.5 border border-purple-200 rounded-lg font-bold text-purple-700 bg-purple-50/40 text-right focus:ring-1 focus:ring-purple-500 font-mono">
-                                    </td>
-
-                                    <!-- Challan Fees (Editable) -->
-                                    <td class="p-1.5">
-                                        <input type="number" x-model.number="row.challanFees" @input="updateBatchRowMargin(row)" placeholder="0" min="0"
-                                            class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-slate-600 text-right focus:ring-1 focus:ring-purple-500 font-mono">
-                                    </td>
-
-                                    <!-- Margin Preview -->
-                                    <td class="p-1.5 text-center font-bold text-emerald-600 font-mono text-xs"
-                                        x-text="'₹' + Math.max(0, Number(row.agentPrice || 0) - Number(row.challanFees || 0))">
-                                    </td>
-
-                                    <!-- Paid Amount -->
-                                    <td class="p-1.5">
-                                        <input type="number" x-model.number="row.paidAmount" placeholder="0" min="0"
-                                            class="w-full px-2 py-1.5 border border-emerald-200 rounded-lg font-bold text-emerald-700 bg-emerald-50/30 text-right focus:ring-1 focus:ring-emerald-500 font-mono">
+                                            class="w-full px-2.5 py-1.5 border border-purple-300 rounded-lg text-center font-bold text-purple-700 bg-purple-50/20 text-xs font-mono">
                                     </td>
 
                                     <!-- Delete Row Action -->
-                                    <td class="p-1.5 text-center">
+                                    <td class="p-2 text-center">
                                         <button type="button" @click="removeBatchRow(idx)" 
-                                            class="p-1 text-slate-400 hover:text-rose-600 transition cursor-pointer rounded" title="ही ओळ काढा">
-                                            <i class="fa-solid fa-trash-can text-xs"></i>
+                                            class="text-rose-500 hover:text-rose-700 p-1 cursor-pointer rounded" title="Delete">
+                                            🗑️
                                         </button>
                                     </td>
                                 </tr>
@@ -4042,48 +4067,54 @@
                 </div>
             </div>
 
-            <!-- Summary Totals Footer Bar -->
-            <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200/80 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
-                <div class="flex items-center gap-4 flex-wrap">
-                    <div>
-                        <span class="text-slate-500 block text-[10px] font-bold uppercase">एकूण ग्राहक (Jobs)</span>
-                        <span class="text-sm font-black text-purple-900" x-text="batchSummary.validCount">0</span>
-                    </div>
-                    <div class="border-l border-purple-200 pl-3">
-                        <span class="text-slate-500 block text-[10px] font-bold uppercase">घाऊक बिल (Wholesale ₹)</span>
-                        <span class="text-sm font-black text-purple-700 font-mono" x-text="'₹' + batchSummary.totalBilling.toLocaleString('en-IN')">₹0</span>
-                    </div>
-                    <div class="border-l border-purple-200 pl-3">
-                        <span class="text-slate-500 block text-[10px] font-bold uppercase">सरकारी चलन (Challan ₹)</span>
-                        <span class="text-sm font-bold text-slate-700 font-mono" x-text="'₹' + batchSummary.totalChallan.toLocaleString('en-IN')">₹0</span>
-                    </div>
-                    <div class="border-l border-purple-200 pl-3">
-                        <span class="text-slate-500 block text-[10px] font-bold uppercase">निव्वळ नफा (Margin ₹)</span>
-                        <span class="text-sm font-black text-emerald-600 font-mono" x-text="'₹' + batchSummary.totalMargin.toLocaleString('en-IN')">₹0</span>
-                    </div>
-                    <div class="border-l border-purple-200 pl-3">
-                        <span class="text-slate-500 block text-[10px] font-bold uppercase">जमा रक्कम (Paid ₹)</span>
-                        <span class="text-sm font-black text-emerald-700 font-mono" x-text="'₹' + batchSummary.totalPaid.toLocaleString('en-IN')">₹0</span>
-                    </div>
-                    <div class="border-l border-purple-200 pl-3">
-                        <span class="text-slate-500 block text-[10px] font-bold uppercase">येणे बाकी (Due ₹)</span>
-                        <span class="text-sm font-black font-mono" 
-                            :class="batchSummary.totalDue > 0 ? 'text-rose-600' : 'text-emerald-600'"
-                            x-text="'₹' + batchSummary.totalDue.toLocaleString('en-IN')">₹0</span>
-                    </div>
+            <!-- 3. FINANCIAL SUMMARY: TOTAL, PAID, DUE BALANCE -->
+            <div class="p-3 bg-gradient-to-r from-slate-50 via-purple-50/40 to-slate-50 border border-slate-200 rounded-xl grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs items-center">
+                <!-- Total Billed Amount -->
+                <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">एकूण रक्कम (Total Bill)</span>
+                    <div class="text-base font-extrabold text-slate-900 font-mono mt-0.5" x-text="'₹ ' + (batchSummary.totalBilling || 0)">₹ 0</div>
+                    <span class="text-[10px] text-purple-700 font-medium" x-text="batchSummary.validCount + ' अर्ज जोडले'"></span>
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="flex items-center gap-2 ml-auto">
-                    <button type="button" @click="closeModals()" class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded-lg border border-slate-200 cursor-pointer transition">
-                        रद्द करा (Cancel)
-                    </button>
-                    <button type="button" @click="saveAgentBatchLogs()" 
-                        class="px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-lg shadow-md transition flex items-center gap-1.5 cursor-pointer">
-                        <i class="fa-solid fa-floppy-disk text-xs"></i>
-                        <span>💾 सर्व अर्ज सेव्ह करा (Save Batch)</span>
-                    </button>
+                <!-- Amount Paid / Advance -->
+                <div class="bg-white p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                    <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">जमा रक्कम (Paid Amount)</span>
+                    <div class="flex items-center gap-1 mt-0.5">
+                        <span class="font-bold text-slate-600">₹</span>
+                        <input type="number" x-model.number="agentBatchForm.paidAmount" placeholder="0" 
+                            class="w-full font-extrabold text-emerald-700 font-mono text-base px-1.5 py-0.5 border-b border-emerald-300 focus:outline-none focus:border-emerald-600 bg-transparent">
+                    </div>
+                    <span class="text-[10px] text-slate-400">एजंटने जमा केलेली रक्कम</span>
                 </div>
+
+                <!-- Balance Due -->
+                <div class="bg-white p-2.5 rounded-xl border shadow-2xs"
+                    :class="(batchSummary.totalBilling - (agentBatchForm.paidAmount || 0)) > 0 ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200'">
+                    <span class="text-[10px] font-bold uppercase tracking-wider block"
+                        :class="(batchSummary.totalBilling - (agentBatchForm.paidAmount || 0)) > 0 ? 'text-amber-800' : 'text-slate-500'">
+                        बाकी शिल्लक (Balance Due)
+                    </span>
+                    <div class="text-base font-extrabold font-mono mt-0.5"
+                        :class="(batchSummary.totalBilling - (agentBatchForm.paidAmount || 0)) > 0 ? 'text-amber-700' : 'text-slate-700'"
+                        x-text="'₹ ' + Math.max(0, (batchSummary.totalBilling || 0) - Number(agentBatchForm.paidAmount || 0))">
+                        ₹ 0
+                    </div>
+                    <span class="text-[10px]" :class="(batchSummary.totalBilling - (agentBatchForm.paidAmount || 0)) > 0 ? 'text-amber-700 font-semibold' : 'text-emerald-600 font-medium'">
+                        <span x-text="(batchSummary.totalBilling - (agentBatchForm.paidAmount || 0)) > 0 ? 'एजंटकडे येणे बाकी' : 'पूर्ण भरणा झाला'"></span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button type="button" @click="closeModals()" class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded-lg border border-slate-200 cursor-pointer transition text-xs">
+                    रद्द करा (Cancel)
+                </button>
+                <button type="button" @click="saveAgentBatchLogs()" 
+                    class="px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-lg shadow-md transition flex items-center gap-1.5 cursor-pointer text-xs">
+                    <i class="fa-solid fa-floppy-disk text-xs"></i>
+                    <span>💾 सर्व अर्ज सेव्ह करा (Save Batch)</span>
+                </button>
             </div>
         </div>
     </div>
@@ -4236,12 +4267,13 @@
                     agentId: '',
                     agentName: '',
                     date: new Date().toISOString().slice(0, 10),
+                    paidAmount: '',
                     isCreatingInlineAgent: false,
                     inlineAgent: { name: '', centerName: '', mobile: '', village: '', notes: '' },
                     rows: [
-                        { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' },
-                        { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' },
-                        { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' }
+                        { customerName: '', mobileNo: '', username: '', password: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0 },
+                        { customerName: '', mobileNo: '', username: '', password: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0 },
+                        { customerName: '', mobileNo: '', username: '', password: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0 }
                     ]
                 },
 
@@ -4253,7 +4285,7 @@
                     username: '', password: '', status: 'In Process',
                     totalAmount: 0, paidAmount: '', paymentDate: new Date().toISOString().slice(0, 10), paymentHistory: [], notes: '',
                     agentBatchRows: [
-                        { customerName: '', mobileNo: '', serviceName: '', agentFee: 0, challan: 0, netMargin: 0 }
+                        { customerName: '', mobileNo: '', username: '', password: '', serviceName: '', agentFee: 0, challan: 0, netMargin: 0 }
                     ]
                 },
                 tempService: { name: '', customerPrice: '', challanFees: 0, amount: '', netMargin: 0 },
@@ -4925,7 +4957,7 @@
                     if (this.customerForm.clientType === 'agent') {
                         if (!this.customerForm.agentBatchRows || this.customerForm.agentBatchRows.length === 0) {
                             this.customerForm.agentBatchRows = [
-                                { customerName: '', mobileNo: '', serviceName: '', agentFee: 0, challan: 0, netMargin: 0 }
+                                { customerName: '', mobileNo: '', username: '', password: '', serviceName: '', agentFee: 0, challan: 0, netMargin: 0 }
                             ];
                         }
                         this.recalculateAgentBatchTotal();
@@ -4941,6 +4973,8 @@
                     this.customerForm.agentBatchRows.push({
                         customerName: '',
                         mobileNo: '',
+                        username: '',
+                        password: '',
                         serviceName: '',
                         agentFee: 0,
                         challan: 0,
@@ -4978,7 +5012,7 @@
                 recalculateAgentBatchTotal() {
                     const total = (this.customerForm.agentBatchRows || []).reduce((sum, r) => sum + Number(r.agentFee || 0), 0);
                     this.customerForm.totalAmount = total;
-                    if (!this.customerForm.paidAmount) {
+                    if (this.customerForm.paidAmount === '' || this.customerForm.paidAmount === null || this.customerForm.paidAmount === undefined) {
                         this.customerForm.paidAmount = total;
                     }
                 },
@@ -5208,6 +5242,8 @@
                                 agent_name: agentName,
                                 agentName: agentName,
                                 applicationType: row.serviceName,
+                                username: row.username ? row.username.trim() : '',
+                                password: row.password ? row.password.trim() : '',
                                 status: 'In Process',
                                 totalAmount: rowFee,
                                 paidAmount: rowPaid,
@@ -5245,6 +5281,8 @@
                                         address: singleLog.address,
                                         application_type: singleLog.applicationType,
                                         services: singleLog.services,
+                                        username: singleLog.username,
+                                        password: singleLog.password,
                                         status: 'In Process',
                                         total_amount: rowFee,
                                         paid_amount: rowPaid,
@@ -8392,7 +8430,7 @@
                     const totalBilling = validRows.reduce((sum, r) => sum + Number(r.agentPrice || 0), 0);
                     const totalChallan = validRows.reduce((sum, r) => sum + Number(r.challanFees || 0), 0);
                     const totalMargin = validRows.reduce((sum, r) => sum + Math.max(0, Number(r.agentPrice || 0) - Number(r.challanFees || 0)), 0);
-                    const totalPaid = validRows.reduce((sum, r) => sum + Number(r.paidAmount || 0), 0);
+                    const totalPaid = Number(this.agentBatchForm?.paidAmount || 0);
                     const totalDue = Math.max(0, totalBilling - totalPaid);
                     return {
                         validCount: validRows.length,
@@ -8411,12 +8449,13 @@
                         agentId: initialAgentId,
                         agentName: foundAgent ? foundAgent.name : '',
                         date: new Date().toISOString().slice(0, 10),
+                        paidAmount: '',
                         isCreatingInlineAgent: false,
                         inlineAgent: { name: '', centerName: '', mobile: '', village: '', notes: '' },
                         rows: [
-                            { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' },
-                            { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' },
-                            { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' }
+                            { customerName: '', mobileNo: '', username: '', password: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0 },
+                            { customerName: '', mobileNo: '', username: '', password: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0 },
+                            { customerName: '', mobileNo: '', username: '', password: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0 }
                         ]
                     };
                     this.modals.agentBatch = true;
@@ -8438,18 +8477,19 @@
                         this.agentBatchForm.rows.push({
                             customerName: '',
                             mobileNo: '',
+                            username: '',
+                            password: '',
                             serviceName: '',
                             agentPrice: '',
                             challanFees: 0,
-                            netMargin: 0,
-                            paidAmount: ''
+                            netMargin: 0
                         });
                     }
                 },
 
                 removeBatchRow(idx) {
                     if (this.agentBatchForm.rows.length <= 1) {
-                        this.agentBatchForm.rows[0] = { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' };
+                        this.agentBatchForm.rows[0] = { customerName: '', mobileNo: '', username: '', password: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0 };
                     } else {
                         this.agentBatchForm.rows.splice(idx, 1);
                     }
@@ -8457,9 +8497,9 @@
 
                 resetBatchRows() {
                     this.agentBatchForm.rows = [
-                        { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' },
-                        { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' },
-                        { customerName: '', mobileNo: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0, paidAmount: '' }
+                        { customerName: '', mobileNo: '', username: '', password: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0 },
+                        { customerName: '', mobileNo: '', username: '', password: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0 },
+                        { customerName: '', mobileNo: '', username: '', password: '', serviceName: '', agentPrice: '', challanFees: 0, netMargin: 0 }
                     ];
                 },
 
@@ -8572,14 +8612,15 @@
                     const formattedDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                     const newLogPayloads = [];
                     const supabaseRows = [];
+                    const overallPaid = Number(this.agentBatchForm?.paidAmount || 0);
 
                     validRows.forEach((row, i) => {
                         const appId = `SRV-${datePrefix}-${String(currentSerial + i).padStart(2, '0')}`;
                         const logId = Date.now() + i;
-                        const agentFee = Number(row.agentPrice || 0);
+                        const agentFee = Number(row.agentPrice || row.agentFee || 0);
                         const challan = Number(row.challanFees || 0);
                         const margin = Math.max(0, agentFee - challan);
-                        const paid = Number(row.paidAmount || 0);
+                        const paid = (i === 0 ? overallPaid : 0);
                         const serviceName = (row.serviceName || 'General Service').trim();
 
                         const serviceObj = {
@@ -8611,8 +8652,8 @@
                             address: selectedAgent.village || '',
                             applicationType: serviceName,
                             services: [serviceObj],
-                            username: '',
-                            password: '',
+                            username: (row.username || '').trim(),
+                            password: (row.password || '').trim(),
                             status: 'In Process',
                             totalAmount: agentFee,
                             paidAmount: paid,
@@ -8765,7 +8806,7 @@
                             username: '', password: '', status: 'In Process', 
                             totalAmount: 0, paidAmount: '', paymentDate: todayStr, paymentHistory: [], notes: '',
                             agentBatchRows: [
-                                { customerName: '', mobileNo: '', serviceName: '', agentFee: 0, challan: 0, netMargin: 0 }
+                                { customerName: '', mobileNo: '', username: '', password: '', serviceName: '', agentFee: 0, challan: 0, netMargin: 0 }
                             ]
                         };
                         this.tempService = { name: '', customerPrice: '', challanFees: 0, amount: '', netMargin: 0 };

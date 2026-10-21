@@ -36,6 +36,8 @@ export interface CustomerServiceItem {
 export interface CustomerFormAgentBatchRow {
   customerName: string;
   mobileNo: string;
+  username?: string;
+  password?: string;
   serviceName: string;
   agentFee: number;
   challan: number;
