@@ -2554,13 +2554,6 @@
                             <input type="number" x-model.number="tempService.customerPrice" @input="tempService.amount = tempService.customerPrice; tempService.netMargin = Math.max(0, Number(tempService.customerPrice || 0) - Number(tempService.challanFees || 0))" placeholder="Fee ₹" 
                                 class="w-full px-2.5 py-2 border rounded-lg focus:ring-2 focus:outline-none text-xs font-bold"
                                 :class="customerForm.clientType === 'agent' ? 'border-purple-300 focus:ring-purple-500 text-purple-900 bg-purple-50/30' : 'border-slate-300 focus:ring-indigo-500 text-slate-800'">
-                            <!-- Quick Rate Action Buttons (25 / 50 / 100 / 200) -->
-                            <div class="flex items-center gap-1 mt-1">
-                                <button type="button" @click="tempService.customerPrice = 25; tempService.amount = 25; tempService.netMargin = Math.max(0, 25 - Number(tempService.challanFees || 0))" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 border border-slate-200 transition cursor-pointer">₹25</button>
-                                <button type="button" @click="tempService.customerPrice = 50; tempService.amount = 50; tempService.netMargin = Math.max(0, 50 - Number(tempService.challanFees || 0))" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 border border-slate-200 transition cursor-pointer">₹50</button>
-                                <button type="button" @click="tempService.customerPrice = 100; tempService.amount = 100; tempService.netMargin = Math.max(0, 100 - Number(tempService.challanFees || 0))" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 border border-slate-200 transition cursor-pointer">₹100</button>
-                                <button type="button" @click="tempService.customerPrice = 200; tempService.amount = 200; tempService.netMargin = Math.max(0, 200 - Number(tempService.challanFees || 0))" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 border border-slate-200 transition cursor-pointer">₹200</button>
-                            </div>
                         </div>
                         <div class="sm:col-span-2">
                             <label class="block text-[10px] font-bold text-rose-600 uppercase mb-0.5">सरकारी चलन (₹)</label>
