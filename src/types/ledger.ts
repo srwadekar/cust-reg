@@ -33,6 +33,15 @@ export interface CustomerServiceItem {
   agentPrice?: number;
 }
 
+export interface CustomerFormAgentBatchRow {
+  customerName: string;
+  mobileNo: string;
+  serviceName: string;
+  agentFee: number;
+  challan: number;
+  netMargin: number;
+}
+
 export interface CustomerLog {
   id: number | string;
   app_id: string;
@@ -40,8 +49,8 @@ export interface CustomerLog {
   mobile_no?: string;
   address?: string;
   application_type?: string;
-  client_type?: 'direct' | 'agent';
-  clientType?: 'direct' | 'agent';
+  client_type?: 'direct' | 'agent' | 'customer';
+  clientType?: 'direct' | 'agent' | 'customer';
   agent_id?: number | string | null;
   agentId?: number | string | null;
   agent_name?: string | null;

@@ -2419,267 +2419,257 @@
 
     <!-- A. NEW / EDIT CUSTOMER LOG MODAL -->
     <div x-show="modals.customer" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto no-print">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 space-y-4 my-8 border border-slate-200" @keydown.escape.window="closeModals()">
+        <div :class="customerForm.clientType === 'agent' ? 'max-w-4xl' : 'max-w-2xl'" class="bg-white rounded-2xl shadow-2xl w-full p-6 space-y-4 my-8 border border-slate-200 transition-all duration-200" @keydown.escape.window="closeModals()">
             <div class="flex justify-between items-center border-b border-slate-100 pb-3">
                 <div class="flex items-center gap-2">
                     <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold"><i class="fa-solid fa-user-plus text-xs"></i></span>
-                    <h3 class="text-base font-bold text-slate-900" x-text="editMode ? 'ग्राहक नोंद दुरुस्त करा (Edit Customer Log)' : 'नवीन ग्राहक नोंद (New Customer Application)'"></h3>
+                    <h3 class="text-base font-bold text-slate-900" x-text="editMode ? 'ग्राहक नोंद दुरुस्त करा (Edit Customer Log)' : (customerForm.clientType === 'agent' ? 'नवीन एजंट बॅच नोंद (Agent Batch Customer Registration)' : 'नवीन ग्राहक नोंद (New Customer Application)')"></h3>
                 </div>
                 <button @click="closeModals()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
             <form @submit.prevent="saveCustomerLog" class="space-y-4 text-xs">
-                <!-- Client Type Toggle: Direct Customer (Retail) vs Agent Work (Wholesale B2B) -->
-                <div class="bg-gradient-to-r from-slate-50 via-purple-50/50 to-slate-50 p-3 rounded-xl border border-slate-200 space-y-2.5">
-                    <div class="flex items-center justify-between">
-                        <label class="block font-bold text-slate-800 text-xs">
-                            <i class="fa-solid fa-users text-purple-700 mr-1"></i> ग्राहकाचा प्रकार (Client / Customer Type) *
+                <!-- CLIENT TYPE SELECTOR (DIRECT CUSTOMER VS AGENT) -->
+                <div class="p-3 bg-indigo-50/70 rounded-xl border border-indigo-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800">नोंद प्रकार निवडा (Select Client Type):</label>
+                        <p class="text-[10px] text-slate-500">एजंट निवडल्यास एकाच वेळी अनेक ग्राहक (Batch) जोडता येतील</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 cursor-pointer">
+                            <input type="radio" value="customer" x-model="customerForm.clientType" @change="onClientTypeToggle()" class="text-indigo-600">
+                            <span>किरकोळ ग्राहक (Single Customer)</span>
                         </label>
-                        <span class="text-[10px] text-purple-700 font-semibold bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                            एजंट कामासाठी घाऊक सवलत दर (Wholesale B2B Rates)
-                        </span>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <button type="button" 
-                            @click="setClientType('direct')" 
-                            :class="customerForm.clientType !== 'agent' ? 'bg-slate-900 text-white font-bold shadow-sm border-slate-900' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'"
-                            class="px-3.5 py-2 rounded-lg border text-xs flex items-center justify-center gap-2 transition cursor-pointer">
-                            <i class="fa-solid fa-user text-xs"></i>
-                            <span>किरकोळ ग्राहक (Direct Customer - Retail ₹)</span>
-                        </button>
-                        <button type="button" 
-                            @click="setClientType('agent')" 
-                            :class="customerForm.clientType === 'agent' ? 'bg-purple-700 text-white font-bold shadow-sm border-purple-800 ring-2 ring-purple-300' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'"
-                            class="px-3.5 py-2 rounded-lg border text-xs flex items-center justify-center gap-2 transition cursor-pointer">
-                            <i class="fa-solid fa-handshake text-xs"></i>
-                            <span>एजंटचे काम (Agent Work - Wholesale ₹)</span>
-                        </button>
-                    </div>
-
-                    <!-- If Agent Work is selected, show Agent Selector Dropdown -->
-                    <div x-show="customerForm.clientType === 'agent'" x-transition class="pt-2 border-t border-purple-200 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-                        <div class="sm:col-span-8">
-                            <label class="block text-[10px] font-bold text-purple-900 uppercase mb-0.5">
-                                संबंधित एजंट / केंद्र निवडा (Select Active Agent Partner) *
-                            </label>
-                            <select x-model="customerForm.agentId" @change="onAgentSelect()" 
-                                class="w-full px-3 py-2 border border-purple-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 font-semibold text-xs text-purple-900">
-                                <option value="">-- एजंट निवडा (Select Agent Center) --</option>
-                                <template x-for="ag in agents" :key="ag.id">
-                                    <option :value="ag.id" x-text="ag.name + ' (' + (ag.centerName || 'केंद्र') + ' - ' + (ag.village || '') + ')'"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div class="sm:col-span-4 flex items-center gap-1.5 pt-1 sm:pt-4">
-                            <button type="button" @click="openModal('agent')" class="w-full py-2 bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold rounded-lg border border-purple-300 text-[11px] transition flex items-center justify-center gap-1.5 cursor-pointer">
-                                <i class="fa-solid fa-plus text-[10px]"></i>
-                                <span>+ नवीन एजंट जोडा</span>
-                            </button>
-                        </div>
+                        <label class="inline-flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-200 cursor-pointer">
+                            <input type="radio" value="agent" x-model="customerForm.clientType" @change="onClientTypeToggle()" class="text-purple-600">
+                            <span>एजंट काम (Agent Batch)</span>
+                        </label>
                     </div>
                 </div>
 
-                <!-- Customer Name, Mobile, Address -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">ग्राहक पूर्ण नाव (Customer Name) [Alt+C] *</label>
-                        <input id="customerNameInput" accesskey="c" type="text" x-model="customerForm.customerName" required placeholder="उदा. सागर शांताराम वाडेकर" 
-                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">मोबाईल नंबर (WhatsApp No) [Alt+M] *</label>
-                        <input id="mobileNoInput" accesskey="m" type="text" x-model="customerForm.mobileNo" required placeholder="१० अंकी मोबाईल नंबर" 
-                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block font-semibold text-slate-700 mb-1">पत्ता (Address / Village) [Alt+A]</label>
-                        <input id="addressInput" accesskey="a" type="text" x-model="customerForm.address" placeholder="मु. पो. नमपुर, ता. बागलाण, जि. नाशिक" 
-                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                    </div>
-                </div>
-
-                <!-- Multi-Service Builder (With Challan Fees & Net Margin Profit) -->
-                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-slate-700"><i class="fa-solid fa-cart-plus text-indigo-600 mr-1"></i> सेवा, चलन व निव्वळ नफा (Services, Challan & Net Margin) [Alt+S]</span>
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="text-indigo-600 font-bold" x-text="'एकूण: ₹ ' + customerForm.totalAmount"></span>
-                            <span class="text-rose-600 font-bold font-mono" x-text="'(चलन: ₹ ' + customerForm.services.reduce((s, x) => s + Number(x.challanFees || 0), 0) + ')'"></span>
-                            <span class="text-emerald-700 font-bold font-mono" x-text="'[नफा: ₹ ' + customerForm.services.reduce((s, x) => s + Number(x.netMargin !== undefined ? x.netMargin : Math.max(0, Number(x.customerPrice || x.amount || 0) - Number(x.challanFees || 0))), 0) + ']'"></span>
+                <!-- ============================================================== -->
+                <!-- CASE A: DIRECT SINGLE CUSTOMER FORM (WHEN clientType !== 'agent') -->
+                <!-- ============================================================== -->
+                <div x-show="customerForm.clientType !== 'agent'" class="space-y-3">
+                    <!-- Single Customer Details -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">ग्राहक पूर्ण नाव *</label>
+                            <input id="customerNameInput" accesskey="c" type="text" x-model="customerForm.customerName" placeholder="उदा. सागर शांताराम वाडेकर" 
+                                :required="customerForm.clientType !== 'agent'"
+                                class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">मोबाईल नंबर *</label>
+                            <input id="mobileNoInput" accesskey="m" type="text" x-model="customerForm.mobileNo" placeholder="१० अंकी मोबाईल" 
+                                :required="customerForm.clientType !== 'agent'"
+                                class="w-full px-3 py-2 border rounded-lg font-mono">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">पत्ता / गाव</label>
+                            <input id="addressInput" accesskey="a" type="text" x-model="customerForm.address" placeholder="मु. पो. नमपुर" 
+                                class="w-full px-3 py-2 border rounded-lg">
                         </div>
                     </div>
-                    
-                    <!-- Inline Quick Service Creator Card -->
-                    <div x-show="showInlineServiceCreator" x-transition class="p-3 bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 border border-purple-200 rounded-xl space-y-2 text-xs shadow-xs">
+
+                    <!-- Single Customer Service Selector (Clean, No Quick Rate Buttons) -->
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2.5">
                         <div class="flex items-center justify-between">
-                            <span class="font-bold text-purple-900 flex items-center gap-1.5 text-xs">
-                                <i class="fa-solid fa-wand-magic-sparkles text-purple-600"></i> थेट नवीन सेवा नोंदवा (Inline Service Creator)
-                            </span>
-                            <span class="text-[10px] text-purple-600 font-medium">सेटिंग्ज टॅबवर न जाता त्वरित सेवा जोडा व निवडा</span>
+                            <span class="font-bold text-slate-700 text-xs">सेवा निवडा व जोडा (Services)</span>
+                            <span class="text-xs font-bold text-indigo-700 font-mono" x-text="'एकूण: ₹ ' + customerForm.totalAmount"></span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
-                            <div class="sm:col-span-4">
-                                <label class="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">सेवेचे नाव (Service Name) *</label>
-                                <input type="text" x-model="inlineNewService.name" placeholder="उदा. ड्रायव्हिंग लायसन्स, शॉप ॲक्ट..." 
-                                    @keydown.enter.prevent="saveAndSelectInlineService"
-                                    class="w-full px-2.5 py-1.5 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white font-semibold text-xs">
+                            <div class="sm:col-span-5">
+                                <select id="serviceSelectInput" accesskey="s" x-model="tempService.name" @change="onTempServiceChange" class="w-full px-3 py-2 border rounded-lg bg-white text-xs">
+                                    <option value="">-- सेवा निवडा --</option>
+                                    <template x-for="type in appTypes" :key="type.id">
+                                        <option :value="type.name" x-text="type.name + ' (₹' + (type.defaultAmount || 0) + ')'"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div class="sm:col-span-3">
+                                <label class="block text-[10px] font-bold text-slate-500 mb-0.5">ग्राहक शुल्क ₹</label>
+                                <input type="number" x-model.number="tempService.customerPrice" 
+                                    @input="tempService.amount = tempService.customerPrice; tempService.netMargin = Math.max(0, Number(tempService.customerPrice || 0) - Number(tempService.challanFees || 0))" 
+                                    class="w-full px-2.5 py-2 border rounded-lg text-xs font-bold">
                             </div>
                             <div class="sm:col-span-2">
-                                <label class="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">ग्राहक शुल्क ₹</label>
-                                <input type="number" x-model.number="inlineNewService.defaultAmount" 
-                                    @input="if(!inlineNewService.manualAgentEdited) { inlineNewService.defaultAgentAmount = Math.round(Number(inlineNewService.defaultAmount || 0) * 0.8); }"
-                                    placeholder="Cust ₹" 
-                                    @keydown.enter.prevent="saveAndSelectInlineService"
-                                    class="w-full px-2.5 py-1.5 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white font-bold text-slate-800 text-xs">
+                                <label class="block text-[10px] font-bold text-rose-500 mb-0.5">चलन ₹</label>
+                                <input type="number" x-model.number="tempService.challanFees" 
+                                    @input="tempService.netMargin = Math.max(0, Number(tempService.customerPrice || 0) - Number(tempService.challanFees || 0))" 
+                                    class="w-full px-2.5 py-2 border border-rose-200 rounded-lg text-xs font-bold text-rose-700 bg-rose-50/20">
                             </div>
                             <div class="sm:col-span-2">
-                                <label class="block text-[10px] font-bold text-purple-700 uppercase mb-0.5">एजंट शुल्क ₹ [20% Off]</label>
-                                <input type="number" x-model.number="inlineNewService.defaultAgentAmount" 
-                                    @input="inlineNewService.manualAgentEdited = true"
-                                    placeholder="Agent ₹" 
-                                    @keydown.enter.prevent="saveAndSelectInlineService"
-                                    class="w-full px-2.5 py-1.5 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white font-bold text-purple-800 text-xs">
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label class="block text-[10px] font-bold text-rose-600 uppercase mb-0.5">सरकारी चलन ₹</label>
-                                <input type="number" x-model.number="inlineNewService.defaultChallan" placeholder="Challan ₹" 
-                                    @keydown.enter.prevent="saveAndSelectInlineService"
-                                    class="w-full px-2.5 py-1.5 border border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 bg-white font-bold text-rose-700 text-xs">
-                            </div>
-                            <div class="sm:col-span-2 flex items-center gap-1">
-                                <button type="button" @click="saveAndSelectInlineService" 
-                                    class="flex-1 py-1.5 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-1 text-xs">
-                                    <i class="fa-solid fa-check text-xs"></i> <span>Save</span>
-                                </button>
-                                <button type="button" @click="showInlineServiceCreator = false" 
-                                    class="px-2 py-1.5 border border-slate-300 hover:bg-slate-100 text-slate-600 rounded-lg transition text-xs">
-                                    रद्द
+                                <button type="button" @click="addServiceToForm" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs cursor-pointer">
+                                    + जोडा
                                 </button>
                             </div>
                         </div>
+
+                        <!-- Selected Services List -->
+                        <div class="divide-y divide-slate-200 border rounded-lg bg-white" x-show="customerForm.services.length > 0">
+                            <template x-for="(srv, idx) in customerForm.services" :key="idx">
+                                <div class="p-2 flex items-center justify-between text-xs">
+                                    <span class="font-semibold" x-text="srv.name"></span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-mono font-bold text-slate-800" x-text="'₹ ' + srv.customerPrice"></span>
+                                        <span class="text-rose-600 font-mono text-[11px]" x-text="'Ch: ₹ ' + srv.challanFees"></span>
+                                        <span class="text-emerald-700 font-mono font-bold text-[11px]" x-text="'Nafa: ₹ ' + srv.netMargin"></span>
+                                        <button type="button" @click="removeServiceFromForm(idx)" class="text-rose-500 hover:text-rose-700 ml-1 cursor-pointer">🗑️</button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
                     </div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
-                        <div class="sm:col-span-5">
-                            <div class="flex items-center justify-between mb-0.5">
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase">सेवा निवडा (Service)</label>
-                                <button type="button" @click="showInlineServiceCreator = !showInlineServiceCreator" 
-                                    class="text-[10px] font-bold text-purple-700 hover:text-purple-900 transition flex items-center gap-1 hover:underline">
-                                    <i class="fa-solid" :class="showInlineServiceCreator ? 'fa-xmark text-rose-500' : 'fa-plus'"></i>
-                                    <span x-text="showInlineServiceCreator ? 'रद्द करा (Cancel)' : '+ नवीन सेवा जोडा (+ Add Service)'"></span>
-                                </button>
-                            </div>
-                            <select id="serviceSelectInput" accesskey="s" x-model="tempService.name" @change="onTempServiceChange" 
-                                class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs">
-                                <option value="">-- सेवा निवडा (Select Service) --</option>
-                                <option value="__CREATE_NEW__" class="font-bold text-purple-700 bg-purple-50">+ नवीन सेवा तयार करा (+ Create New Service)...</option>
-                                <template x-for="type in appTypes" :key="type.id">
-                                    <option :value="type.name" 
-                                        x-text="type.name + (customerForm.clientType === 'agent' ? ' [एजंट: ₹' + (type.defaultAgentAmount !== undefined && type.defaultAgentAmount !== null && Number(type.defaultAgentAmount) > 0 ? type.defaultAgentAmount : Math.round(Number(type.defaultAmount || 0) * 0.8)) + ']' : ' [ग्राहक: ₹' + (type.defaultAmount || 0) + ']') + ' (चलन: ₹' + (type.defaultChallan || 0) + ')'"></option>
+
+                    <!-- Single Customer Portal Credentials -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">पोर्टल युझरनेम (Portal Username)</label>
+                            <input type="text" x-model="customerForm.username" placeholder="उदा. AapleSarkar ID" class="w-full px-3 py-1.5 border rounded-lg bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">पोर्टल पासवर्ड (Portal Password)</label>
+                            <input type="text" x-model="customerForm.password" placeholder="पोर्टल पासवर्ड" class="w-full px-3 py-1.5 border rounded-lg bg-white">
+                        </div>
+                    </div>
+
+                    <!-- Single Customer Payment Details -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">एकूण शुल्क (Total ₹)</label>
+                            <input type="number" x-model.number="customerForm.totalAmount" readonly class="w-full px-3 py-2 border rounded-lg bg-slate-100 font-bold text-indigo-700">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">जमा रक्कम (Paid ₹) [Alt+P]</label>
+                            <input id="initialPaidInput" accesskey="p" type="number" x-model.number="customerForm.paidAmount" placeholder="भरलेली रक्कम" 
+                                class="w-full px-3 py-2 border rounded-lg font-bold text-emerald-700 focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">तारीख (Payment Date) [Alt+D]</label>
+                            <input id="paymentDateInput" accesskey="d" type="date" x-model="customerForm.paymentDate" class="w-full px-3 py-2 border rounded-lg bg-white">
+                        </div>
+                    </div>
+
+                    <!-- Single Customer Notes -->
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">टीप / शेरा (Notes / Remarks) [Alt+R]</label>
+                        <input id="notesInput" accesskey="r" type="text" x-model="customerForm.notes" placeholder="उदा. टोकन क्रमांक, कागदपत्रे प्रलंबित इत्यादी..." class="w-full px-3 py-2 border rounded-lg">
+                    </div>
+                </div>
+
+                <!-- ============================================================== -->
+                <!-- CASE B: AGENT BATCH CUSTOMERS (WHEN clientType === 'agent')    -->
+                <!-- ============================================================== -->
+                <div x-show="customerForm.clientType === 'agent'" class="space-y-3">
+                    <!-- Select Agent -->
+                    <div class="p-3 bg-purple-50/70 rounded-xl border border-purple-200 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-purple-900 mb-1">एजंट निवडा (Select Agent) *</label>
+                            <select x-model="customerForm.agentId" @change="onAgentSelectInCustomerModal()" class="w-full px-3 py-2 border rounded-lg bg-white text-xs font-semibold">
+                                <option value="">-- एजंट निवडा --</option>
+                                <template x-for="ag in agents" :key="ag.id">
+                                    <option :value="ag.id" x-text="ag.name + ' (' + (ag.shop_name || ag.centerName || 'सेंटर') + ' - ' + (ag.village || '') + ')'"></option>
                                 </template>
                             </select>
                         </div>
-                        <div class="sm:col-span-2">
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5" 
-                                   x-text="customerForm.clientType === 'agent' ? 'एजंट शुल्क ₹ (Wholesale)' : 'ग्राहक शुल्क ₹ (Retail)'"></label>
-                            <input type="number" x-model.number="tempService.customerPrice" @input="tempService.amount = tempService.customerPrice; tempService.netMargin = Math.max(0, Number(tempService.customerPrice || 0) - Number(tempService.challanFees || 0))" placeholder="Fee ₹" 
-                                class="w-full px-2.5 py-2 border rounded-lg focus:ring-2 focus:outline-none text-xs font-bold"
-                                :class="customerForm.clientType === 'agent' ? 'border-purple-300 focus:ring-purple-500 text-purple-900 bg-purple-50/30' : 'border-slate-300 focus:ring-indigo-500 text-slate-800'">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">जमा रक्कम / ॲडव्हान्स (Paid ₹)</label>
+                            <input type="number" x-model.number="customerForm.paidAmount" placeholder="₹ 0" class="w-full px-3 py-2 border rounded-lg bg-white font-bold text-emerald-700 text-xs">
                         </div>
-                        <div class="sm:col-span-2">
-                            <label class="block text-[10px] font-bold text-rose-600 uppercase mb-0.5">सरकारी चलन (₹)</label>
-                            <input type="number" x-model.number="tempService.challanFees" @input="tempService.netMargin = Math.max(0, Number(tempService.customerPrice || tempService.amount || 0) - Number(tempService.challanFees || 0))" placeholder="Challan ₹" 
-                                class="w-full px-2.5 py-2 border border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-xs font-bold text-rose-700 bg-rose-50/40">
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label class="block text-[10px] font-bold text-emerald-700 uppercase mb-0.5">निव्वळ नफा (Margin)</label>
-                            <div class="px-2 py-2 bg-emerald-50 border border-emerald-300 rounded-lg text-xs font-extrabold text-emerald-700 font-mono text-center"
-                                 x-text="'₹ ' + Math.max(0, Number(tempService.customerPrice || tempService.amount || 0) - Number(tempService.challanFees || 0))">
-                            </div>
-                        </div>
-                        <div class="sm:col-span-1">
-                            <button type="button" @click="addServiceToForm" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm transition text-xs flex items-center justify-center cursor-pointer" title="Add Service">
-                                <i class="fa-solid fa-plus text-xs"></i>
+                    </div>
+
+                    <!-- Batch Customers Table -->
+                    <div class="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                        <div class="p-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                            <span class="font-bold text-xs text-slate-700">एजंटकडील ग्राहकांची यादी (Customers in Batch)</span>
+                            <button type="button" @click="addAgentBatchRow()" class="px-3 py-1 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 cursor-pointer">
+                                <span>➕</span> ग्राहक ओळ जोडा (+ Add Customer)
                             </button>
                         </div>
-                    </div>
 
-                    <!-- Real-Time Transparency: Live Net Margin & Estimated Associate Commissions -->
-                    <template x-if="tempService.name && (tempService.customerPrice || tempService.amount)">
-                        <div class="p-2 bg-emerald-50/70 border border-emerald-200 rounded-lg text-[11px] flex flex-wrap items-center justify-between gap-2 text-slate-700">
-                            <div class="flex items-center gap-1.5 font-bold text-emerald-800">
-                                <i class="fa-solid fa-chart-line text-emerald-600"></i>
-                                <span>Net Profit Margin: ₹<span x-text="Math.max(0, Number(tempService.customerPrice || tempService.amount || 0) - Number(tempService.challanFees || 0))"></span></span>
-                            </div>
-                            <div class="flex items-center gap-2 font-mono text-[10px]">
-                                <span class="text-indigo-700 font-semibold" x-text="'Est. Proc Comm: ₹' + calcProcComm(Math.max(0, Number(tempService.customerPrice || tempService.amount || 0) - Number(tempService.challanFees || 0)), currentUser ? getUserCommissionConfig(currentUser.username).procRate : 15, currentUser ? getUserCommissionConfig(currentUser.username).procCap : 20)"></span>
-                                <span class="text-slate-400">|</span>
-                                <span class="text-teal-700 font-semibold" x-text="'Est. Disp Comm: ₹' + calcDispComm(Math.max(0, Number(tempService.customerPrice || tempService.amount || 0) - Number(tempService.challanFees || 0)), currentUser ? getUserCommissionConfig(currentUser.username).dispRate : 5, currentUser ? getUserCommissionConfig(currentUser.username).dispCap : 5)"></span>
-                            </div>
+                        <div class="overflow-x-auto max-h-[300px]">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead class="bg-slate-100 text-[10px] uppercase font-bold text-slate-600 border-b">
+                                    <tr>
+                                        <th class="p-2 w-8 text-center">#</th>
+                                        <th class="p-2 min-w-[150px]">ग्राहक पूर्ण नाव *</th>
+                                        <th class="p-2 min-w-[110px]">मोबाईल नंबर</th>
+                                        <th class="p-2 min-w-[170px]">सेवा (Service) *</th>
+                                        <th class="p-2 w-24 text-center">एजंट दर (₹)</th>
+                                        <th class="p-2 w-20 text-center">चलन (₹)</th>
+                                        <th class="p-2 w-20 text-center">नफा (₹)</th>
+                                        <th class="p-2 w-8 text-center"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 font-medium">
+                                    <template x-for="(row, idx) in customerForm.agentBatchRows" :key="idx">
+                                        <tr class="hover:bg-slate-50/80">
+                                            <td class="p-2 text-center text-slate-400 font-mono" x-text="idx + 1"></td>
+                                            <td class="p-2">
+                                                <input type="text" x-model="row.customerName" placeholder="उदा. सागर वाडेकर" :required="customerForm.clientType === 'agent'" class="w-full px-2.5 py-1.5 border rounded-lg bg-white text-xs">
+                                            </td>
+                                            <td class="p-2">
+                                                <input type="text" x-model="row.mobileNo" placeholder="मोबाईल" class="w-full px-2.5 py-1.5 border rounded-lg bg-white text-xs font-mono">
+                                            </td>
+                                            <td class="p-2">
+                                                <select x-model="row.serviceName" :required="customerForm.clientType === 'agent'" @change="onAgentBatchRowServiceChange(row)" class="w-full px-2.5 py-1.5 border rounded-lg bg-white text-xs">
+                                                    <option value="">-- सेवा निवडा --</option>
+                                                    <template x-for="type in appTypes" :key="type.id">
+                                                        <option :value="type.name" x-text="type.name"></option>
+                                                    </template>
+                                                </select>
+                                            </td>
+                                            <td class="p-2">
+                                                <input type="number" x-model.number="row.agentFee" 
+                                                    @input="row.netMargin = Math.max(0, Number(row.agentFee || 0) - Number(row.challan || 0)); recalculateAgentBatchTotal()"
+                                                    class="w-full px-2 py-1.5 border border-purple-300 rounded-lg text-center font-bold text-purple-700 bg-purple-50/20 text-xs">
+                                            </td>
+                                            <td class="p-2">
+                                                <input type="number" x-model.number="row.challan" 
+                                                    @input="row.netMargin = Math.max(0, Number(row.agentFee || 0) - Number(row.challan || 0)); recalculateAgentBatchTotal()"
+                                                    class="w-full px-2 py-1.5 border border-rose-200 rounded-lg text-center font-bold text-rose-700 bg-rose-50/20 text-xs">
+                                            </td>
+                                            <td class="p-2">
+                                                <div class="px-2 py-1.5 bg-emerald-50 rounded-lg text-xs font-bold text-emerald-700 font-mono text-center" x-text="'₹ ' + (row.netMargin || 0)"></div>
+                                            </td>
+                                            <td class="p-2 text-center">
+                                                <button type="button" @click="removeAgentBatchRow(idx)" class="text-rose-500 hover:text-rose-700 p-1 cursor-pointer" title="Delete">
+                                                    🗑️
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
                         </div>
-                    </template>
 
-                    <!-- Selected Services List -->
-                    <div class="divide-y divide-slate-200 border rounded-lg bg-white overflow-hidden" x-show="customerForm.services.length > 0">
-                        <template x-for="(srv, idx) in customerForm.services" :key="idx">
-                            <div class="p-2.5 flex items-center justify-between gap-2 text-xs">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold flex items-center justify-center shrink-0" x-text="idx + 1"></span>
-                                    <span class="font-semibold text-slate-800" x-text="srv.name"></span>
-                                </div>
-                                <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-                                    <span class="font-bold text-slate-800" x-text="(customerForm.clientType === 'agent' ? 'Ag: ₹ ' : 'Fee: ₹ ') + (srv.customerPrice || srv.amount || 0)"></span>
-                                    <span class="font-semibold text-rose-600 font-mono" x-text="'Challan: ₹ ' + (srv.challanFees || 0)"></span>
-                                    <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-extrabold rounded font-mono" x-text="'Profit: ₹ ' + (srv.netMargin !== undefined ? srv.netMargin : Math.max(0, Number(srv.customerPrice || srv.amount || 0) - Number(srv.challanFees || 0)))"></span>
-                                    <span class="px-1.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold rounded font-mono text-[10px] hidden sm:inline" x-text="'Proc: ₹' + calcProcComm(srv.netMargin !== undefined ? srv.netMargin : Math.max(0, Number(srv.customerPrice || srv.amount || 0) - Number(srv.challanFees || 0)), currentUser ? getUserCommissionConfig(currentUser.username).procRate : 15, currentUser ? getUserCommissionConfig(currentUser.username).procCap : 20)"></span>
-                                    <button type="button" @click="removeServiceFromForm(idx)" class="text-rose-500 hover:text-rose-700 ml-1"><i class="fa-solid fa-trash"></i></button>
-                                </div>
-                            </div>
-                        </template>
+                        <!-- Agent Batch Calculation Footer -->
+                        <div class="p-2.5 bg-slate-50 border-t flex flex-wrap items-center justify-between text-xs font-semibold">
+                            <div>एकूण ग्राहक: <strong class="text-purple-700 font-mono" x-text="(customerForm.agentBatchRows || []).length"></strong></div>
+                            <div>एकूण बिल: <strong class="text-slate-900 font-mono" x-text="'₹ ' + (customerForm.totalAmount || 0)"></strong></div>
+                            <div>निव्वळ नफा (Net Margin): <strong class="text-emerald-700 font-mono" x-text="'₹ ' + getAgentBatchTotalMargin()"></strong></div>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Portal Credentials -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">पोर्टल युझरनेम (Portal Username)</label>
-                        <input type="text" x-model="customerForm.username" placeholder="उदा. AapleSarkar ID" class="w-full px-3 py-1.5 border rounded-lg bg-white">
+                    <!-- Agent Batch Date & Remarks -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">नोंद तारीख (Batch / Payment Date)</label>
+                            <input type="date" x-model="customerForm.paymentDate" class="w-full px-3 py-2 border rounded-lg bg-white text-xs">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">टीप / शेरा (Notes / Remarks)</label>
+                            <input type="text" x-model="customerForm.notes" placeholder="उदा. एजंट बॅच नोंद..." class="w-full px-3 py-2 border rounded-lg text-xs">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">पोर्टल पासवर्ड (Portal Password)</label>
-                        <input type="text" x-model="customerForm.password" placeholder="पोर्टल पासवर्ड" class="w-full px-3 py-1.5 border rounded-lg bg-white">
-                    </div>
-                </div>
-
-                <!-- Payment Details -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">एकूण शुल्क (Total ₹)</label>
-                        <input type="number" x-model.number="customerForm.totalAmount" readonly class="w-full px-3 py-2 border rounded-lg bg-slate-100 font-bold text-indigo-700">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">जमा रक्कम (Paid ₹) [Alt+P]</label>
-                        <input id="initialPaidInput" accesskey="p" type="number" x-model.number="customerForm.paidAmount" placeholder="भरलेली रक्कम" 
-                            class="w-full px-3 py-2 border rounded-lg font-bold text-emerald-700 focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">तारीख (Payment Date) [Alt+D]</label>
-                        <input id="paymentDateInput" accesskey="d" type="date" x-model="customerForm.paymentDate" class="w-full px-3 py-2 border rounded-lg bg-white">
-                    </div>
-                </div>
-
-                <!-- Notes -->
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">टीप / शेरा (Notes / Remarks) [Alt+R]</label>
-                    <input id="notesInput" accesskey="r" type="text" x-model="customerForm.notes" placeholder="उदा. टोकन क्रमांक, कागदपत्रे प्रलंबित इत्यादी..." class="w-full px-3 py-2 border rounded-lg">
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                    <button type="button" @click="closeModals()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition">रद्द करा (Cancel)</button>
-                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-floppy-disk"></i> सेव्ह करा (Save & Sync)
+                    <button type="button" @click="closeModals()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition cursor-pointer">रद्द करा (Cancel)</button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-floppy-disk"></i> <span x-text="customerForm.clientType === 'agent' ? 'बॅच ग्राहक सेव्ह करा (Save Agent Batch)' : 'सेव्ह करा (Save & Sync)'"></span>
                     </button>
                 </div>
             </form>
@@ -4258,10 +4248,13 @@
                 // Customer Form
                 customerForm: {
                     customerName: '', mobileNo: '', address: '',
-                    clientType: 'direct', agentId: null, agentName: '',
+                    clientType: 'customer', agentId: '', agentName: '',
                     services: [],
                     username: '', password: '', status: 'In Process',
-                    totalAmount: 0, paidAmount: '', paymentDate: '', paymentHistory: [], notes: ''
+                    totalAmount: 0, paidAmount: '', paymentDate: new Date().toISOString().slice(0, 10), paymentHistory: [], notes: '',
+                    agentBatchRows: [
+                        { customerName: '', mobileNo: '', serviceName: '', agentFee: 0, challan: 0, netMargin: 0 }
+                    ]
                 },
                 tempService: { name: '', customerPrice: '', challanFees: 0, amount: '', netMargin: 0 },
                 showInlineServiceCreator: false,
@@ -4914,21 +4907,88 @@
                 },
 
                 setClientType(type) {
-                    this.customerForm.clientType = type;
-                    if (type === 'direct') {
+                    this.customerForm.clientType = (type === 'agent' ? 'agent' : 'customer');
+                    if (type === 'direct' || type === 'customer') {
                         this.customerForm.agentId = null;
                         this.customerForm.agentName = '';
                     } else if (this.customerForm.agentId) {
-                        const ag = this.agents.find(a => Number(a.id) === Number(this.customerForm.agentId));
+                        const ag = this.agents.find(a => String(a.id) === String(this.customerForm.agentId));
                         if (ag) this.customerForm.agentName = ag.name;
                     }
+                    this.onClientTypeToggle();
                     if (this.tempService.name) {
                         this.onTempServiceChange();
                     }
                 },
 
+                onClientTypeToggle() {
+                    if (this.customerForm.clientType === 'agent') {
+                        if (!this.customerForm.agentBatchRows || this.customerForm.agentBatchRows.length === 0) {
+                            this.customerForm.agentBatchRows = [
+                                { customerName: '', mobileNo: '', serviceName: '', agentFee: 0, challan: 0, netMargin: 0 }
+                            ];
+                        }
+                        this.recalculateAgentBatchTotal();
+                    } else {
+                        this.recalculateTotal();
+                    }
+                },
+
+                addAgentBatchRow() {
+                    if (!this.customerForm.agentBatchRows) {
+                        this.customerForm.agentBatchRows = [];
+                    }
+                    this.customerForm.agentBatchRows.push({
+                        customerName: '',
+                        mobileNo: '',
+                        serviceName: '',
+                        agentFee: 0,
+                        challan: 0,
+                        netMargin: 0
+                    });
+                },
+
+                removeAgentBatchRow(idx) {
+                    if (this.customerForm.agentBatchRows && this.customerForm.agentBatchRows.length > 1) {
+                        this.customerForm.agentBatchRows.splice(idx, 1);
+                        this.recalculateAgentBatchTotal();
+                    }
+                },
+
+                onAgentSelectInCustomerModal() {
+                    const ag = this.agents.find(a => String(a.id) === String(this.customerForm.agentId));
+                    this.customerForm.agentName = ag ? ag.name : '';
+                },
+
+                onAgentBatchRowServiceChange(row) {
+                    const selected = this.appTypes.find(t => t.name === row.serviceName);
+                    if (selected) {
+                        const custPrice = Number(selected.defaultAmount !== undefined && selected.defaultAmount !== null ? selected.defaultAmount : (selected.default_amount || 0));
+                        const predefinedAgentPrice = Number(selected.defaultAgentAmount !== undefined && selected.defaultAgentAmount !== null ? selected.defaultAgentAmount : (selected.default_agent_amount || 0));
+                        const agentFee = predefinedAgentPrice > 0 ? predefinedAgentPrice : Math.round(custPrice * 0.8);
+                        const challan = Number(selected.defaultChallan !== undefined && selected.defaultChallan !== null ? selected.defaultChallan : (selected.default_challan || 0));
+
+                        row.agentFee = agentFee;
+                        row.challan = challan;
+                        row.netMargin = Math.max(0, agentFee - challan);
+                        this.recalculateAgentBatchTotal();
+                    }
+                },
+
+                recalculateAgentBatchTotal() {
+                    const total = (this.customerForm.agentBatchRows || []).reduce((sum, r) => sum + Number(r.agentFee || 0), 0);
+                    this.customerForm.totalAmount = total;
+                    if (!this.customerForm.paidAmount) {
+                        this.customerForm.paidAmount = total;
+                    }
+                },
+
+                getAgentBatchTotalMargin() {
+                    return (this.customerForm.agentBatchRows || []).reduce((sum, r) => sum + Number(r.netMargin || 0), 0);
+                },
+
                 onAgentSelect() {
-                    const ag = this.agents.find(a => Number(a.id) === Number(this.customerForm.agentId));
+                    const ag = this.agents.find(a => String(a.id) === String(this.customerForm.agentId));
                     if (ag) {
                         this.customerForm.agentName = ag.name;
                     } else {
@@ -5089,6 +5149,125 @@
                 },
 
                 async saveCustomerLog() {
+                    // 1. AGENT BATCH CUSTOMER MODE (when clientType === 'agent' and not in edit mode)
+                    if (this.customerForm.clientType === 'agent' && !this.editMode) {
+                        if (!this.customerForm.agentId) {
+                            alert('कृपया एजंट निवडा.');
+                            return;
+                        }
+                        const validRows = (this.customerForm.agentBatchRows || []).filter(r => r.customerName && r.customerName.trim() && r.serviceName);
+                        if (validRows.length === 0) {
+                            alert('कृपया किमान १ ग्राहकाचे नाव व सेवा भरा.');
+                            return;
+                        }
+
+                        const ag = this.agents.find(a => String(a.id) === String(this.customerForm.agentId));
+                        const agentName = ag ? ag.name : (this.customerForm.agentName || 'Agent');
+                        const batchDate = this.customerForm.paymentDate || new Date().toISOString().slice(0, 10);
+                        const dateFormatted = new Date(batchDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                        const baseTs = Date.now();
+
+                        // Sequential App ID calculation
+                        const dateClean = (batchDate || new Date().toISOString().slice(0, 10)).replace(/-/g, '');
+                        const prefix = `SRV-${dateClean}-`;
+                        let highestSerial = 0;
+                        if (this.logs && Array.isArray(this.logs)) {
+                            for (const l of this.logs) {
+                                const idStr = l.appId || l.app_id || '';
+                                if (idStr.startsWith(prefix)) {
+                                    const serialPart = parseInt(idStr.replace(prefix, ''), 10);
+                                    if (!isNaN(serialPart) && serialPart > highestSerial) {
+                                        highestSerial = serialPart;
+                                    }
+                                }
+                            }
+                        }
+
+                        const createdByUsername = this.currentUser ? this.currentUser.username : 'admin';
+                        const overallPaid = Number(this.customerForm.paidAmount || 0);
+
+                        for (let i = 0; i < validRows.length; i++) {
+                            const row = validRows[i];
+                            const nextSerial = highestSerial + i + 1;
+                            const appId = `${prefix}${String(nextSerial).padStart(2, '0')}`;
+                            const rowFee = Number(row.agentFee || 0);
+                            const rowChallan = Number(row.challan || 0);
+                            const rowMargin = Number(row.netMargin !== undefined ? row.netMargin : Math.max(0, rowFee - rowChallan));
+                            const rowPaid = (i === 0 ? overallPaid : 0);
+
+                            const singleLog = {
+                                id: baseTs + i,
+                                appId: appId,
+                                customerName: row.customerName.trim(),
+                                mobileNo: row.mobileNo ? row.mobileNo.trim() : '',
+                                address: ag ? `${ag.shop_name || ag.centerName || ''}, ${ag.village || ''}`.replace(/^,\s*|,\s*$/g, '') : '',
+                                client_type: 'agent',
+                                clientType: 'agent',
+                                agent_id: this.customerForm.agentId,
+                                agentId: this.customerForm.agentId,
+                                agent_name: agentName,
+                                agentName: agentName,
+                                applicationType: row.serviceName,
+                                status: 'In Process',
+                                totalAmount: rowFee,
+                                paidAmount: rowPaid,
+                                paymentDate: batchDate,
+                                date: dateFormatted,
+                                createdBy: createdByUsername,
+                                notes: this.customerForm.notes || '',
+                                services: [
+                                    {
+                                        name: row.serviceName,
+                                        customerPrice: rowFee,
+                                        challanFees: rowChallan,
+                                        netMargin: rowMargin,
+                                        amount: rowFee,
+                                        status: 'In Process',
+                                        physicalStatus: 'Pending',
+                                        assignedTo: 'ALL',
+                                        completedBy: null,
+                                        procCommission: 0,
+                                        dispatchedBy: null,
+                                        dispCommission: 0
+                                    }
+                                ]
+                            };
+
+                            this.logs.unshift(singleLog);
+
+                            if (this.supabaseClient) {
+                                try {
+                                    await this.supabaseClient.from('logs').insert({
+                                        id: singleLog.id,
+                                        app_id: singleLog.appId,
+                                        customer_name: singleLog.customerName,
+                                        mobile_no: singleLog.mobileNo,
+                                        address: singleLog.address,
+                                        application_type: singleLog.applicationType,
+                                        services: singleLog.services,
+                                        status: 'In Process',
+                                        total_amount: rowFee,
+                                        paid_amount: rowPaid,
+                                        payment_date: batchDate,
+                                        date: singleLog.date,
+                                        created_by: singleLog.createdBy,
+                                        client_type: 'agent',
+                                        agent_id: singleLog.agent_id ? Number(singleLog.agent_id) : null,
+                                        agent_name: singleLog.agent_name,
+                                        notes: singleLog.notes
+                                    });
+                                } catch (err) {
+                                    console.error('Supabase batch insert error:', err);
+                                }
+                            }
+                        }
+
+                        this.closeModals();
+                        alert(`यशस्वी! एजंट अंतर्गत ${validRows.length} ग्राहकांची कामे टास्क डिस्पॅचमध्ये पाठवली आहेत.`);
+                        return;
+                    }
+
+                    // 2. NORMAL SINGLE CUSTOMER MODE
                     if (this.customerForm.services.length === 0) {
                         alert('कृपया ग्राहकासाठी किमान १ सेवा जोडा.');
                         return;
@@ -5109,7 +5288,7 @@
                             id: Date.now(),
                             appId: this.generateSequentialAppId(),
                             date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-                            createdBy: this.currentUser.username,
+                            createdBy: this.currentUser ? this.currentUser.username : 'admin',
                             showPass: false,
                             applicationType: primaryAppType,
                             status: overallStat,
@@ -5118,28 +5297,30 @@
                         this.logs.unshift(logPayload);
                     }
 
-                    await this.supabaseClient.from('logs').upsert({
-                        id: logPayload.id,
-                        app_id: logPayload.appId,
-                        client_type: logPayload.clientType || 'direct',
-                        agent_id: logPayload.agentId ? Number(logPayload.agentId) : null,
-                        agent_name: logPayload.agentName || null,
-                        customer_name: logPayload.customerName,
-                        mobile_no: logPayload.mobileNo,
-                        address: logPayload.address || '',
-                        application_type: logPayload.applicationType,
-                        services: logPayload.services,
-                        username: logPayload.username,
-                        password: logPayload.password,
-                        status: logPayload.status,
-                        total_amount: logPayload.totalAmount,
-                        paid_amount: logPayload.paidAmount,
-                        payment_date: logPayload.paymentDate,
-                        payment_history: logPayload.paymentHistory,
-                        notes: logPayload.notes,
-                        date: logPayload.date,
-                        created_by: logPayload.createdBy
-                    });
+                    if (this.supabaseClient) {
+                        await this.supabaseClient.from('logs').upsert({
+                            id: logPayload.id,
+                            app_id: logPayload.appId,
+                            client_type: logPayload.clientType === 'agent' ? 'agent' : 'direct',
+                            agent_id: logPayload.agentId ? Number(logPayload.agentId) : null,
+                            agent_name: logPayload.agentName || null,
+                            customer_name: logPayload.customerName,
+                            mobile_no: logPayload.mobileNo,
+                            address: logPayload.address || '',
+                            application_type: logPayload.applicationType,
+                            services: logPayload.services,
+                            username: logPayload.username,
+                            password: logPayload.password,
+                            status: logPayload.status,
+                            total_amount: logPayload.totalAmount,
+                            paid_amount: logPayload.paidAmount,
+                            payment_date: logPayload.paymentDate,
+                            payment_history: logPayload.paymentHistory,
+                            notes: logPayload.notes,
+                            date: logPayload.date,
+                            created_by: logPayload.createdBy
+                        });
+                    }
 
                     this.closeModals();
                 },
@@ -5148,11 +5329,16 @@
                     this.editMode = true;
                     this.editId = log.id;
                     this.customerForm = JSON.parse(JSON.stringify(log));
-                    this.customerForm.clientType = log.clientType || 'direct';
-                    this.customerForm.agentId = log.agentId || null;
-                    this.customerForm.agentName = log.agentName || '';
+                    this.customerForm.clientType = (log.clientType === 'agent' || log.client_type === 'agent') ? 'agent' : 'customer';
+                    this.customerForm.agentId = log.agentId || log.agent_id || '';
+                    this.customerForm.agentName = log.agentName || log.agent_name || '';
                     if (!this.customerForm.services) {
                         this.customerForm.services = [{ name: log.applicationType, amount: log.totalAmount, status: log.status, physicalStatus: 'Pending', assignedTo: 'ALL', completedBy: null, procCommission: 0, dispatchedBy: null, dispCommission: 0 }];
+                    }
+                    if (!this.customerForm.agentBatchRows || this.customerForm.agentBatchRows.length === 0) {
+                        this.customerForm.agentBatchRows = [
+                            { customerName: log.customerName || log.customer_name || '', mobileNo: log.mobileNo || log.mobile_no || '', serviceName: log.applicationType || '', agentFee: log.totalAmount || 0, challan: 0, netMargin: 0 }
+                        ];
                     }
                     this.tempService = { name: '', customerPrice: '', challanFees: 0, amount: '', netMargin: 0 };
                     this.modals.customer = true;
@@ -8574,10 +8760,13 @@
                         const todayStr = new Date().toISOString().slice(0, 10);
                         this.customerForm = { 
                             customerName: '', mobileNo: '', address: '', 
-                            clientType: 'direct', agentId: null, agentName: '',
+                            clientType: 'customer', agentId: '', agentName: '',
                             services: [], 
                             username: '', password: '', status: 'In Process', 
-                            totalAmount: 0, paidAmount: '', paymentDate: todayStr, paymentHistory: [], notes: '' 
+                            totalAmount: 0, paidAmount: '', paymentDate: todayStr, paymentHistory: [], notes: '',
+                            agentBatchRows: [
+                                { customerName: '', mobileNo: '', serviceName: '', agentFee: 0, challan: 0, netMargin: 0 }
+                            ]
                         };
                         this.tempService = { name: '', customerPrice: '', challanFees: 0, amount: '', netMargin: 0 };
                         setTimeout(() => document.getElementById('customerNameInput')?.focus(), 50);
