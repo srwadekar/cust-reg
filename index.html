@@ -1401,39 +1401,90 @@
                         </div>
                     </div>
 
-                    <!-- Live Active Session Running Status -->
-                    <template x-if="myTodayPunchRecord && myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime">
-                        <div class="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-                                <strong class="font-mono text-emerald-300 text-sm" x-text="activePunchBannerText || ('चालू वेळ: ' + (myTodayPunchRecord?.punchInTime || '') + ' (' + (activePunchDurationText || '0 hrs 0 min') + ')')"></strong>
-                                <span class="text-slate-400 font-mono text-[11px]">(<span x-text="(activePunchHours || 0) + ' hrs'"></span>)</span>
+                    <!-- Live Shift Tracker Banner & 8-Hour Daily Target Progress Bar -->
+                    <template x-if="myTodayPunchRecord && (myTodayPunchRecord.punchInTime || (myTodayPunchRecord.sessions && myTodayPunchRecord.sessions.length > 0))">
+                        <div class="mt-4 pt-3.5 border-t border-white/10 space-y-2.5 text-xs">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <template x-if="myTodayPunchRecord.punchInTime && !myTodayPunchRecord.punchOutTime">
+                                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                                            सत्र चालू (Active)
+                                        </span>
+                                    </template>
+                                    <template x-if="myTodayPunchRecord.punchOutTime">
+                                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                            सत्र थांबवले (Break/Out)
+                                        </span>
+                                    </template>
+                                    
+                                    <span class="font-bold text-white text-xs">
+                                        काम पूर्ण: <span class="text-emerald-300 font-mono font-black" x-text="myTodayShiftProgress.hoursText"></span>
+                                    </span>
+                                    <span class="text-slate-400 font-mono text-[11px]">(<span x-text="myTodayShiftProgress.decimalHours + ' hrs'"></span>)</span>
+                                    
+                                    <span class="text-slate-500 hidden sm:inline">|</span>
+                                    
+                                    <span class="text-slate-300 text-xs">
+                                        8 तास पूर्ण होण्यासाठी बाकी: <strong class="text-amber-300 font-mono font-bold" x-text="myTodayShiftProgress.remainingText"></strong>
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2.5 py-0.5 rounded-md text-[11px] font-bold border"
+                                        :class="myTodayShiftProgress.multiplier === 1.0 
+                                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
+                                            : (myTodayShiftProgress.multiplier === 0.5 
+                                                ? 'bg-sky-500/20 text-sky-300 border-sky-500/30' 
+                                                : 'bg-rose-500/20 text-rose-300 border-rose-500/30')"
+                                        x-text="myTodayShiftProgress.status + ' (' + Math.round(myTodayShiftProgress.multiplier * 100) + '% Shift)'"
+                                    ></span>
+                                    <span class="font-mono font-extrabold text-xs text-white bg-white/10 px-2 py-0.5 rounded-md" x-text="myTodayShiftProgress.percent + '%'"></span>
+                                </div>
                             </div>
-                            <div class="bg-white/10 px-3 py-1 rounded-lg text-[11px] font-semibold">
-                                सध्याची स्थिती: <strong class="text-amber-300" x-text="activePunchMarathi || 'गणना चालू आहे'"></strong>
+
+                            <!-- Real-Time 8-Hour Goal Progress Bar -->
+                            <div class="space-y-1">
+                                <div class="w-full bg-slate-800/90 rounded-full h-2.5 overflow-hidden border border-white/10 p-0.5">
+                                    <div 
+                                        class="h-full rounded-full transition-all duration-500 bg-gradient-to-r"
+                                        :class="myTodayShiftProgress.percent >= 100 
+                                            ? 'from-emerald-500 to-teal-400' 
+                                            : (myTodayShiftProgress.percent >= 50 
+                                                ? 'from-indigo-500 to-sky-400' 
+                                                : 'from-amber-500 to-rose-400')"
+                                        :style="'width: ' + myTodayShiftProgress.percent + '%'"
+                                    ></div>
+                                </div>
+                                <div class="flex justify-between items-center text-[10px] text-slate-400 font-mono">
+                                    <span>० तास (Start)</span>
+                                    <span>४ तास (50% Half Day)</span>
+                                    <span class="text-emerald-400 font-bold">८ तास (100% Shift Target)</span>
+                                </div>
                             </div>
                         </div>
                     </template>
                 </div>
 
-                <!-- 2. CRITERIA SUMMARY CARDS (FULL MOBILE RESPONSIVE GRID) -->
+                <!-- 2. CRITERIA SUMMARY CARDS (8-HOUR SHIFT TARGET GRID) -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div class="bg-white p-3.5 rounded-xl border border-emerald-200/80 bg-emerald-50/20 shadow-2xs">
-                        <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">४ तासांपेक्षा जास्त (> ४.० तास)</div>
-                        <div class="text-base sm:text-lg font-black text-emerald-700 mt-0.5">Full Day (पूर्ण पगार)</div>
-                        <div class="text-[10px] text-slate-500 mt-0.5">&gt; 4.0 तास प्रत्यक्ष काम (१००% दैनिक वेतन)</div>
+                        <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">८ तास किंवा जास्त (≥ ८.० तास)</div>
+                        <div class="text-base sm:text-lg font-black text-emerald-700 mt-0.5">Full Day (100% Shift)</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">≥ 8.0 तास प्रत्यक्ष काम (१००% दैनिक वेतन)</div>
                     </div>
 
                     <div class="bg-white p-3.5 rounded-xl border border-sky-200/80 bg-sky-50/20 shadow-2xs">
-                        <div class="text-[10px] font-bold text-sky-800 uppercase tracking-wider">२ ते ४ तास (२.० ते ४.० तास)</div>
-                        <div class="text-base sm:text-lg font-black text-sky-700 mt-0.5">Half Day (अर्धा पगार)</div>
-                        <div class="text-[10px] text-slate-500 mt-0.5">२.० ते ४.० तास प्रत्यक्ष काम (५०% दैनिक वेतन)</div>
+                        <div class="text-[10px] font-bold text-sky-800 uppercase tracking-wider">४ ते ७.९९ तास (४.० ते ७.९९ तास)</div>
+                        <div class="text-base sm:text-lg font-black text-sky-700 mt-0.5">Half Day (50% Shift)</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">4.0 ते 7.99 तास प्रत्यक्ष काम (५०% दैनिक वेतन)</div>
                     </div>
 
                     <div class="bg-white p-3.5 rounded-xl border border-rose-200/80 bg-rose-50/20 shadow-2xs">
-                        <div class="text-[10px] font-bold text-rose-800 uppercase tracking-wider">२ तासांपेक्षा कमी (&lt; २.० तास)</div>
-                        <div class="text-base sm:text-lg font-black text-rose-700 mt-0.5">Absent (शून्य पगार)</div>
-                        <div class="text-[10px] text-slate-500 mt-0.5">&lt; २.० तास (केवळ लॉगिन केल्यास हजेरी किंवा पगार नाही)</div>
+                        <div class="text-[10px] font-bold text-rose-800 uppercase tracking-wider">४ तासांपेक्षा कमी (&lt; ४.० तास)</div>
+                        <div class="text-base sm:text-lg font-black text-rose-700 mt-0.5">Short Shift / Absent (0%)</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">&lt; 4.0 तास (शॉर्ट शिफ्ट / गैरहजर - ०% वेतन)</div>
                     </div>
                 </div>
 
@@ -2293,177 +2344,225 @@
             <!-- ============================================================== -->
             <!-- TAB 5: MASTER ADMIN & SYSTEM SETTINGS (प्रशासक व प्रणाली सेटिंग्ज) -->
             <!-- ============================================================== -->
+            <!-- ============================================================== -->
+            <!-- TAB 5: OPTIMIZED MASTER ADMIN & SYSTEM SETTINGS HUB            -->
+            <!-- ============================================================== -->
             <div x-show="activeTab === 'admin' || activeTab === 'settings'" class="space-y-5">
                 
-                <!-- Settings Header Banner -->
-                <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 text-white rounded-2xl p-5 shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2">
-                            <span class="w-8 h-8 rounded-lg bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold">
-                                <i class="fa-solid fa-gears text-sm"></i>
-                            </span>
-                            <h2 class="text-base sm:text-lg font-bold text-white">सिस्टीम सेटिंग्स व कॉन्फिगरेशन (System Settings & Hub)</h2>
+                <!-- 1. TOP EXECUTIVE CLOUD & HEALTH BANNER -->
+                <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 text-white rounded-2xl p-5 sm:p-6 shadow-md flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                    <div class="space-y-1.5">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-lg shadow-inner">
+                                <i class="fa-solid fa-gears"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h2 class="text-base sm:text-lg font-extrabold tracking-tight text-white">प्रणाली नियंत्रण व मास्टर ॲडमिन हब</h2>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+                                        Cloud Active
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-400">
+                                    सेवा दर, ऑपरेटर रोस्टर, एजंट सवलती, व्हॉट्सॲप टेम्पलेट व डेटाबेस सुरक्षितता
+                                </p>
+                            </div>
                         </div>
-                        <p class="text-xs text-slate-400">
-                            सेवा दर, ऑपरेटर व कर्मचारी रोस्टर, व्हॉट्सॲप टेम्पलेट, दुकान लोगो, एक्सेल बॅकअप व क्लाउड डेटाबेस नियंत्रित करा.
-                        </p>
                     </div>
 
-                    <div class="flex items-center gap-2">
-                        <button @click="pullDataFromCloud(); alert('क्लाऊडवरून फ्रेश डेटा यशस्वीरित्या सिंक केला!')" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-arrows-rotate"></i> Sync Cloud Now
+                    <!-- Quick Top Metrics & Cloud Sync Action -->
+                    <div class="flex items-center gap-2 sm:gap-3 w-full lg:w-auto justify-between lg:justify-end flex-wrap">
+                        <div class="bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl text-center">
+                            <span class="text-[10px] text-slate-400 uppercase font-bold block">सेवा कॅटलॉग</span>
+                            <strong class="text-sm font-mono text-indigo-300" x-text="appTypes.length + ' सेवा'"></strong>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl text-center">
+                            <span class="text-[10px] text-slate-400 uppercase font-bold block">कर्मचारी / ऑपरेटर</span>
+                            <strong class="text-sm font-mono text-purple-300" x-text="users.length + ' रोस्टर'"></strong>
+                        </div>
+                        <button 
+                            type="button"
+                            @click="pullDataFromCloud(); alert('क्लाऊडवरून फ्रेश डेटा यशस्वीरित्या सिंक केला!')" 
+                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                            <i class="fa-solid fa-arrows-rotate text-xs"></i> <span>Sync Cloud</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Settings Dashboard Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    
-                    <!-- 1. Application & Service Types -->
-                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-3">
-                        <div class="space-y-2">
-                            <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg">
-                                <i class="fa-solid fa-list-check"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800 text-sm">सेवांचे प्रकार व दर (App / Service Types)</h3>
-                            <p class="text-xs text-slate-500 leading-relaxed">
-                                कॅफेमधील सर्व सेवांची यादी, डीफॉल्ट ग्राहक दर, आणि चलन फी कॉन्फिगर करा.
-                            </p>
-                            <div class="text-[11px] text-purple-700 font-semibold bg-purple-50 px-2 py-1 rounded inline-block">
-                                <span x-text="appTypes.length"></span> सेवा उपलब्ध
-                            </div>
-                        </div>
-                        <button @click="openModal('appTypes')" class="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-pen-to-square"></i> Manage App Types
-                        </button>
+                <!-- 2. CATEGORY 1: BUSINESS PRICING & SERVICE CATALOG -->
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider px-1">
+                        <i class="fa-solid fa-layer-group text-indigo-600"></i>
+                        <span>सेवा, दर व डेटा व्यवस्थापन (Pricing & Catalog)</span>
                     </div>
 
-                    <!-- 2. Staff & Operators Roster -->
-                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-3">
-                        <div class="space-y-2">
-                            <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
-                                <i class="fa-solid fa-users-gear"></i>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Card 1: App & Service Types -->
+                        <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition duration-150 flex flex-col justify-between space-y-4">
+                            <div class="space-y-2.5">
+                                <div class="flex items-center justify-between">
+                                    <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center text-lg font-bold border border-purple-100">
+                                        <i class="fa-solid fa-list-check"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full" x-text="appTypes.length + ' Active'"></span>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-sm">सेवांचे प्रकार व दर (App Types)</h3>
+                                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                                        कॅफेतील सर्व सेवा, ग्राहक शुल्क, २०% एजंट सवलत दर आणि सरकारी चलन फी व्यवस्थापित करा.
+                                    </p>
+                                </div>
                             </div>
-                            <h3 class="font-bold text-slate-800 text-sm">ऑपरेटर व कर्मचारी (Staff Roster & Salaries)</h3>
-                            <p class="text-xs text-slate-500 leading-relaxed">
-                                ऑपरेटर खाती तयार करा, रोल्स, पासवर्ड, प्रोसेसिंग/डिस्पॅच दर आणि वेतन रचना व्यवस्थापित करा.
-                            </p>
-                            <div class="text-[11px] text-indigo-700 font-semibold bg-indigo-50 px-2 py-1 rounded inline-block">
-                                <span x-text="users.length"></span> कर्मचारी नोंदणीकृत
-                            </div>
-                        <template x-if="currentUser && currentUser.role === 'admin'">
-                            <button @click="openModal('operators')" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5">
-                                <i class="fa-solid fa-user-gear"></i> Manage Staff & Operators
-                            </button>
-                        </template>
-                        <template x-if="!currentUser || currentUser.role !== 'admin'">
-                            <div class="w-full py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-xl text-center flex items-center justify-center gap-1.5 cursor-not-allowed">
-                                <i class="fa-solid fa-lock"></i> ॲडमिन मास्टर ॲक्सेस आवश्यक
-                            </div>
-                        </template>
-                    </div>
-
-                    <!-- 3. WhatsApp Messaging Template -->
-                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-3">
-                        <div class="space-y-2">
-                            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
-                                <i class="fa-brands fa-whatsapp"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800 text-sm">व्हॉट्सॲप मेसेज टेम्पलेट (WhatsApp Template)</h3>
-                            <p class="text-xs text-slate-500 leading-relaxed">
-                                ग्राहकांना पाठवले जाणारे मराठी पावती मेसेज, व्हेरिएबल्स आणि दुकानाचे नाव कस्टमाईज करा.
-                            </p>
-                            <div class="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-1 rounded inline-block">
-                                मराठी ऑटोमेशन सक्रिय
-                            </div>
-                        </div>
-                        <button @click="openModal('waSettings')" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-sliders"></i> Configure WA Template
-                        </button>
-                    </div>
-
-                    <!-- 4. Shop Logo & Branding -->
-                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-3">
-                        <div class="space-y-2">
-                            <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-lg">
-                                <i class="fa-solid fa-image"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800 text-sm">लोगो व ब्रँडिंग (Shop Identity & Logo)</h3>
-                            <p class="text-xs text-slate-500 leading-relaxed">
-                                हेडर आणि पेमेंट व्हाउचर्सवर दिसणारा कॅफेचा लोगो URL सेट करा.
-                            </p>
-                            <div class="text-[11px] text-sky-700 font-semibold bg-sky-50 px-2 py-1 rounded inline-block">
-                                <span x-text="customLogoUrl ? 'कस्टम लोगो सेव्ह आहे' : 'डीफॉल्ट लोगो सक्रिय'"></span>
-                            </div>
-                        </div>
-                        <button @click="openModal('logoSettings')" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-palette"></i> Customize Logo
-                        </button>
-                    </div>
-
-                    <!-- 5. REST API Documentation -->
-                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-3">
-                        <div class="space-y-2">
-                            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
-                                <i class="fa-solid fa-code"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800 text-sm">REST API डॉक्युमेंटेशन (API & Endpoints)</h3>
-                            <p class="text-xs text-slate-500 leading-relaxed">
-                                तृतीय-पक्ष सॉफ्टवेअर, ॲप्स किंवा ऑटोमेशनसाठी REST API एंडपॉईंट्स आणि cURL उदाहरणे पहा.
-                            </p>
-                            <div class="text-[11px] text-amber-700 font-semibold bg-amber-50 px-2 py-1 rounded inline-block">
-                                Supabase PostgREST
-                            </div>
-                        </div>
-                        <button @click="openModal('apiDocs')" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-book-open"></i> View API Docs
-                        </button>
-                    </div>
-
-                    <!-- 6. Excel Data I/O -->
-                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-3">
-                        <div class="space-y-2">
-                            <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-lg">
-                                <i class="fa-solid fa-file-excel"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800 text-sm">एक्सेल डेटा बॅकअप (Excel Import / Export)</h3>
-                            <p class="text-xs text-slate-500 leading-relaxed">
-                                संपूर्ण खातेवही एक्सेल (.xlsx) मध्ये डाऊनलोड करा किंवा जुने रेकॉर्ड्स इंपोर्ट करा.
-                            </p>
-                            <div class="text-[11px] text-teal-700 font-semibold bg-teal-50 px-2 py-1 rounded inline-block">
-                                SheetJS Engine
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button @click="exportExcel" class="py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1">
-                                <i class="fa-solid fa-download"></i> Export
-                            </button>
-                            <label class="py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1 cursor-pointer">
-                                <i class="fa-solid fa-upload"></i> Import
-                                <input type="file" accept=".xlsx, .xls, .csv" @change="importExcel" class="hidden">
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- 7. Supabase Database Connection Details -->
-                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm md:col-span-2 lg:col-span-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                                <h4 class="text-sm font-bold text-slate-800">Supabase Cloud Database Status</h4>
-                            </div>
-                            <p class="text-xs text-slate-500 font-mono" x-text="'Connected: ' + (tempConfig.url || 'Configured via LocalStorage')"></p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button @click="pullDataFromCloud()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition flex items-center gap-1.5">
-                                <i class="fa-solid fa-cloud-arrow-down"></i> Reload Cloud Data
-                            </button>
-                            <button @click="resetSupabaseConfig()" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 border border-rose-200">
-                                <i class="fa-solid fa-plug-circle-xmark"></i> Disconnect DB
+                            <button 
+                                type="button"
+                                @click="openModal('appTypes')" 
+                                class="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                                <i class="fa-solid fa-pen-to-square"></i> <span>सेवा व दर बदला (Manage Catalog)</span>
                             </button>
                         </div>
+
+                        <!-- Card 2: Excel Import / Export -->
+                        <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition duration-150 flex flex-col justify-between space-y-4">
+                            <div class="space-y-2.5">
+                                <div class="flex items-center justify-between">
+                                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-lg font-bold border border-emerald-100">
+                                        <i class="fa-solid fa-file-excel"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">SheetJS</span>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-sm">एक्सेल डेटा बॅकअप (Excel I/O)</h3>
+                                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                                        संपूर्ण खातेवही एक्सेल (.xlsx) मध्ये सुरक्षित डाऊनलोड करा किंवा जुने रेकॉर्ड्स सिस्टीममध्ये इंपोर्ट करा.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button 
+                                    type="button"
+                                    @click="exportExcel" 
+                                    class="py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-2xs transition flex items-center justify-center gap-1 cursor-pointer"
+                                >
+                                    <i class="fa-solid fa-download"></i> <span>Export</span>
+                                </button>
+                                <label class="py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-2xs transition flex items-center justify-center gap-1 cursor-pointer">
+                                    <i class="fa-solid fa-upload"></i> <span>Import</span>
+                                    <input type="file" accept=".xlsx, .xls, .csv" @change="importExcel" class="hidden">
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Cloud Database Status -->
+                        <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition duration-150 flex flex-col justify-between space-y-4">
+                            <div class="space-y-2.5">
+                                <div class="flex items-center justify-between">
+                                    <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center text-lg font-bold border border-sky-100">
+                                        <i class="fa-solid fa-database"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-sky-800 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-full">PostgreSQL</span>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-sm">Supabase Cloud स्थिती</h3>
+                                    <p class="text-xs text-slate-500 mt-1 leading-relaxed truncate font-mono" x-text="tempConfig.url ? tempConfig.url : 'Connected'"></p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button 
+                                    type="button"
+                                    @click="openModal('apiDocs')" 
+                                    class="py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1 cursor-pointer"
+                                >
+                                    <i class="fa-solid fa-code"></i> <span>API Docs</span>
+                                </button>
+                                <button 
+                                    type="button"
+                                    @click="resetSupabaseConfig()" 
+                                    class="py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1 cursor-pointer"
+                                >
+                                    <i class="fa-solid fa-plug-circle-xmark"></i> <span>Reset DB</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. CATEGORY 2: STAFF & CREDENTIALS CONTROL -->
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider px-1">
+                        <i class="fa-solid fa-user-shield text-indigo-600"></i>
+                        <span>कर्मचारी, क्रेडेंशियल्स व पगार रचना (Staff & Permissions)</span>
                     </div>
 
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Card 4: Staff Roster & Passwords -->
+                        <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition duration-150 flex flex-col justify-between space-y-4">
+                            <div class="space-y-2.5">
+                                <div class="flex items-center justify-between">
+                                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center text-lg font-bold border border-indigo-100">
+                                        <i class="fa-solid fa-users-gear"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-indigo-800 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full" x-text="users.length + ' ऑपरेटर नोंद'"></span>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-sm">ऑपरेटर व क्रेडेंशियल्स हब (Staff Credentials)</h3>
+                                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                                        ऑपरेटर खाती तयार करा, प्लेन-टेक्स्ट पासवर्ड पहा/बदला, रोल्स आणि ॲडमिन संरक्षण नियम व्यवस्थापित करा.
+                                    </p>
+                                </div>
+                            </div>
+                            <template x-if="currentUser && currentUser.role === 'admin'">
+                                <button 
+                                    type="button"
+                                    @click="openModal('operators')" 
+                                    class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                    <i class="fa-solid fa-key"></i> <span>पासवर्ड व ऑपरेटर व्यवस्थापन (Credentials)</span>
+                                </button>
+                            </template>
+                            <template x-if="!currentUser || currentUser.role !== 'admin'">
+                                <div class="w-full py-2 bg-slate-100 text-slate-400 text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5 cursor-not-allowed">
+                                    <i class="fa-solid fa-lock"></i> <span>ॲडमिन मास्टर ॲक्सेस आवश्यक</span>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Card 5: WhatsApp Template & Branding -->
+                        <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition duration-150 flex flex-col justify-between space-y-4">
+                            <div class="space-y-2.5">
+                                <div class="flex items-center justify-between">
+                                    <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-lg font-bold border border-teal-100">
+                                        <i class="fa-brands fa-whatsapp"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-full">मराठी पावती</span>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-sm">व्हॉट्सॲप टेम्पलेट व दुकान ब्रँडिंग</h3>
+                                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                                        ग्राहकांना पाठवली जाणारी मराठी पावती, व्हेरिएबल्स आणि हेडरवर दिसणारा दुकानाचा लोगो कस्टमाईज करा.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button 
+                                    type="button"
+                                    @click="openModal('waSettings')" 
+                                    class="py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl shadow-2xs transition flex items-center justify-center gap-1 cursor-pointer"
+                                >
+                                    <i class="fa-brands fa-whatsapp"></i> <span>WA Template</span>
+                                </button>
+                                <button 
+                                    type="button"
+                                    @click="openModal('logoSettings')" 
+                                    class="py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-2xs transition flex items-center justify-center gap-1 cursor-pointer"
+                                >
+                                    <i class="fa-solid fa-palette"></i> <span>Shop Logo</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -4624,6 +4723,7 @@
                                 punchOutTime: a.punch_out_time || (a.punch_out ? this.formatToISTTime(a.punch_out) : null),
                                 punchInISO: a.punch_in || a.punch_in_iso || null,
                                 punchOutISO: a.punch_out || a.punch_out_iso || null,
+                                sessions: Array.isArray(a.sessions) ? a.sessions : (typeof a.sessions === 'string' ? (JSON.parse(a.sessions || '[]') || []) : []),
                                 totalHours: Number(a.total_hours || 0),
                                 attendanceType: a.attendance_type || (a.status === 'Half Day' ? 'Half Day' : a.status === 'Absent' ? 'Absent' : 'Full Day'),
                                 daySalaryMultiplier: a.day_salary_multiplier !== undefined ? Number(a.day_salary_multiplier) : (a.status === 'Present' ? 1.0 : a.status === 'Half Day' ? 0.5 : 0.0),
@@ -4638,6 +4738,9 @@
                                     if (!this.attendanceLogs[existIdx].punchOutTime && !this.attendanceLogs[existIdx].punchOutISO) {
                                         this.attendanceLogs[existIdx].punchInISO = this.attendanceLogs[existIdx].punchInISO || activeSess.punchInISO;
                                         this.attendanceLogs[existIdx].punchInTime = this.attendanceLogs[existIdx].punchInTime || this.formatToISTTime(activeSess.punchInISO);
+                                        if (Array.isArray(activeSess.sessions) && activeSess.sessions.length > 0) {
+                                            this.attendanceLogs[existIdx].sessions = activeSess.sessions;
+                                        }
                                     }
                                 } else {
                                     this.attendanceLogs.unshift({
@@ -4650,6 +4753,7 @@
                                         punchOutTime: null,
                                         punchInISO: activeSess.punchInISO,
                                         punchOutISO: null,
+                                        sessions: Array.isArray(activeSess.sessions) ? activeSess.sessions : [],
                                         totalHours: 0.00,
                                         attendanceType: 'Absent',
                                         daySalaryMultiplier: 0.00,
@@ -4876,6 +4980,7 @@
                                 punchOutTime: a.punch_out_time || (a.punch_out ? this.formatToISTTime(a.punch_out) : null),
                                 punchInISO: a.punch_in || a.punch_in_iso || null,
                                 punchOutISO: a.punch_out || a.punch_out_iso || null,
+                                sessions: Array.isArray(a.sessions) ? a.sessions : (typeof a.sessions === 'string' ? (JSON.parse(a.sessions || '[]') || []) : []),
                                 totalHours: Number(a.total_hours || 0),
                                 attendanceType: a.attendance_type || (a.status === 'Half Day' ? 'Half Day' : a.status === 'Absent' ? 'Absent' : 'Full Day'),
                                 daySalaryMultiplier: a.day_salary_multiplier !== undefined ? Number(a.day_salary_multiplier) : (a.status === 'Present' ? 1.0 : a.status === 'Half Day' ? 0.5 : 0.0),
@@ -4890,6 +4995,9 @@
                                     if (!this.attendanceLogs[existIdx].punchOutTime && !this.attendanceLogs[existIdx].punchOutISO) {
                                         this.attendanceLogs[existIdx].punchInISO = this.attendanceLogs[existIdx].punchInISO || activeSess.punchInISO;
                                         this.attendanceLogs[existIdx].punchInTime = this.attendanceLogs[existIdx].punchInTime || this.formatToISTTime(activeSess.punchInISO);
+                                        if (Array.isArray(activeSess.sessions) && activeSess.sessions.length > 0) {
+                                            this.attendanceLogs[existIdx].sessions = activeSess.sessions;
+                                        }
                                     }
                                 } else {
                                     this.attendanceLogs.unshift({
@@ -4902,6 +5010,7 @@
                                         punchOutTime: null,
                                         punchInISO: activeSess.punchInISO,
                                         punchOutISO: null,
+                                        sessions: Array.isArray(activeSess.sessions) ? activeSess.sessions : [],
                                         totalHours: 0.00,
                                         attendanceType: 'Absent',
                                         daySalaryMultiplier: 0.00,
@@ -5746,7 +5855,7 @@
                     }
                 },
 
-                // Extracted Individual Commission Entries for Logged-In Associate
+                // Extracted Individual Commission Entries for Logged-In Associate (Strict IST Windowing)
                 get myCommissionLogs() {
                     if (!this.currentUser) return [];
                     const list = [];
@@ -5761,12 +5870,11 @@
                         const custName = task.customerName || task.customer_name || 'Customer';
                         const srvName = task.name || task.serviceName || task.service_name || 'Service';
 
-                        // 1. Work / Submit Commission: Credited on the date job was finished (completed_at)
+                        // 1. Work / Submit Commission: Credited strictly on IST calendar date of completed_at (or task.date)
                         if (isDocs) {
-                            const workDate = task.completedAt ? task.completedAt.split('T')[0] : (this.normalizeToISODate(task.date) || this.todayISODate);
-                            const workTime = task.completedAt && task.completedAt.includes('T')
-                                ? task.completedAt.split('T')[1]?.substring(0, 5)
-                                : '12:00';
+                            const rawCompletedAt = task.completedAt || task.completed_at;
+                            const workDate = this.getStrictISTDate(rawCompletedAt) || this.getStrictISTDate(task.date) || this.todayISODate;
+                            const workTime = this.getStrictISTTime(rawCompletedAt);
                             const comm = Math.round(Number(task.procCommission || 0) * penaltyMultiplier * 100) / 100;
                             list.push({
                                 id: `${task.logId}_${task.sIndex}_doc`,
@@ -5781,13 +5889,11 @@
                             });
                         }
 
-                        // 2. Dispatch Commission: Strictly credited on the date marked as Despatched (dispatched_at)
-                        // If an old task from last week is dispatched TODAY, its dispatch fee immediately reflects in Today's Earned Commission.
+                        // 2. Dispatch Commission: Strictly credited on IST calendar date of dispatched_at
                         if (isSubmit) {
-                            const dispDate = task.dispatchedAt ? task.dispatchedAt.split('T')[0] : this.todayISODate;
-                            const dispTime = task.dispatchedAt && task.dispatchedAt.includes('T')
-                                ? task.dispatchedAt.split('T')[1]?.substring(0, 5)
-                                : '12:00';
+                            const rawDispatchedAt = task.dispatchedAt || task.dispatched_at;
+                            const dispDate = this.getStrictISTDate(rawDispatchedAt) || this.todayISODate;
+                            const dispTime = this.getStrictISTTime(rawDispatchedAt);
                             const comm = Math.round(Number(task.dispCommission || 0) * penaltyMultiplier * 100) / 100;
                             list.push({
                                 id: `${task.logId}_${task.sIndex}_sub`,
@@ -5804,10 +5910,9 @@
 
                         // 3. Full Complete (Unsplit fallback)
                         if (!isDocs && !isSubmit && isAssigned) {
-                            const fullDate = task.completedAt ? task.completedAt.split('T')[0] : (this.normalizeToISODate(task.date) || this.todayISODate);
-                            const fullTime = task.completedAt && task.completedAt.includes('T')
-                                ? task.completedAt.split('T')[1]?.substring(0, 5)
-                                : '12:00';
+                            const rawCompletedAt = task.completedAt || task.completed_at;
+                            const fullDate = this.getStrictISTDate(rawCompletedAt) || this.getStrictISTDate(task.date) || this.todayISODate;
+                            const fullTime = this.getStrictISTTime(rawCompletedAt);
                             const comm = Math.round(Number(task.procCommission || task.amount || 20) * penaltyMultiplier * 100) / 100;
                             list.push({
                                 id: `${task.logId}_${task.sIndex}_full`,
@@ -5823,7 +5928,7 @@
                         }
                     });
 
-                    return list.sort((a, b) => b.date.localeCompare(a.date));
+                    return list.sort((a, b) => (b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time));
                 },
 
                 // Card 1: Today's Earned Commission (19 Oct)
@@ -5972,8 +6077,53 @@
                     }
                 },
 
+                // =========================================================================
+                // STRICT IST DATE EXTRACTION HELPER (Asia/Kolkata 00:00:00 to 23:59:59)
+                // =========================================================================
+                getStrictISTDate(timestampInput) {
+                    if (!timestampInput) return null;
+                    try {
+                        const str = String(timestampInput).trim();
+                        // If already in YYYY-MM-DD format
+                        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+                            return str;
+                        }
+
+                        const dt = new Date(timestampInput);
+                        if (isNaN(dt.getTime())) return null;
+
+                        // Convert exactly to Indian Standard Time (Asia/Kolkata)
+                        const istString = dt.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+                        const istDate = new Date(istString);
+                        
+                        const year = istDate.getFullYear();
+                        const month = String(istDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(istDate.getDate()).padStart(2, '0');
+
+                        return `${year}-${month}-${day}`; // Exactly YYYY-MM-DD in IST
+                    } catch (e) {
+                        return null;
+                    }
+                },
+
+                getStrictISTTime(timestampInput) {
+                    if (!timestampInput) return '12:00';
+                    try {
+                        const dt = new Date(timestampInput);
+                        if (isNaN(dt.getTime())) return '12:00';
+                        return dt.toLocaleTimeString('en-IN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true,
+                            timeZone: 'Asia/Kolkata'
+                        });
+                    } catch (e) {
+                        return '12:00';
+                    }
+                },
+
                 get todayISODate() {
-                    return new Date().toISOString().slice(0, 10);
+                    return this.getStrictISTDate(new Date()) || new Date().toISOString().slice(0, 10);
                 },
 
                 get myTodayPunchRecord() {
@@ -5995,8 +6145,9 @@
                                         ...existing,
                                         punchInISO: existing.punchInISO || sess.punchInISO,
                                         punchInTime: existing.punchInTime || this.formatToISTTime(sess.punchInISO),
-                                        punchOutTime: existing.punchOutTime || null,
-                                        punchOutISO: existing.punchOutISO || null,
+                                        punchOutTime: null,
+                                        punchOutISO: null,
+                                        sessions: existing.sessions || sess.sessions || [],
                                     };
                                 }
                                 return {
@@ -6008,6 +6159,7 @@
                                     punchOutTime: null,
                                     punchInISO: sess.punchInISO,
                                     punchOutISO: null,
+                                    sessions: sess.sessions || [],
                                     totalHours: 0.00,
                                     attendanceType: 'Absent',
                                     daySalaryMultiplier: 0.00,
@@ -6025,33 +6177,106 @@
                     );
                 },
 
-                // Live Active Punch Duration & Status Updater (Per-Second IST Precision)
+                // =========================================================================
+                // MULTI-SESSION ACCUMULATOR & 8-HOUR SHIFT ENGINE
+                // =========================================================================
+                calculateStaffCumulativeHours(record) {
+                    if (!record) return { decimalHours: 0, totalMinutes: 0, hoursText: '0 hrs 0 min', remainingText: '8 hrs 0 min बाकी', percent: 0, status: 'Absent', multiplier: 0 };
+
+                    let totalMs = 0;
+
+                    // 1. Sum all previously completed closed sessions
+                    const sessions = Array.isArray(record.sessions) ? record.sessions : [];
+                    sessions.forEach(s => {
+                        if (s.in && s.out) {
+                            const start = new Date(s.in).getTime();
+                            const end = new Date(s.out).getTime();
+                            if (!isNaN(start) && !isNaN(end) && end > start) {
+                                totalMs += (end - start);
+                            }
+                        }
+                    });
+
+                    // 2. If currently active (punched in without punch out)
+                    if (record.punchInISO && !record.punchOutISO) {
+                        const liveStart = new Date(record.punchInISO).getTime();
+                        if (!isNaN(liveStart)) {
+                            totalMs += Math.max(0, Date.now() - liveStart);
+                        }
+                    } else if (sessions.length === 0 && record.punchInISO && record.punchOutISO) {
+                        // Fallback for single session
+                        const start = new Date(record.punchInISO).getTime();
+                        const end = new Date(record.punchOutISO).getTime();
+                        if (!isNaN(start) && !isNaN(end) && end > start) {
+                            totalMs = (end - start);
+                        }
+                    }
+
+                    if (totalMs === 0 && Number(record.totalHours) > 0) {
+                        totalMs = Number(record.totalHours) * 3600 * 1000;
+                    }
+
+                    const totalMinutes = Math.floor(totalMs / (1000 * 60));
+                    const hours = Math.floor(totalMinutes / 60);
+                    const mins = totalMinutes % 60;
+                    const decimalHours = Number((totalMs / (1000 * 60 * 60)).toFixed(2));
+
+                    // 8-Hour Goal Calculation (480 minutes)
+                    const targetMinutes = 480;
+                    const remainingMinutes = Math.max(0, targetMinutes - totalMinutes);
+                    const remHours = Math.floor(remainingMinutes / 60);
+                    const remMins = remainingMinutes % 60;
+                    const progressPercent = Math.min(100, Math.round((totalMinutes / targetMinutes) * 100));
+
+                    // 8-Hour Wage Rule Evaluation
+                    let attendanceType = 'Absent';
+                    let salaryMultiplier = 0.0;
+                    if (decimalHours >= 8.0) {
+                        attendanceType = 'Full Day';
+                        salaryMultiplier = 1.0;
+                    } else if (decimalHours >= 4.0) {
+                        attendanceType = 'Half Day';
+                        salaryMultiplier = 0.5;
+                    } else {
+                        attendanceType = 'Absent';
+                        salaryMultiplier = 0.0;
+                    }
+
+                    return {
+                        decimalHours,
+                        totalMinutes,
+                        hoursText: `${hours} hrs ${mins} min`,
+                        remainingText: remainingMinutes === 0 ? '८ तासांचे शिफ्ट उद्दिष्ट पूर्ण! 🎉' : `${remHours} hrs ${remMins} min बाकी`,
+                        percent: progressPercent,
+                        status: attendanceType,
+                        multiplier: salaryMultiplier
+                    };
+                },
+
+                get myTodayShiftProgress() {
+                    return this.calculateStaffCumulativeHours(this.myTodayPunchRecord);
+                },
+
+                // Live Active Punch Duration & Status Updater (Per-Second IST Precision with 8-Hour Goal)
                 updateLivePunchTimer() {
                     const myRec = this.myTodayPunchRecord;
                     if (myRec && (myRec.punchInISO || myRec.punchInTime) && !myRec.punchOutTime && !myRec.punchOutISO) {
-                        let startMs = myRec.punchInISO ? new Date(myRec.punchInISO).getTime() : NaN;
-                        if (isNaN(startMs) && myRec.punchInTime) {
-                            startMs = new Date(`${this.todayISODate} ${myRec.punchInTime}`).getTime();
-                        }
-                        if (isNaN(startMs)) startMs = Date.now();
-                        const diffMs = Math.max(0, Date.now() - startMs);
-                        const totalMins = Math.floor(diffMs / (1000 * 60));
-                        const hrs = Math.floor(totalMins / 60);
-                        const mins = totalMins % 60;
-                        const totalHours = Number((diffMs / (1000 * 60 * 60)).toFixed(2));
+                        const cum = this.calculateStaffCumulativeHours(myRec);
                         const inTimeFormatted = myRec.punchInTime || this.formatToISTTime(myRec.punchInISO);
+                        const hrs = Math.floor(cum.totalMinutes / 60);
+                        const mins = cum.totalMinutes % 60;
 
-                        this.activePunchHours = totalHours;
-                        this.activePunchDurationText = `${hrs} hrs ${mins} min${mins === 1 ? '' : 's'}`;
+                        this.activePunchHours = cum.decimalHours;
+                        this.activePunchDurationText = cum.hoursText;
                         this.activePunchDurationCompact = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
-                        this.activePunchBannerText = `चालू वेळ: ${inTimeFormatted} (${hrs} hrs ${mins} min)`;
+                        this.activePunchBannerText = `चालू वेळ: ${inTimeFormatted} (${cum.hoursText})`;
 
-                        if (totalHours >= 4.0) {
-                            this.activePunchMarathi = `पूर्ण दिवस (${totalHours} तास - १००% वेतन)`;
-                        } else if (totalHours >= 2.0) {
-                            this.activePunchMarathi = `अर्धा दिवस (${totalHours} तास - ५०% वेतन)`;
+                        if (cum.decimalHours >= 8.0) {
+                            this.activePunchMarathi = `पूर्ण दिवस (${cum.decimalHours} तास - १००% वेतन)`;
+                        } else if (cum.decimalHours >= 4.0) {
+                            this.activePunchMarathi = `अर्धा दिवस (${cum.decimalHours} तास - ५०% वेतन)`;
                         } else {
-                            this.activePunchMarathi = `अमान्य - २ तासांपेक्षा कमी (${totalHours} तास)`;
+                            this.activePunchMarathi = `शॉर्ट शिफ्ट - ४ तासांपेक्षा कमी (${cum.decimalHours} तास - ०% वेतन)`;
                         }
                     } else {
                         this.activePunchDurationText = '';
@@ -6062,7 +6287,7 @@
                     }
                 },
 
-                // 1. INSTANT OPTIMISTIC PUNCH IN (< 5ms response, background cloud sync)
+                // 1. INSTANT OPTIMISTIC PUNCH IN (Multi-Session Re-Punch Support)
                 async punchInStaff(targetUsername = null) {
                     const username = targetUsername || (this.currentUser ? this.currentUser.username : null);
                     if (!username) {
@@ -6081,18 +6306,29 @@
                     const isWaived = existing ? Boolean(existing.penaltyWaived) : this.isStaffPenaltyWaived(username, today);
                     const staffDisplayName = targetUser ? targetUser.name : (username === 'sagar' ? 'Sagar Wadekar' : username);
 
+                    // Multi-Session: Preserve past completed sessions on re-punch
+                    let existingSessions = Array.isArray(existing?.sessions) ? [...existing.sessions] : [];
+                    if (existing?.punchInISO && existing?.punchOutISO) {
+                        const alreadyIn = existingSessions.some(s => s.in === existing.punchInISO && s.out === existing.punchOutISO);
+                        if (!alreadyIn) {
+                            existingSessions.push({ in: existing.punchInISO, out: existing.punchOutISO });
+                        }
+                    }
+
                     // 1. INSTANT LOCAL STATE & OPTIMISTIC RENDERING (Zero delay)
                     const activeSession = {
                         staffId: username,
                         staffName: staffDisplayName,
                         date: today,
-                        punchInISO: nowISO
+                        punchInISO: nowISO,
+                        sessions: existingSessions
                     };
                     try {
                         localStorage.setItem('suravi_active_punch_session', JSON.stringify(activeSession));
                     } catch (e) {}
 
                     const updatedRecord = {
+                        ...(existing || {}),
                         id: existing?.id || recId,
                         staffId: username,
                         staff_id: username,
@@ -6104,12 +6340,15 @@
                         punchOutTime: null,
                         punchInISO: nowISO,
                         punchOutISO: null,
-                        totalHours: 0.00,
-                        attendanceType: 'Absent',
-                        daySalaryMultiplier: 0.00,
+                        sessions: existingSessions,
                         penaltyWaived: isWaived,
                         autoCalculated: false
                     };
+
+                    const liveCum = this.calculateStaffCumulativeHours(updatedRecord);
+                    updatedRecord.totalHours = liveCum.decimalHours;
+                    updatedRecord.attendanceType = liveCum.status;
+                    updatedRecord.daySalaryMultiplier = liveCum.multiplier;
 
                     const existingIdx = (this.attendanceLogs || []).findIndex(a => (a.staffId === username || a.staff_id === username) && a.date === today);
                     if (existingIdx !== -1) {
@@ -6138,9 +6377,9 @@
                                     punch_out_time: null,
                                     punch_in_iso: nowISO,
                                     punch_out_iso: null,
-                                    total_hours: 0.00,
-                                    attendance_type: 'Absent',
-                                    day_salary_multiplier: 0.00,
+                                    total_hours: liveCum.decimalHours,
+                                    attendance_type: liveCum.status,
+                                    day_salary_multiplier: liveCum.multiplier,
                                     penalty_waived: isWaived,
                                     auto_calculated: false
                                 };
@@ -6154,9 +6393,9 @@
                                     date: today,
                                     punch_in: nowISO,
                                     punch_out: null,
-                                    total_hours: 0.00,
-                                    attendance_type: 'Absent',
-                                    day_salary_multiplier: 0.00,
+                                    total_hours: liveCum.decimalHours,
+                                    attendance_type: liveCum.status,
+                                    day_salary_multiplier: liveCum.multiplier,
                                     base_daily_salary: sal,
                                     auto_calculated: false
                                 });
@@ -6167,7 +6406,7 @@
                     }
                 },
 
-                // 2. INSTANT OPTIMISTIC PUNCH OUT (< 5ms response, background cloud sync)
+                // 2. INSTANT OPTIMISTIC PUNCH OUT (Multi-Session Accumulator & 8-Hour Wage Rule)
                 async punchOutStaff(targetUsername = null) {
                     const username = targetUsername || (this.currentUser ? this.currentUser.username : null);
                     if (!username) return;
@@ -6191,37 +6430,20 @@
                     const recId = existing?.id || myActive?.id || `att_${username}_${today}`;
                     const staffDisplayName = targetUser ? targetUser.name : (username === 'sagar' ? 'Sagar Wadekar' : username);
 
-                    let startMs = effectivePunchInISO ? new Date(effectivePunchInISO).getTime() : NaN;
-                    if (isNaN(startMs) && effectivePunchInTime) {
-                        startMs = new Date(`${today} ${effectivePunchInTime}`).getTime();
-                    }
-                    if (isNaN(startMs)) startMs = now.getTime();
-
-                    const diffMs = Math.max(0, now.getTime() - startMs);
-                    const totalHours = Number((diffMs / (1000 * 60 * 60)).toFixed(2));
-
-                    let attendanceType = 'Absent';
-                    let salaryMultiplier = 0.0;
-                    let statusText = 'Absent';
-                    let marathiSummary = '';
-
-                    if (totalHours >= 4.0) {
-                        attendanceType = 'Full Day';
-                        salaryMultiplier = 1.0;
-                        statusText = 'Present';
-                        marathiSummary = `पूर्ण दिवस (${totalHours} तास - १००% वेतन)`;
-                    } else if (totalHours >= 2.0) {
-                        attendanceType = 'Half Day';
-                        salaryMultiplier = 0.5;
-                        statusText = 'Half Day';
-                        marathiSummary = `अर्धा दिवस (${totalHours} तास - ५०% वेतन)`;
-                    } else {
-                        attendanceType = 'Absent';
-                        salaryMultiplier = 0.0;
-                        statusText = 'Absent';
-                        marathiSummary = `अमान्य - २ तासांपेक्षा कमी कामाची वेळ (${totalHours} तास - ०% वेतन)`;
+                    // Multi-Session Accumulator: Push completed session to sessions array
+                    let existingSessions = Array.isArray(existing?.sessions) ? [...existing.sessions] : (Array.isArray(myActive?.sessions) ? [...myActive.sessions] : []);
+                    if (effectivePunchInISO) {
+                        existingSessions.push({ in: effectivePunchInISO, out: nowISO });
                     }
 
+                    // Calculate cumulative duration and 8-hour target
+                    const cum = this.calculateStaffCumulativeHours({
+                        sessions: existingSessions,
+                        punchInISO: null,
+                        punchOutISO: null
+                    });
+
+                    const statusText = cum.status === 'Absent' ? 'Absent' : (cum.status === 'Half Day' ? 'Half Day' : 'Present');
                     const isWaived = existing ? Boolean(existing.penaltyWaived) : this.isStaffPenaltyWaived(username, today);
 
                     // 1. INSTANT LOCAL STATE & OPTIMISTIC RENDERING (Clear session, set punch out)
@@ -6231,6 +6453,7 @@
 
                     const existingIdx = (this.attendanceLogs || []).findIndex(a => (a.staffId === username || a.staff_id === username) && a.date === today);
                     const updatedRecord = {
+                        ...(existing || {}),
                         id: recId,
                         staffId: username,
                         staff_id: username,
@@ -6242,9 +6465,10 @@
                         punchOutTime: nowTime,
                         punchInISO: effectivePunchInISO,
                         punchOutISO: nowISO,
-                        totalHours: totalHours,
-                        attendanceType: attendanceType,
-                        daySalaryMultiplier: salaryMultiplier,
+                        sessions: existingSessions,
+                        totalHours: cum.decimalHours,
+                        attendanceType: cum.status,
+                        daySalaryMultiplier: cum.multiplier,
                         penaltyWaived: isWaived,
                         autoCalculated: false
                     };
@@ -6275,9 +6499,9 @@
                                     punch_out_time: nowTime,
                                     punch_in_iso: effectivePunchInISO || null,
                                     punch_out_iso: nowISO,
-                                    total_hours: totalHours,
-                                    attendance_type: attendanceType,
-                                    day_salary_multiplier: salaryMultiplier,
+                                    total_hours: cum.decimalHours,
+                                    attendance_type: cum.status,
+                                    day_salary_multiplier: cum.multiplier,
                                     penalty_waived: isWaived,
                                     auto_calculated: false
                                 };
@@ -6291,9 +6515,9 @@
                                     date: today,
                                     punch_in: effectivePunchInISO,
                                     punch_out: nowISO,
-                                    total_hours: totalHours,
-                                    attendance_type: attendanceType,
-                                    day_salary_multiplier: salaryMultiplier,
+                                    total_hours: cum.decimalHours,
+                                    attendance_type: cum.status,
+                                    day_salary_multiplier: cum.multiplier,
                                     base_daily_salary: sal,
                                     auto_calculated: false
                                 });
@@ -6455,22 +6679,13 @@
                     };
                 },
 
-                // Compute Working Duration (Hours & Minutes)
+                // Compute Working Duration (Hours & Minutes) with Multi-Session Cumulative Accumulator
                 getStaffDurationDisplay(username, dateStr) {
                     if (dateStr === this.todayISODate && this.currentUser && (username === this.currentUser.username || (this.currentUser.username === 'sagar' && username === 'sagar_wadekar') || (this.currentUser.username === 'sagar_wadekar' && username === 'sagar'))) {
                         const myRec = this.myTodayPunchRecord;
-                        if (myRec && (myRec.punchInISO || myRec.punchInTime) && !myRec.punchOutISO && !myRec.punchOutTime) {
-                            let start = myRec.punchInISO ? new Date(myRec.punchInISO).getTime() : NaN;
-                            if (isNaN(start) && myRec.punchInTime) {
-                                start = new Date(`${dateStr} ${myRec.punchInTime}`).getTime();
-                            }
-                            if (isNaN(start)) start = Date.now();
-                            const diffMs = Math.max(0, Date.now() - start);
-                            const totalMinutes = Math.floor(diffMs / (1000 * 60));
-                            const hours = Math.floor(totalMinutes / 60);
-                            const mins = totalMinutes % 60;
-                            const decimalHours = (diffMs / (1000 * 60 * 60)).toFixed(2);
-                            return `${hours} hrs ${mins} mins (${decimalHours} hrs)`;
+                        if (myRec && (myRec.punchInISO || myRec.punchInTime || (Array.isArray(myRec.sessions) && myRec.sessions.length > 0))) {
+                            const cum = this.calculateStaffCumulativeHours(myRec);
+                            return `${cum.hoursText} (${cum.decimalHours} hrs)`;
                         }
                     }
 
@@ -6478,46 +6693,26 @@
                         (a.staffId === username || a.staff_id === username || (username === 'sagar' && a.staffId === 'sagar_wadekar') || (username === 'sagar_wadekar' && a.staffId === 'sagar')) && 
                         (a.date === dateStr || a.date?.startsWith(dateStr))
                     );
-                    const punchInVal = rec ? (rec.punchInISO || rec.punch_in || rec.punchInTime) : null;
-                    if (!rec || !punchInVal) return '—';
-
-                    let start = (rec.punchInISO || rec.punch_in) ? new Date(rec.punchInISO || rec.punch_in).getTime() : NaN;
-                    if (isNaN(start) && rec.punchInTime) {
-                        start = new Date(`${dateStr} ${rec.punchInTime}`).getTime();
+                    if (!rec) return '—';
+                    const cum = this.calculateStaffCumulativeHours(rec);
+                    if (cum.totalMinutes === 0 && !rec.punchInISO && !rec.punchInTime && !rec.punch_in && !rec.totalHours) {
+                        return '—';
                     }
-                    if (isNaN(start)) return '—';
-
-                    let end = (rec.punchOutISO || rec.punch_out) ? new Date(rec.punchOutISO || rec.punch_out).getTime() : NaN;
-                    if (isNaN(end) && rec.punchOutTime) {
-                        end = new Date(`${dateStr} ${rec.punchOutTime}`).getTime();
-                    }
-                    if (isNaN(end)) {
-                        if (dateStr === this.todayISODate) {
-                            end = Date.now();
-                        } else if (rec.totalHours > 0) {
-                            end = start + Math.round(rec.totalHours * 3600 * 1000);
-                        } else {
-                            return '—';
-                        }
-                    }
-
-                    const diffMs = Math.max(0, end - start);
-                    const totalMinutes = Math.floor(diffMs / (1000 * 60));
-                    const hours = Math.floor(totalMinutes / 60);
-                    const mins = totalMinutes % 60;
-                    const decimalHours = (diffMs / (1000 * 60 * 60)).toFixed(2);
-
-                    return `${hours} hrs ${mins} mins (${decimalHours} hrs)`;
+                    const finalHours = cum.decimalHours > 0 ? cum.decimalHours : Number(rec.totalHours || 0).toFixed(2);
+                    const finalMinutes = cum.totalMinutes > 0 ? cum.totalMinutes : Math.round(Number(rec.totalHours || 0) * 60);
+                    const h = Math.floor(finalMinutes / 60);
+                    const m = finalMinutes % 60;
+                    return `${h} hrs ${m} mins (${finalHours} hrs)`;
                 },
 
-                // Attendance Status with Wage Multiplier Badge Display
+                // Attendance Status with 8-Hour Wage Multiplier Badge Display (>=8h: 100%, 4-7.99h: 50%, <4h: 0%)
                 getAttendanceStatusWithWage(username, dateStr) {
                     if (dateStr === this.todayISODate && this.currentUser && (username === this.currentUser.username || (this.currentUser.username === 'sagar' && username === 'sagar_wadekar') || (this.currentUser.username === 'sagar_wadekar' && username === 'sagar'))) {
                         const myRec = this.myTodayPunchRecord;
-                        if (myRec && (myRec.punchInISO || myRec.punchInTime) && !myRec.punchOutISO && !myRec.punchOutTime) {
-                            const hrs = this.activePunchHours || 0;
-                            if (hrs >= 4.0) return 'Full Day (100%)';
-                            if (hrs >= 2.0) return 'Half Day (50%)';
+                        if (myRec && (myRec.punchInISO || myRec.punchInTime || (Array.isArray(myRec.sessions) && myRec.sessions.length > 0))) {
+                            const cum = this.calculateStaffCumulativeHours(myRec);
+                            if (cum.decimalHours >= 8.0) return 'Full Day (100%)';
+                            if (cum.decimalHours >= 4.0) return 'Half Day (50%)';
                             return 'Absent (0%)';
                         }
                     }
@@ -6526,18 +6721,22 @@
                         (a.date === dateStr || a.date?.startsWith(dateStr))
                     );
                     if (!record) return 'Absent (0%)';
-                    const type = record.attendanceType || (record.status === 'Present' ? 'Full Day' : record.status === 'Half Day' ? 'Half Day' : 'Absent');
-                    const mult = record.daySalaryMultiplier !== undefined ? Number(record.daySalaryMultiplier) : (type === 'Full Day' || record.status === 'Present' ? 1.0 : type === 'Half Day' || record.status === 'Half Day' ? 0.5 : 0.0);
-                    if (mult === 1.0 || type === 'Full Day' || record.status === 'Present') return 'Full Day (100%)';
-                    if (mult === 0.5 || type === 'Half Day' || record.status === 'Half Day') return 'Half Day (50%)';
+                    const cum = this.calculateStaffCumulativeHours(record);
+                    const mult = record.daySalaryMultiplier !== undefined ? Number(record.daySalaryMultiplier) : cum.multiplier;
+                    if (mult === 1.0 || cum.status === 'Full Day' || record.attendanceType === 'Full Day') return 'Full Day (100%)';
+                    if (mult === 0.5 || cum.status === 'Half Day' || record.attendanceType === 'Half Day') return 'Half Day (50%)';
                     return 'Absent (0%)';
                 },
 
+                // 8-Hour Shift Salary Calculation Display (>=8h: 100%, 4-7.99h: 50%, <4h: 0%)
                 getStaffSalaryCalculationDisplay(username, dateStr) {
                     if (dateStr === this.todayISODate && this.currentUser && (username === this.currentUser.username || (this.currentUser.username === 'sagar' && username === 'sagar_wadekar') || (this.currentUser.username === 'sagar_wadekar' && username === 'sagar'))) {
                         const myRec = this.myTodayPunchRecord;
-                        if (myRec && myRec.punchInTime && !myRec.punchOutTime) {
-                            return (this.activePunchHours || 0) >= 4.0 ? '१००% (Full)' : (this.activePunchHours || 0) >= 2.0 ? '५०% (Half)' : '०% (Absent / चालू)';
+                        if (myRec && (myRec.punchInTime || myRec.punchInISO || (Array.isArray(myRec.sessions) && myRec.sessions.length > 0))) {
+                            const cum = this.calculateStaffCumulativeHours(myRec);
+                            if (cum.decimalHours >= 8.0) return '१००% (Full Day)';
+                            if (cum.decimalHours >= 4.0) return '५०% (Half Day)';
+                            return myRec.punchInISO && !myRec.punchOutISO ? '०% (चालू शिफ्ट)' : '०% (Absent / None)';
                         }
                     }
                     const rec = (this.attendanceLogs || []).find(a => 
@@ -6545,9 +6744,10 @@
                         (a.date === dateStr || a.date?.startsWith(dateStr))
                     );
                     if (!rec) return '०% (None)';
-                    const mult = rec.daySalaryMultiplier !== undefined ? Number(rec.daySalaryMultiplier) : (rec.status === 'Present' ? 1.0 : rec.status === 'Half Day' ? 0.5 : 0.0);
-                    if (mult === 1.0) return '१००% (Full Day)';
-                    if (mult === 0.5) return '५०% (Half Day)';
+                    const cum = this.calculateStaffCumulativeHours(rec);
+                    const mult = rec.daySalaryMultiplier !== undefined ? Number(rec.daySalaryMultiplier) : cum.multiplier;
+                    if (mult === 1.0 || cum.status === 'Full Day' || rec.attendanceType === 'Full Day') return '१००% (Full Day)';
+                    if (mult === 0.5 || cum.status === 'Half Day' || rec.attendanceType === 'Half Day') return '५०% (Half Day)';
                     return '०% (Absent / None)';
                 },
 
