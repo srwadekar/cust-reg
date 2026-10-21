@@ -5766,7 +5766,8 @@
                                 dispatchedBy: srv.dispatchedBy || null,
                                 dispatchedAt: srv.dispatchedAt || srv.dispatched_at || log.dispatched_at || null,
                                 dispCommission: srv.dispCommission !== undefined ? Number(srv.dispCommission) : ((srv.physicalStatus === 'Despatched' || srv.physicalStatus === 'Come in Shop') ? this.calcDispComm(margin, this.getUserCommissionConfig(srv.dispatchedBy).dispRate, this.getUserCommissionConfig(srv.dispatchedBy).dispCap) : 0),
-                                date: log.date
+                                date: log.date,
+                                createdAt: log.createdAt || log.created_at || null
                             });
                         });
                     });
@@ -5855,7 +5856,7 @@
                     }
                 },
 
-                // Extracted Individual Commission Entries for Logged-In Associate (Strict IST Windowing)
+                // Cleaned, Accurate, Leak-Proof Commission Logs (Strict IST, Zero Leakage)
                 get myCommissionLogs() {
                     if (!this.currentUser) return [];
                     const list = [];
@@ -5870,68 +5871,86 @@
                         const custName = task.customerName || task.customer_name || 'Customer';
                         const srvName = task.name || task.serviceName || task.service_name || 'Service';
 
-                        // 1. Work / Submit Commission: Credited strictly on IST calendar date of completed_at (or task.date)
+                        // Helper to get fallback creation date in YYYY-MM-DD IST
+                        const logDateFallback = this.getStrictISTDate(task.date) || this.getStrictISTDate(task.createdAt) || null;
+
+                        // 1. Processing Commission (Stage 1)
                         if (isDocs) {
-                            const rawCompletedAt = task.completedAt || task.completed_at;
-                            const workDate = this.getStrictISTDate(rawCompletedAt) || this.getStrictISTDate(task.date) || this.todayISODate;
-                            const workTime = this.getStrictISTTime(rawCompletedAt);
+                            const effectiveISTDate = this.getStrictISTDate(task.completedAt) || logDateFallback;
+                            const effectiveTime = this.getStrictISTTime(task.completedAt) || (task.completedAt ? '12:00' : '—');
                             const comm = Math.round(Number(task.procCommission || 0) * penaltyMultiplier * 100) / 100;
-                            list.push({
-                                id: `${task.logId}_${task.sIndex}_doc`,
-                                taskId: String(task.appId || task.logId),
-                                customerName: custName,
-                                serviceName: srvName,
-                                stage: 'STAGE_1_DOCS',
-                                stageLabel: 'कामाचे कमिशन (Work/Submit)',
-                                commissionAmount: comm,
-                                date: workDate,
-                                time: workTime
-                            });
+
+                            // Only add if there is a real date and commission > 0
+                            if (effectiveISTDate && comm > 0) {
+                                list.push({
+                                    id: `${task.logId}_${task.sIndex}_proc`,
+                                    taskId: String(task.appId || task.logId),
+                                    customerName: custName,
+                                    serviceName: srvName,
+                                    stage: 'STAGE_1_DOCS',
+                                    stageLabel: 'प्रोसेसिंग कमिशन (Processing)',
+                                    commissionAmount: comm,
+                                    date: effectiveISTDate, // Strictly actual date, NO today fallback!
+                                    time: effectiveTime
+                                });
+                            }
                         }
 
-                        // 2. Dispatch Commission: Strictly credited on IST calendar date of dispatched_at
+                        // 2. Dispatch Commission (Stage 2)
                         if (isSubmit) {
-                            const rawDispatchedAt = task.dispatchedAt || task.dispatched_at;
-                            const dispDate = this.getStrictISTDate(rawDispatchedAt) || this.todayISODate;
-                            const dispTime = this.getStrictISTTime(rawDispatchedAt);
+                            // STRICT FIX: If dispatchedAt is missing, fall back to logDateFallback. NEVER fallback to todayISODate!
+                            const effectiveISTDate = this.getStrictISTDate(task.dispatchedAt) || 
+                                                     this.getStrictISTDate(task.completedAt) || 
+                                                     logDateFallback;
+                            const effectiveTime = this.getStrictISTTime(task.dispatchedAt) || '12:00';
                             const comm = Math.round(Number(task.dispCommission || 0) * penaltyMultiplier * 100) / 100;
-                            list.push({
-                                id: `${task.logId}_${task.sIndex}_sub`,
-                                taskId: String(task.appId || task.logId),
-                                customerName: custName,
-                                serviceName: srvName,
-                                stage: 'STAGE_2_SUBMIT',
-                                stageLabel: 'डिस्पॅच कमिशन (Dispatch)',
-                                commissionAmount: comm,
-                                date: dispDate,
-                                time: dispTime
-                            });
+
+                            if (effectiveISTDate && comm > 0) {
+                                list.push({
+                                    id: `${task.logId}_${task.sIndex}_disp`,
+                                    taskId: String(task.appId || task.logId),
+                                    customerName: custName,
+                                    serviceName: srvName,
+                                    stage: 'STAGE_2_SUBMIT',
+                                    stageLabel: 'डिस्पॅच कमिशन (Dispatch)',
+                                    commissionAmount: comm,
+                                    date: effectiveISTDate, // Strictly actual date, NO today fallback!
+                                    time: effectiveTime
+                                });
+                            }
                         }
 
-                        // 3. Full Complete (Unsplit fallback)
+                        // 3. Unsplit Full Complete Fallback
                         if (!isDocs && !isSubmit && isAssigned) {
-                            const rawCompletedAt = task.completedAt || task.completed_at;
-                            const fullDate = this.getStrictISTDate(rawCompletedAt) || this.getStrictISTDate(task.date) || this.todayISODate;
-                            const fullTime = this.getStrictISTTime(rawCompletedAt);
-                            const comm = Math.round(Number(task.procCommission || task.amount || 20) * penaltyMultiplier * 100) / 100;
-                            list.push({
-                                id: `${task.logId}_${task.sIndex}_full`,
-                                taskId: String(task.appId || task.logId),
-                                customerName: custName,
-                                serviceName: srvName,
-                                stage: 'FULL_COMPLETE',
-                                stageLabel: 'पूर्ण काम (Full Complete)',
-                                commissionAmount: comm,
-                                date: fullDate,
-                                time: fullTime
-                            });
+                            const effectiveISTDate = this.getStrictISTDate(task.completedAt) || logDateFallback;
+                            const effectiveTime = this.getStrictISTTime(task.completedAt) || '12:00';
+                            const comm = Math.round(Number(task.procCommission || 20) * penaltyMultiplier * 100) / 100;
+
+                            if (effectiveISTDate && comm > 0) {
+                                list.push({
+                                    id: `${task.logId}_${task.sIndex}_full`,
+                                    taskId: String(task.appId || task.logId),
+                                    customerName: custName,
+                                    serviceName: srvName,
+                                    stage: 'FULL_COMPLETE',
+                                    stageLabel: 'पूर्ण काम (Full)',
+                                    commissionAmount: comm,
+                                    date: effectiveISTDate,
+                                    time: effectiveTime
+                                });
+                            }
                         }
                     });
 
-                    return list.sort((a, b) => (b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time));
+                    return list.sort((a, b) => {
+                        if (b.date === a.date) {
+                            return (b.time || '').localeCompare(a.time || '');
+                        }
+                        return b.date.localeCompare(a.date);
+                    });
                 },
 
-                // Card 1: Today's Earned Commission (19 Oct)
+                // Card 1: Today's Earned Commission
                 get todayEarnedCommission() {
                     const today = this.todayISODate;
                     const total = this.myCommissionLogs
